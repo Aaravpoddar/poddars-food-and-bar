@@ -1,0 +1,140 @@
+[
+  {
+    "id": "TP-538736",
+    "status": "Completed",
+    "createdAt": "2026-08-20T04:34:01.811Z",
+    "mode": "Dine in",
+    "table": "Table 12",
+    "items": [
+      {
+        "id": 38,
+        "name": "Chicken Tikka",
+        "price": 249,
+        "qty": 1,
+        "color": "orange",
+        "mark": "CT"
+      },
+      {
+        "id": 41,
+        "name": "Cold Coffee",
+        "price": 89,
+        "qty": 2,
+        "color": "cream",
+        "mark": "CF"
+      }
+    ],
+    "instructions": "Make Less spicy",
+    "subtotal": 427,
+    "gst": 21.35,
+    "total": 448.35,
+    "estimatedPrepTime": 20,
+    "approvedAt": "2026-08-20T04:34:19.905Z",
+    "readyAt": "2026-08-20T04:34:58.657Z",
+    "completedAt": "2026-08-20T04:35:02.174Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "Chef Aarav"
+  },
+  {
+    "id": "TP-239429",
+    "status": "Completed",
+    "createdAt": "2026-08-20T04:24:10.626Z",
+    "mode": "Dine in",
+    "table": "Table 12",
+    "items": [
+      {
+        "id": 7,
+        "name": "Veg Hakka Noodles",
+        "price": 169,
+        "qty": 1,
+        "color": "pink",
+        "mark": "VN"
+      },
+      {
+        "id": 9,
+        "name": "Veg Manchurian",
+        "price": 179,
+        "qty": 1,
+        "color": "green",
+        "mark": "VM"
+      }
+    ],
+    "instructions": "Make Less Spicy",
+    "subtotal": 348,
+    "gst": 17.400000000000002,
+    "total": 365.4,
+    "estimatedPrepTime": 20,
+    "approvedAt": "2026-08-20T04:24:27.720Z",
+    "readyAt": "2026-08-20T04:24:35.724Z",
+    "completedAt": "2026-08-20T04:24:51.517Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "Chef Aarav"
+  },
+  {
+    "id": "TP-775898",
+    "status": "Completed",
+    "createdAt": "2026-08-20T04:08:28.774Z",
+    "mode": "Dine in",
+    "table": "Table 12",
+    "items": [
+      {
+        "id": 16,
+        "name": "French Fries",
+        "price": 89,
+        "qty": 1,
+        "color": "yellow",
+        "mark": "FF"
+      },
+      {
+        "id": 37,
+        "name": "Spring Rolls",
+        "price": 129,
+        "qty": 1,
+        "color": "green",
+        "mark": "SR"
+      }
+    ],
+    "instructions": "",
+    "subtotal": 218,
+    "gst": 10.9,
+    "total": 228.9,
+    "estimatedPrepTime": 15,
+    "approvedAt": "2026-08-20T04:08:59.321Z",
+    "readyAt": "2026-08-20T04:09:07.950Z",
+    "completedAt": "2026-08-20T04:09:29.307Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null
+  },
+  {
+    "id": "TP-387279",
+    "status": "Completed",
+    "createdAt": "2026-08-20T04:06:14.752Z",
+    "mode": "Dine in",
+    "table": "Table 4",
+    "items": [
+      {
+        "id": 1,
+        "name": "Butter Chicken",
+        "price": 289,
+        "qty": 1,
+        "color": "coral",
+        "mark": "FD"
+      }
+    ],
+    "instructions": "Mild spice",
+    "subtotal": 289,
+    "gst": 14.45,
+    "total": 303.45,
+    "estimatedPrepTime": 20,
+    "approvedAt": "2026-08-20T04:06:14.772Z",
+    "readyAt": "2026-08-20T04:06:14.777Z",
+    "completedAt": "2026-08-20T04:06:14.785Z",
+    "cancelledAt": null,
+    "chefNote": "Fresh gravy brewing",
+    "rejectionReason": null
+  }
+]

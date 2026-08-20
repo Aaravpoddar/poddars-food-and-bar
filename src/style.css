@@ -6,3 +6,200 @@
 
 /* Midnight restaurant theme */
 :root{--ink:#f5f3ec;--muted:#a8ada8;--line:#303532;--paper:#101211;--lime:#d7f24a;--pink:#ff7567}body{background:radial-gradient(circle at 90% 0,#293025 0,transparent 27%),#101211;color:var(--ink)}header{background:#101211eF;border-color:#303532;position:sticky;top:0;z-index:3;backdrop-filter:blur(16px)}.brand-mark{box-shadow:0 0 24px #d7f24a55}.service-status{color:#b9c2ba}.icon-btn,.cart-trigger{color:var(--ink);background:#191d1b;border-color:#383e3a;transition:.2s ease}.icon-btn:hover,.cart-trigger:hover{border-color:var(--lime);transform:translateY(-2px)}.cart-trigger b{background:var(--lime);color:#151914}.welcome{background:linear-gradient(115deg,#090a0a 0%,#18201b 58%,#273121 100%);border-bottom:1px solid #303532;position:relative;overflow:hidden}.welcome:after{content:'';position:absolute;width:330px;height:330px;right:-70px;top:-160px;border:1px solid #d7f24a48;border-radius:50%;box-shadow:0 0 0 42px #d7f24a0b,0 0 0 84px #d7f24a08}.welcome>div{position:relative;z-index:1}.welcome h1{letter-spacing:-1.5px}.mode-switch{background:#111713;border:1px solid #3a443a}.mode-switch button{transition:.2s ease}.mode-switch button:hover{background:#273122}.mode-switch button.active{box-shadow:0 5px 22px #d7f24a31}.menu-section{background:transparent}.eyebrow{color:#aeba86}.menu-top h2{color:#fff}.search{border-color:#626b63}.search input{color:#fff}.search input::placeholder{color:#7d857f}.categories button{background:#171b19;color:#c8cdc7;border-color:#363d38;transition:.2s ease}.categories button:hover{border-color:var(--lime);color:#fff}.categories .selected{background:var(--lime);color:#111410;border-color:var(--lime)}.dish{background:linear-gradient(145deg,#1a1e1c,#141715);border-color:#303632;box-shadow:0 10px 24px #0000001f;transition:transform .22s ease,box-shadow .22s ease,border-color .22s ease}.dish:hover{transform:translateY(-6px);border-color:#8ba22d;box-shadow:0 18px 36px #00000055}.dish-info{background:transparent}.dish h3{color:#fff}.dish p{color:#a9b0aa}.add{transition:transform .2s ease,box-shadow .2s ease}.add:hover{transform:scale(1.12);box-shadow:0 5px 16px #d7f24a66}.drawer{background:#151917;color:var(--ink);box-shadow:-8px 0 28px #00000077}.drawer-head,.drawer-footer{border-color:#303632}.order-type,.ready{background:#222821}.order-type button{color:var(--ink)}.cart-item{border-color:#2d332f}.quantity button{background:#252c27;color:var(--ink)}.totals{color:#adb4ae}.totals b,.totals strong{color:#fff}.totals strong{border-color:#3a423c}.empty{color:#a8afa9}.notification-popover{background:#1a1f1c;border-color:#3a433c;color:#fff}.notification-popover span{color:#b6beb7}.confirmation{background:#050705eF}.confirmation>div{background:#171c19;color:#fff}.confirmation p:not(.eyebrow){color:#b5bdb6}.backdrop{background:#000000ae}.cart-toast{position:fixed;z-index:7;right:28px;bottom:28px;background:var(--lime);color:#121611;padding:13px 16px;display:flex;align-items:center;gap:10px;font-weight:700;box-shadow:0 14px 30px #00000077;animation:toast-in .3s ease}.cart-toast:hover{background:#e6ff59}@keyframes toast-in{from{opacity:0;transform:translateY(15px)}to{opacity:1;transform:translateY(0)}}.instructions-panel{position:fixed;z-index:5;right:18px;bottom:126px;width:min(394px,calc(100% - 36px));padding:12px 14px;background:#202622;border:1px solid #3a443d;box-shadow:0 10px 22px #0000003d;display:flex;flex-direction:column;gap:7px}.instructions-panel span{font:600 11px 'DM Mono';letter-spacing:.3px;color:#d7f24a}.instructions-panel textarea{resize:vertical;min-height:46px;max-height:90px;background:#141815;color:#f5f3ec;border:1px solid #3b443e;padding:9px;font:12px 'Work Sans',sans-serif;outline:none}.instructions-panel textarea:focus{border-color:#d7f24a}.instructions-panel textarea::placeholder{color:#8e9790}.diet-filter{display:flex;align-items:center;gap:8px;padding:13px max(7vw,48px);border-bottom:1px solid #303532;background:#121612}.diet-filter span{font:10px 'DM Mono';letter-spacing:1px;color:#aeba86;margin-right:5px}.diet-filter button{border:1px solid #3b443e;background:#1b201d;color:#d0d6d0;padding:7px 15px;font-size:12px;transition:.2s ease}.diet-filter button:hover{border-color:var(--lime);color:#fff}.diet-filter .selected{background:var(--lime);border-color:var(--lime);color:#111410;font-weight:700}.menu-quantity{border:1px solid #b9d234}.menu-quantity>b,.menu-quantity button{color:#101410}.menu-quantity>b{font-size:14px;font-weight:700}.mode-switch button.active{color:#101410;font-weight:700}.mode-switch button.active small{color:#101410;opacity:.82}.mode-switch button.active svg{stroke-width:2.6}.mode-switch button:not(.active){color:#dce2dc}.mode-switch button:not(.active) small{color:#b7c0b8}@media(min-width:801px){.instructions-panel{right:448px;bottom:24px}}@media(max-width:800px){.cart-toast{right:16px;bottom:82px}.mobile-cart button{background:#d7f24a;color:#121611;box-shadow:0 12px 25px #00000055}.instructions-panel{right:12px;top:150px;bottom:auto;width:calc(100% - 24px)}.diet-filter{padding:12px 20px;overflow:auto}.diet-filter span{flex:none}.diet-filter button{white-space:nowrap}}
+
+/* View Navigation Switcher */
+.view-nav{display:flex;align-items:center;background:#181e1b;border:1px solid var(--line);border-radius:30px;padding:3px;gap:2px}
+.view-nav button{padding:6px 14px;border-radius:24px;background:transparent;color:var(--muted);font-size:12px;font-weight:600;display:flex;align-items:center;gap:7px;transition:.2s ease}
+.view-nav button.active{background:var(--lime);color:#121611}
+.view-nav button:hover:not(.active){color:#fff}
+.badge-pill{background:#ff6f61;color:#fff;font-size:10px;font-family:'DM Mono';padding:1px 6px;border-radius:10px;animation:pulse-badge 1.6s infinite ease-in-out}
+@keyframes pulse-badge{0%,100%{transform:scale(1)}50%{transform:scale(1.15);box-shadow:0 0 10px #ff6f61aa}}
+
+/* Chef KDS Styles */
+.kds-container{padding:30px max(4vw,32px) 80px;max-width:1600px;margin:0 auto}
+.kds-topbar{display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;flex-wrap:wrap;gap:16px}
+.kds-title{display:flex;align-items:center;gap:14px}
+.kds-title h1{font-size:26px;margin:0;font-family:'Playfair Display',serif;color:#fff}
+.kds-live-clock{font-family:'DM Mono';font-size:13px;color:var(--lime);background:#18201a;border:1px solid #2e3a2f;padding:6px 12px;border-radius:20px;display:flex;align-items:center;gap:6px}
+.kds-actions-bar{display:flex;align-items:center;gap:10px}
+.kds-btn-tool{background:#181d1a;color:#c0c8c0;border:1px solid #363d37;padding:8px 14px;font-size:12px;font-weight:500;display:flex;align-items:center;gap:6px;border-radius:6px;transition:.2s ease}
+.kds-btn-tool:hover{border-color:var(--lime);color:#fff}
+.kds-btn-tool.active{background:#233020;border-color:var(--lime);color:var(--lime)}
+
+/* Stats Bar */
+.kds-stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px;margin-bottom:28px}
+.kds-stat-card{background:linear-gradient(135deg,#181c1a,#131614);border:1px solid #2d342f;padding:16px 18px;border-radius:10px;display:flex;align-items:center;gap:14px;position:relative;overflow:hidden}
+.kds-stat-card.alert{border-color:#ff9800;background:linear-gradient(135deg,#231c15,#181410)}
+.kds-stat-card.alert .stat-val{color:#ffb74d}
+.stat-icon-box{width:42px;height:42px;border-radius:8px;background:#202823;display:grid;place-items:center;color:var(--lime);flex-shrink:0}
+.stat-icon-box.pending{background:#382710;color:#ffb74d}
+.stat-icon-box.cooking{background:#152c38;color:#4fc3f7}
+.stat-icon-box.ready{background:#1a361e;color:#81c784}
+.stat-icon-box.completed{background:#2a2336;color:#ba68c8}
+.stat-data{display:flex;flex-direction:column}
+.stat-val{font-family:'DM Mono';font-size:22px;font-weight:700;color:#fff;line-height:1.1}
+.stat-lbl{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+
+/* Filter bar */
+.kds-filter-bar{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:24px;flex-wrap:wrap}
+.kds-tab-pills{display:flex;gap:8px;overflow-x:auto;padding-bottom:4px}
+.kds-tab-btn{background:#161a18;border:1px solid #2e3530;color:#a8b0aa;padding:8px 16px;font-size:12px;font-weight:600;border-radius:6px;white-space:nowrap;display:flex;align-items:center;gap:7px;transition:.2s ease}
+.kds-tab-btn:hover{border-color:var(--lime);color:#fff}
+.kds-tab-btn.active{background:var(--lime);border-color:var(--lime);color:#121611}
+.kds-tab-count{font-family:'DM Mono';font-size:11px;background:#00000033;padding:2px 6px;border-radius:10px}
+.kds-tab-btn.active .kds-tab-count{background:#12161133;color:#000}
+.kds-search{position:relative;width:280px}
+.kds-search input{width:100%;background:#161a18;border:1px solid #2e3530;color:#fff;padding:8px 12px 8px 34px;border-radius:6px;font-size:12px;outline:none}
+.kds-search input:focus{border-color:var(--lime)}
+.kds-search svg{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted)}
+
+/* Order Grid & Cards */
+.kds-orders-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(330px,1fr));gap:20px}
+.kds-card{background:#161a18;border:1px solid #2e3530;border-radius:10px;display:flex;flex-direction:column;box-shadow:0 8px 24px #0000003d;position:relative;overflow:hidden;transition:transform .2s ease,border-color .2s ease}
+.kds-card:hover{transform:translateY(-3px);border-color:#4a544d}
+.kds-card.status-new{border-top:4px solid #ff9800}
+.kds-card.status-preparing{border-top:4px solid #00bcd4}
+.kds-card.status-ready{border-top:4px solid #4caf50}
+.kds-card.status-completed{border-top:4px solid #78909c;opacity:.85}
+.kds-card.status-cancelled{border-top:4px solid #e53935;opacity:.8}
+
+.kds-card-head{padding:14px 16px;border-bottom:1px solid #272e29;display:flex;justify-content:space-between;align-items:flex-start}
+.kds-order-num{font-family:'DM Mono';font-size:16px;font-weight:700;color:#fff;display:flex;align-items:center;gap:6px}
+.kds-order-type{font-size:11px;color:var(--lime);display:inline-block;margin-top:2px;font-weight:600}
+.kds-badge{font-family:'DM Mono';font-size:10px;padding:3px 8px;border-radius:4px;text-transform:uppercase;font-weight:600;letter-spacing:.4px}
+.kds-badge.badge-new{background:#422a08;color:#ffb74d;border:1px solid #ff9800;animation:pulse-badge 1.8s infinite}
+.kds-badge.badge-preparing{background:#09303d;color:#4fc3f7;border:1px solid #00bcd4}
+.kds-badge.badge-ready{background:#11381b;color:#81c784;border:1px solid #4caf50}
+.kds-badge.badge-completed{background:#232b26;color:#90a4ae;border:1px solid #546e7a}
+.kds-badge.badge-cancelled{background:#3b1414;color:#ef5350;border:1px solid #e53935}
+
+.kds-card-meta{padding:8px 16px;background:#121513;font-family:'DM Mono';font-size:11px;color:var(--muted);display:flex;justify-content:space-between;border-bottom:1px solid #232a25}
+.kds-elapsed{color:#e6ee9c;display:flex;align-items:center;gap:4px}
+
+.kds-items-list{padding:14px 16px;flex:1;display:flex;flex-direction:column;gap:10px;max-height:260px;overflow-y:auto}
+.kds-item-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.kds-item-main{display:flex;align-items:center;gap:10px}
+.kds-qty-badge{background:#273327;border:1px solid #425942;color:var(--lime);font-family:'DM Mono';font-weight:700;font-size:12px;padding:2px 8px;border-radius:4px;min-width:30px;text-align:center}
+.kds-item-name{font-size:13px;font-weight:600;color:#fff}
+.kds-item-price{font-family:'DM Mono';font-size:11px;color:var(--muted)}
+
+.kds-instructions-alert{margin:10px 16px 0;background:#2b220f;border:1px dashed #ffa726;border-radius:6px;padding:10px 12px;display:flex;align-items:flex-start;gap:8px}
+.kds-instructions-alert svg{color:#ffa726;flex-shrink:0;margin-top:2px}
+.kds-instructions-alert span{font-size:11px;color:#ffe0b2;line-height:1.4}
+.kds-instructions-alert b{display:block;font-size:11px;text-transform:uppercase;color:#ffb74d;letter-spacing:.4px}
+
+.kds-chef-note-box{margin:10px 16px 0;background:#18262b;border:1px solid #00bcd455;border-radius:6px;padding:8px 12px;font-size:11px;color:#b2ebf2}
+
+.kds-card-footer{padding:14px 16px;border-top:1px solid #232a25;margin-top:12px;background:#141715}
+.kds-totals-summary{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:12px;color:var(--muted)}
+.kds-totals-summary b{font-family:'DM Mono';color:#fff;font-size:14px}
+
+/* Chef Card Actions */
+.kds-prep-selector{display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.kds-prep-selector span{font-size:10px;color:var(--muted);text-transform:uppercase;font-family:'DM Mono'}
+.kds-prep-btn{padding:4px 8px;font-size:10px;font-family:'DM Mono';background:#1d241f;border:1px solid #334036;color:#c0cac1;border-radius:4px}
+.kds-prep-btn.selected{background:var(--lime);color:#121611;border-color:var(--lime);font-weight:700}
+
+.kds-action-buttons{display:flex;gap:8px}
+.kds-btn-approve{flex:1;background:var(--lime);color:#121611;font-weight:700;font-size:12px;padding:10px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:6px;transition:.2s ease}
+.kds-btn-approve:hover{background:#e8ff54;transform:scale(1.02)}
+.kds-btn-ready{flex:1;background:#00bcd4;color:#0c2126;font-weight:700;font-size:12px;padding:10px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:6px;transition:.2s ease}
+.kds-btn-ready:hover{background:#4dd0e1}
+.kds-btn-complete{flex:1;background:#4caf50;color:#0e2911;font-weight:700;font-size:12px;padding:10px;border-radius:6px;display:flex;align-items:center;justify-content:center;gap:6px;transition:.2s ease}
+.kds-btn-complete:hover{background:#81c784}
+.kds-btn-reject{background:#2a1a1a;border:1px solid #e53935;color:#ef5350;padding:10px 14px;border-radius:6px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;transition:.2s ease}
+.kds-btn-reject:hover{background:#d32f2f;color:#fff}
+.kds-btn-delete{background:#1f2621;border:1px solid #38423a;color:#a0aaa1;padding:8px 12px;border-radius:6px;font-size:11px;margin-left:auto}
+.kds-btn-delete:hover{background:#e53935;color:#fff;border-color:#e53935}
+
+/* Reject Prompt Modal */
+.kds-modal-overlay{position:fixed;inset:0;background:#000000c0;z-index:10;display:grid;place-items:center;padding:20px}
+.kds-modal-box{background:#191e1b;border:1px solid #3d4740;border-radius:12px;padding:24px;width:min(440px,100%);box-shadow:0 16px 40px #00000088}
+.kds-modal-box h3{margin:0 0 8px;font-size:18px;color:#fff}
+.kds-modal-box p{margin:0 0 16px;font-size:12px;color:var(--muted)}
+.kds-modal-box textarea{width:100%;background:#121513;border:1px solid #333d36;color:#fff;padding:10px;border-radius:6px;font-size:12px;min-height:80px;outline:none}
+.kds-modal-box textarea:focus{border-color:#ef5350}
+.kds-modal-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.kds-modal-actions button{padding:8px 16px;border-radius:6px;font-size:12px;font-weight:600}
+.kds-modal-cancel{background:#252d28;color:#ccc}
+.kds-modal-confirm-reject{background:#e53935;color:#fff}
+
+/* Live Order Tracker Modal */
+.tracker-card{position:fixed;z-index:8;right:28px;bottom:28px;width:min(420px,calc(100% - 40px));background:#181d1a;border:1px solid #364239;border-radius:12px;box-shadow:0 16px 36px #00000099;padding:20px;animation:toast-in .3s ease}
+.tracker-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;border-bottom:1px solid #29332b;padding-bottom:10px}
+.tracker-header h4{margin:0;font-size:15px;color:#fff;display:flex;align-items:center;gap:7px}
+.tracker-header button{background:transparent;color:var(--muted);padding:4px}
+.tracker-header button:hover{color:#fff}
+
+.tracker-stepper{display:flex;flex-direction:column;gap:14px;margin:14px 0}
+.tracker-step{display:flex;gap:12px;align-items:flex-start}
+.tracker-step-indicator{width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font-size:11px;font-weight:700;flex-shrink:0;border:2px solid #334036;background:#131614;color:var(--muted)}
+.tracker-step.completed .tracker-step-indicator{background:var(--lime);border-color:var(--lime);color:#121611}
+.tracker-step.current .tracker-step-indicator{background:#1b3223;border-color:var(--lime);color:var(--lime);animation:pulse-badge 1.8s infinite}
+.tracker-step-content{display:flex;flex-direction:column}
+.tracker-step-content b{font-size:13px;color:#fff}
+.tracker-step-content span{font-size:11px;color:var(--muted);margin-top:2px}
+.tracker-eta-badge{display:inline-flex;align-items:center;gap:6px;background:#203324;border:1px solid var(--lime);color:var(--lime);padding:4px 10px;border-radius:20px;font-family:'DM Mono';font-size:12px;font-weight:700;margin-top:6px}
+
+.tracker-order-summary{background:#121613;border-radius:6px;padding:10px 12px;margin-top:10px;font-size:11px;color:var(--muted)}
+.tracker-order-summary div{display:flex;justify-content:space-between;margin-bottom:4px}
+.tracker-order-summary b{color:#fff;font-family:'DM Mono'}
+
+.tracker-actions{display:flex;gap:8px;margin-top:14px}
+.tracker-actions button{flex:1;padding:9px;font-size:11px;font-weight:600;border-radius:6px}
+.tracker-btn-primary{background:var(--lime);color:#121611}
+.tracker-btn-secondary{background:#232c26;color:#ccc}
+
+/* Empty State */
+.kds-empty-state{grid-column:1/-1;text-align:center;padding:60px 20px;background:#141715;border:1px dashed #2d3630;border-radius:10px;color:var(--muted)}
+.kds-empty-state svg{color:#415044;margin-bottom:12px}
+.kds-empty-state h3{color:#fff;font-size:18px;margin:0 0 6px}
+.kds-empty-state p{font-size:12px;margin:0 0 16px}
+
+/* Chef Login Page */
+.chef-login-screen{min-height:85vh;display:grid;place-items:center;padding:40px 20px;background:radial-gradient(circle at 50% 30%,#202c23 0%,#101211 70%)}
+.chef-login-card{width:min(450px,100%);background:linear-gradient(145deg,#181d1a,#121614);border:1px solid #364239;border-radius:16px;box-shadow:0 24px 60px #000000aa;padding:38px 32px;text-align:center}
+.chef-login-badge{width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,#2c3b2d,#1a241c);border:1px solid var(--lime);display:grid;place-items:center;margin:0 auto 18px;color:var(--lime);box-shadow:0 0 30px #d7f24a33}
+.chef-login-card h2{font-size:26px;margin:0 0 6px;color:#fff;font-family:'Playfair Display',serif}
+.chef-login-subtitle{font-size:12px;color:var(--muted);margin:0 0 26px;letter-spacing:.3px}
+
+.chef-login-form{display:flex;flex-direction:column;gap:18px;text-align:left}
+.chef-input-group{display:flex;flex-direction:column;gap:6px}
+.chef-input-group label{font-family:'DM Mono';font-size:11px;color:var(--lime);letter-spacing:.4px;text-transform:uppercase;display:flex;align-items:center;gap:6px}
+.chef-input-box{position:relative;display:flex;align-items:center}
+.chef-input-box svg{position:absolute;left:14px;color:var(--muted)}
+.chef-input-box input{width:100%;background:#111412;border:1px solid #313d34;border-radius:8px;padding:12px 14px 12px 42px;color:#fff;font-size:14px;outline:none;transition:border-color .2s ease}
+.chef-input-box input:focus{border-color:var(--lime);box-shadow:0 0 0 3px #d7f24a1f}
+.chef-input-box input::placeholder{color:#626f65}
+
+.chef-quick-select{margin-top:4px}
+.chef-quick-select span{display:block;font-size:10px;color:var(--muted);font-family:'DM Mono';margin-bottom:6px;text-transform:uppercase}
+.chef-chips{display:flex;flex-wrap:wrap;gap:6px}
+.chef-chip-btn{background:#161c18;border:1px solid #2d382f;color:#b2bcb4;padding:4px 10px;border-radius:14px;font-size:11px;transition:.15s ease}
+.chef-chip-btn:hover{border-color:var(--lime);color:#fff;background:#202822}
+
+.chef-login-btn{margin-top:10px;background:var(--lime);color:#121611;font-weight:700;font-size:14px;padding:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;gap:8px;transition:.2s ease}
+.chef-login-btn:hover{background:#e7ff52;transform:translateY(-2px);box-shadow:0 8px 24px #d7f24a44}
+.chef-login-btn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+
+.chef-back-link{display:inline-flex;align-items:center;gap:6px;margin-top:22px;background:transparent;color:var(--muted);font-size:12px;transition:.2s ease}
+.chef-back-link:hover{color:var(--lime)}
+
+.chef-login-error{background:#381515;border:1px solid #e53935;color:#ffcdd2;padding:10px 14px;border-radius:8px;font-size:12px;display:flex;align-items:center;gap:8px;margin-bottom:16px}
+
+/* Chef Session Info in KDS Topbar */
+.chef-user-pill{display:flex;align-items:center;gap:10px;background:#18201a;border:1px solid #2d3c2e;padding:6px 14px;border-radius:24px}
+.chef-avatar{width:26px;height:26px;border-radius:50%;background:var(--lime);color:#121611;display:grid;place-items:center;font-weight:700;font-size:12px}
+.chef-user-details{display:flex;flex-direction:column}
+.chef-user-name{font-size:12px;font-weight:700;color:#fff}
+.chef-user-id{font-family:'DM Mono';font-size:10px;color:var(--lime)}
+.chef-logout-btn{background:#281818;border:1px solid #5a2525;color:#ff8a80;padding:6px 12px;border-radius:6px;font-size:11px;font-weight:600;display:flex;align-items:center;gap:5px;transition:.2s ease}
+.chef-logout-btn:hover{background:#e53935;color:#fff;border-color:#e53935}
+
+/* Subtle Customer Footer Staff Link */
+.customer-footer{margin-top:80px;border-top:1px solid #232b26;padding:32px max(7vw,48px) 40px;display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+.customer-footer p{margin:0;font-size:12px;color:var(--muted)}
+.staff-access-link{background:transparent;color:#6b766e;font-size:11px;font-family:'DM Mono';display:flex;align-items:center;gap:6px;transition:.2s ease;padding:6px 10px;border-radius:6px;border:1px dashed #303b33}
+.staff-access-link:hover{color:var(--lime);border-color:var(--lime)}
+
+

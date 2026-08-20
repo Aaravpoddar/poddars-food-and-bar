@@ -1,6 +1,31 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
-import { ArrowLeft, Bell, Clock3, MapPin, Minus, Plus, Search, ShoppingBag, UtensilsCrossed } from 'lucide-react';
+import {
+  AlertTriangle,
+  ArrowLeft,
+  Bell,
+  Check,
+  CheckCircle2,
+  ChefHat,
+  Clock,
+  Clock3,
+  Flame,
+  Lock,
+  LogOut,
+  MapPin,
+  Minus,
+  Plus,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  ShoppingBag,
+  Trash2,
+  User,
+  UtensilsCrossed,
+  Volume2,
+  VolumeX,
+  X
+} from 'lucide-react';
 import './style.css';
 
 const menu = [
@@ -59,7 +84,7 @@ const menu = [
   { id: 53, name: 'Sweet Corn Soup', desc: 'Comforting soup with corn and vegetables', price: 99, category: 'Chinese', color: 'cream', mark: 'CS' },
   { id: 54, name: 'Veg Arrabbiata Pasta', desc: 'Penne in a spicy tomato and herb sauce', price: 189, category: 'Italian', color: 'coral', mark: 'AP' },
   { id: 55, name: 'Farmhouse Pizza', desc: 'Mushroom, corn, peppers and mozzarella', price: 279, category: 'Italian', color: 'green', mark: 'FP' },
-  { id: 56, name: 'Chicken Lasagna', desc: 'Layers of chicken, pasta and béchamel sauce', price: 299, category: 'Italian', color: 'orange', mark: 'CL' },
+  { id: 56, name: 'Chicken Lasagna', desc: 'Layers of chicken, pasta and b\u00e9chamel sauce', price: 299, category: 'Italian', color: 'orange', mark: 'CL' },
   { id: 57, name: 'Veg Burger', desc: 'Crispy veg patty, cheese and fries', price: 169, category: 'Continental', color: 'green', mark: 'VB' },
   { id: 58, name: 'Fish and Chips', desc: 'Crispy fish fillet with seasoned fries', price: 279, category: 'Continental', color: 'blue', mark: 'FC' },
   { id: 59, name: 'Grilled Veggies', desc: 'Seasonal vegetables with herb butter', price: 149, category: 'Continental', color: 'purple', mark: 'GV' },
@@ -72,27 +97,1428 @@ const menu = [
   { id: 66, name: 'Virgin Mojito', desc: 'Mint, lime and sparkling soda', price: 89, category: 'Drinks', color: 'green', mark: 'VM' },
   { id: 67, name: 'Iced Tea', desc: 'Chilled lemon tea with mint', price: 69, category: 'Drinks', color: 'orange', mark: 'IT' }
 ];
+
 const eatingOrder = ['Starters', 'Dosa', 'Chinese', 'Italian', 'Continental', 'Indian', 'Breads', 'Dessert', 'Drinks'];
 const categories = ['All', ...eatingOrder];
 const nonVegIds = new Set([1, 4, 8, 10, 13, 15, 38, 40, 45, 51, 56, 58]);
 const formatPrice = amount => `₹${Math.round(amount).toLocaleString('en-IN')}`;
 
-function App() {
-  const [mode, setMode] = useState('Dine in'); const [category, setCategory] = useState('All'); const [diet, setDiet] = useState('All'); const [search, setSearch] = useState(''); const [cart, setCart] = useState([]); const [cartOpen, setCartOpen] = useState(false); const [confirmed, setConfirmedState] = useState(false); const [notice, setNotice] = useState(false); const [addedItem, setAddedItem] = useState(''); const [instruction, setInstruction] = useState(''); const [submitting, setSubmitting] = useState(false); const [orderError, setOrderError] = useState('');
-  const visibleMenu = useMemo(() => menu.filter(item => (category === 'All' || item.category === category) && (diet === 'All' || (diet === 'Veg' ? !nonVegIds.has(item.id) : nonVegIds.has(item.id))) && item.name.toLowerCase().includes(search.toLowerCase())).sort((first, second) => { const categoryOrder = eatingOrder.indexOf(first.category) - eatingOrder.indexOf(second.category); return categoryOrder || Number(nonVegIds.has(first.id)) - Number(nonVegIds.has(second.id)); }), [category, diet, search]);
-  const count = cart.reduce((sum, item) => sum + item.qty, 0); const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0); const gst = subtotal * .05; const total = subtotal + gst;
-  const updateCart = (item, delta) => { if (delta > 0) setAddedItem(item.name); setCart(current => { const found = current.find(cartItem => cartItem.id === item.id); if (!found && delta > 0) return [...current, { ...item, qty: 1 }]; return current.map(cartItem => cartItem.id === item.id ? { ...cartItem, qty: cartItem.qty + delta } : cartItem).filter(cartItem => cartItem.qty > 0); }); };
-  const submitOrder = async () => { if (!cart.length || submitting) return; setSubmitting(true); setOrderError(''); try { const response = await fetch('/api/orders', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mode, items: cart.map(item => ({ id: item.id, name: item.name, price: item.price, qty: item.qty })), instructions: instruction, subtotal, gst, total }) }); if (!response.ok) throw new Error('The hotel server could not receive the order.'); setConfirmedState(true); } catch (error) { setOrderError(error.message); } finally { setSubmitting(false); } };
-  const setConfirmed = value => value ? submitOrder() : setConfirmedState(false);
-  return <main>
-    <header><div className="brand"><span className="brand-mark"><UtensilsCrossed size={19}/></span><span>THE PODDARS<br/><i>food & bar</i></span></div><div className="service-status"><span></span>Kitchen is accepting orders</div><div className="header-actions"><button type="button" className={'icon-btn notification-button ' + (notice ? 'has-notice' : '')} onClick={() => setNotice(!notice)} aria-label="Toggle order updates"><Bell size={19}/></button><button type="button" className="cart-trigger" onClick={() => setCartOpen(true)} aria-label="Open cart"><ShoppingBag size={18}/> <b>{count}</b></button></div></header>
-    <section className="welcome"><div><p className="eyebrow">WELCOME TO SAFFRON</p><h1>Good food,<br/>on your terms.</h1><p className="subcopy">Freshly made, ready when you are. Choose how you would like to enjoy your meal.</p></div><div className="mode-switch" role="group" aria-label="Order type"><button type="button" className={mode === 'Dine in' ? 'active' : ''} onClick={() => setMode('Dine in')}><UtensilsCrossed size={20}/><span>Dine in<small>Table 12</small></span></button><button type="button" className={mode === 'Self pickup' ? 'active' : ''} onClick={() => setMode('Self pickup')}><ShoppingBag size={20}/><span>Self pickup<small>Ready in 20 min</small></span></button></div></section>
-    <nav className="diet-filter" aria-label="Diet preference"><span>SHOWING</span>{['All', 'Veg', 'Non-veg'].map(option => <button type="button" key={option} className={diet === option ? 'selected' : ''} onClick={() => setDiet(option)}>{option}</button>)}</nav>
-    {orderError && <div className="order-error">{orderError} Start the hotel server with <code>npm.cmd run server</code>.</div>}
-    <section className="menu-section"><div className="menu-top"><div><p className="eyebrow">EXPLORE THE MENU</p><h2>Indian favourites, made fresh.</h2></div><label className="search"><Search size={18}/><input placeholder="Search the menu" value={search} onChange={event => setSearch(event.target.value)}/></label></div><nav className="categories">{categories.map(itemCategory => <button type="button" key={itemCategory} onClick={() => setCategory(itemCategory)} className={category === itemCategory ? 'selected' : ''}>{itemCategory}</button>)}</nav><div className="grid">{visibleMenu.map(item => { const cartItem = cart.find(entry => entry.id === item.id); return <article className="dish" key={item.id}><div className={'dish-image ' + item.color}><span>{item.mark}</span><div className="plate"></div></div><div className="dish-info"><div><h3>{item.name}</h3><p>{item.desc}</p></div><div className="dish-bottom"><b>{formatPrice(item.price)}</b>{cartItem ? <div className="menu-quantity"><button type="button" aria-label={'Remove one ' + item.name} onClick={() => updateCart(item, -1)}><Minus size={15}/></button><b>{cartItem.qty}</b><button type="button" aria-label={'Add one ' + item.name} onClick={() => updateCart(item, 1)}><Plus size={15}/></button></div> : <button type="button" className="add" aria-label={'Add ' + item.name} onClick={() => updateCart(item, 1)}><Plus size={18}/></button>}</div></div></article>; })}</div></section>
-    <div className="mobile-cart"><button type="button" onClick={() => setCartOpen(true)}><ShoppingBag size={18}/><span>View order</span><b>{count ? formatPrice(total) : 'Empty'}</b></button></div>
-    {cartOpen && <aside className="drawer"><div className="drawer-head"><button type="button" className="icon-btn" onClick={() => setCartOpen(false)}><ArrowLeft size={20}/></button><h2>Your order</h2><span className="item-count">{count} items</span></div><div className="order-type"><span>{mode === 'Dine in' ? <UtensilsCrossed size={18}/> : <MapPin size={18}/>}</span><div><b>{mode}</b><small>{mode === 'Dine in' ? 'Table 12, main dining room' : 'Pick up at the counter'}</small></div><button type="button" onClick={() => setMode(mode === 'Dine in' ? 'Self pickup' : 'Dine in')}>Change</button></div><div className="cart-items">{cart.length ? cart.map(item => <div className="cart-item" key={item.id}><div className={'tiny ' + item.color}>{item.mark}</div><div className="cart-name"><b>{item.name}</b><span>{formatPrice(item.price)}</span></div><div className="quantity"><button type="button" onClick={() => updateCart(item, -1)}><Minus size={14}/></button><b>{item.qty}</b><button type="button" onClick={() => updateCart(item, 1)}><Plus size={14}/></button></div></div>) : <div className="empty"><ShoppingBag size={30}/><p>Your bag is waiting for something delicious.</p></div>}</div><div className="drawer-footer"><div className="totals"><span>Subtotal</span><b>{formatPrice(subtotal)}</b><span>GST (5%)</span><b>{formatPrice(gst)}</b><strong>Total <b>{formatPrice(total)}</b></strong></div><button type="button" className="checkout" disabled={!cart.length} onClick={() => setConfirmed(true)}>{mode === 'Dine in' ? 'Send to kitchen' : 'Place pickup order'} <span>→</span></button></div></aside>}
-    {cartOpen && <div className="backdrop" onClick={() => setCartOpen(false)}></div>}{cartOpen && cart.length > 0 && <label className="instructions-panel"><span>Special cooking instructions</span><textarea value={instruction} onChange={event => setInstruction(event.target.value)} placeholder="For example: less spicy, no onion, extra sauce..." /></label>}{notice && <div className="notification-popover"><b>Order updates are on</b><span>We will let you know when your food is ready.</span></div>}{addedItem && <button type="button" className="cart-toast" onClick={() => { setCartOpen(true); setAddedItem(''); }}>{addedItem} added <ShoppingBag size={16}/></button>}{confirmed && <div className="confirmation"><div><span className="check">✓</span><p className="eyebrow">ORDER CONFIRMED</p><h2>{mode === 'Dine in' ? 'The kitchen has it.' : 'We will see you soon.'}</h2><p>{mode === 'Dine in' ? 'Your order is on its way to Table 12.' : 'Your order will be ready at the pickup counter in about 20 minutes.'}</p><div className="ready"><Clock3 size={19}/><span>Estimated ready time <b>{mode === 'Dine in' ? '18 minutes' : '20 minutes'}</b></span></div><button type="button" className="checkout" onClick={() => { setConfirmed(false); setCartOpen(false); setCart([]); setAddedItem(''); setInstruction(''); }}>Done</button></div></div>}
-  </main>;
+function playKitchenChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(587.33, ctx.currentTime); // D5
+    osc.frequency.setValueAtTime(880, ctx.currentTime + 0.12); // A5
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.45);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start();
+    osc.stop(ctx.currentTime + 0.45);
+  } catch (e) {
+    // AudioContext might be restricted until user interaction
+  }
 }
-createRoot(document.getElementById('root')).render(<App/>);
+
+function timeAgo(dateString) {
+  if (!dateString) return '';
+  const now = new Date();
+  const past = new Date(dateString);
+  const diffSec = Math.floor((now - past) / 1000);
+  if (diffSec < 45) return 'just now';
+  const diffMin = Math.floor(diffSec / 60);
+  if (diffMin < 60) return `${diffMin}m ago`;
+  const diffHours = Math.floor(diffMin / 60);
+  return `${diffHours}h ago`;
+}
+
+// -------------------------------------------------------------
+// CHEF LOGIN SCREEN COMPONENT
+// -------------------------------------------------------------
+function ChefLogin({ onLogin, onBackToMenu }) {
+  const [name, setName] = useState('');
+  const [chefId, setChefId] = useState('');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!name.trim() || !chefId.trim()) {
+      setError('Please enter both your Chef Name and Staff ID.');
+      return;
+    }
+    setError('');
+    setLoading(true);
+    try {
+      const res = await fetch('/api/chef/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: name.trim(), chefId: chefId.trim() })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Authentication failed.');
+      onLogin(data.chef, data.token);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleQuickSelect = (quickName, quickId) => {
+    setName(quickName);
+    setChefId(quickId);
+    setError('');
+  };
+
+  return (
+    <div className="chef-login-screen">
+      <div className="chef-login-card">
+        <div className="chef-login-badge">
+          <ChefHat size={32} />
+        </div>
+        <h2>Kitchen Portal Access</h2>
+        <p className="chef-login-subtitle">Poddars Food & Bar Kitchen Display System (KDS)</p>
+
+        {error && (
+          <div className="chef-login-error">
+            <AlertTriangle size={16} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className="chef-login-form">
+          <div className="chef-input-group">
+            <label><User size={13} /> Chef Name</label>
+            <div className="chef-input-box">
+              <User size={16} />
+              <input
+                placeholder="e.g. Chef Aarav"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="chef-input-group">
+            <label><Lock size={13} /> Staff ID / Passcode</label>
+            <div className="chef-input-box">
+              <Lock size={16} />
+              <input
+                placeholder="e.g. CHEF-001 or 1234"
+                value={chefId}
+                onChange={e => setChefId(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className="chef-quick-select">
+            <span>Quick Staff Login</span>
+            <div className="chef-chips">
+              <button
+                type="button"
+                className="chef-chip-btn"
+                onClick={() => handleQuickSelect('Chef Aarav', 'CHEF-001')}
+              >
+                👨‍🍳 Chef Aarav (CHEF-001)
+              </button>
+              <button
+                type="button"
+                className="chef-chip-btn"
+                onClick={() => handleQuickSelect('Chef Vikram', 'CHEF-002')}
+              >
+                👨‍🍳 Chef Vikram (CHEF-002)
+              </button>
+              <button
+                type="button"
+                className="chef-chip-btn"
+                onClick={() => handleQuickSelect('Executive Chef', '1234')}
+              >
+                👑 Master Chef (1234)
+              </button>
+            </div>
+          </div>
+
+          <button
+            type="submit"
+            className="chef-login-btn"
+            disabled={loading}
+          >
+            <ShieldCheck size={18} />
+            <span>{loading ? 'Authenticating...' : 'Enter Kitchen Display →'}</span>
+          </button>
+        </form>
+
+        <button
+          type="button"
+          className="chef-back-link"
+          onClick={onBackToMenu}
+        >
+          <ArrowLeft size={14} /> Back to Guest Menu
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// CHEF KITCHEN PORTAL (KDS) COMPONENT
+// -------------------------------------------------------------
+function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange }) {
+  const [orders, setOrders] = useState([]);
+  const [stats, setStats] = useState({ pendingCount: 0, preparingCount: 0, readyCount: 0, completedToday: 0, revenueToday: 0 });
+  const [activeTab, setActiveTab] = useState('New'); // 'New' | 'Preparing' | 'Ready' | 'AllActive' | 'History'
+  const [search, setSearch] = useState('');
+  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [rejectingOrder, setRejectingOrder] = useState(null);
+  const [rejectReason, setRejectReason] = useState('Kitchen unable to fulfill order at this time.');
+  const [prepTimes, setPrepTimes] = useState({}); // { [orderId]: 15 }
+  const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+  const prevPendingCount = useRef(0);
+
+  // Clock ticker
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const fetchOrdersAndStats = async () => {
+    try {
+      const [ordersRes, statsRes] = await Promise.all([
+        fetch('/api/orders'),
+        fetch('/api/stats')
+      ]);
+      if (ordersRes.ok && statsRes.ok) {
+        const ordersData = await ordersRes.json();
+        const statsData = await statsRes.json();
+        setOrders(ordersData);
+        setStats(statsData);
+        if (onOrderStatsChange) onOrderStatsChange(statsData);
+
+        // Chime if new orders arrived
+        if (statsData.pendingCount > prevPendingCount.current && soundEnabled) {
+          playKitchenChime();
+        }
+        prevPendingCount.current = statsData.pendingCount;
+      }
+    } catch (err) {
+      console.error('Failed to fetch kitchen data:', err);
+    }
+  };
+
+  // SSE Stream and Polling fallback
+  useEffect(() => {
+    fetchOrdersAndStats();
+
+    let eventSource;
+    try {
+      eventSource = new EventSource('/api/events');
+      eventSource.addEventListener('order:created', (e) => {
+        const newOrder = JSON.parse(e.data);
+        setOrders(prev => [newOrder, ...prev.filter(o => o.id !== newOrder.id)]);
+        fetchOrdersAndStats();
+        if (soundEnabled) playKitchenChime();
+      });
+      eventSource.addEventListener('order:updated', (e) => {
+        const updatedOrder = JSON.parse(e.data);
+        setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+        fetchOrdersAndStats();
+      });
+      eventSource.addEventListener('order:deleted', (e) => {
+        const { id } = JSON.parse(e.data);
+        setOrders(prev => prev.filter(o => o.id !== id));
+        fetchOrdersAndStats();
+      });
+    } catch (e) {
+      console.warn('SSE not available, falling back to polling');
+    }
+
+    const interval = setInterval(fetchOrdersAndStats, 4000);
+    return () => {
+      clearInterval(interval);
+      if (eventSource) eventSource.close();
+    };
+  }, [soundEnabled]);
+
+  const handleApprove = async (orderId) => {
+    const prepTime = prepTimes[orderId] || 15;
+    try {
+      const res = await fetch(`/api/orders/${orderId}/approve`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          prepTime,
+          approvedBy: chefAuth?.name || 'Chef'
+        })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
+        fetchOrdersAndStats();
+      }
+    } catch (err) {
+      alert('Failed to approve order.');
+    }
+  };
+
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      const res = await fetch(`/api/orders/${orderId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
+        fetchOrdersAndStats();
+      }
+    } catch (err) {
+      alert('Failed to update status.');
+    }
+  };
+
+  const handleConfirmReject = async () => {
+    if (!rejectingOrder) return;
+    try {
+      const res = await fetch(`/api/orders/${rejectingOrder.id}/reject`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: rejectReason })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setOrders(prev => prev.map(o => o.id === updated.id ? updated : o));
+        setRejectingOrder(null);
+        fetchOrdersAndStats();
+      }
+    } catch (err) {
+      alert('Failed to reject order.');
+    }
+  };
+
+  const handleDelete = async (orderId) => {
+    if (!confirm('Remove this order ticket from kitchen history?')) return;
+    try {
+      const res = await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
+      if (res.ok) {
+        setOrders(prev => prev.filter(o => o.id !== orderId));
+        fetchOrdersAndStats();
+      }
+    } catch (err) {
+      alert('Failed to remove order.');
+    }
+  };
+
+  const handleSeedDemoOrder = async () => {
+    const demoItems = [
+      { id: 1, name: 'Butter Chicken', price: 289, qty: 1, color: 'coral', mark: 'BC' },
+      { id: 25, name: 'Butter Naan', price: 45, qty: 2, color: 'orange', mark: 'BN' },
+      { id: 19, name: 'Masala Chai', price: 35, qty: 2, color: 'orange', mark: 'MC' }
+    ];
+    const subtotal = 449;
+    const gst = subtotal * 0.05;
+    const total = subtotal + gst;
+
+    try {
+      await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode: 'Dine in',
+          table: `Table ${Math.floor(Math.random() * 18) + 1}`,
+          items: demoItems,
+          instructions: 'Extra spicy Butter Chicken, serve hot naan with melted butter.',
+          subtotal,
+          gst,
+          total
+        })
+      });
+      fetchOrdersAndStats();
+    } catch (e) {
+      alert('Failed to create demo order.');
+    }
+  };
+
+  const filteredOrders = useMemo(() => {
+    return orders.filter(o => {
+      let matchesTab = true;
+      if (activeTab === 'New') matchesTab = o.status === 'New';
+      else if (activeTab === 'Preparing') matchesTab = o.status === 'Preparing';
+      else if (activeTab === 'Ready') matchesTab = o.status === 'Ready';
+      else if (activeTab === 'AllActive') matchesTab = o.status === 'New' || o.status === 'Preparing' || o.status === 'Ready';
+      else if (activeTab === 'History') matchesTab = o.status === 'Completed' || o.status === 'Cancelled';
+
+      let matchesSearch = true;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        matchesSearch = (
+          o.id.toLowerCase().includes(q) ||
+          (o.table && o.table.toLowerCase().includes(q)) ||
+          o.mode?.toLowerCase().includes(q) ||
+          (o.items && o.items.some(i => i.name.toLowerCase().includes(q)))
+        );
+      }
+      return matchesTab && matchesSearch;
+    });
+  }, [orders, activeTab, search]);
+
+  return (
+    <div className="kds-container">
+      {/* Topbar with Chef Profile */}
+      <div className="kds-topbar">
+        <div className="kds-title">
+          <ChefHat size={28} color="var(--lime)" />
+          <div>
+            <h1>Kitchen Display System (KDS)</h1>
+            <span style={{ fontSize: '11px', color: 'var(--muted)' }}>Live order queue & preparation management</span>
+          </div>
+          <div className="kds-live-clock">
+            <Clock size={14} />
+            <span>{currentTime}</span>
+          </div>
+        </div>
+
+        <div className="kds-actions-bar">
+          {/* Chef User Pill */}
+          <div className="chef-user-pill">
+            <div className="chef-avatar">
+              {chefAuth?.name?.charAt(0) || 'C'}
+            </div>
+            <div className="chef-user-details">
+              <span className="chef-user-name">{chefAuth?.name || 'Chef'}</span>
+              <span className="chef-user-id">{chefAuth?.role || 'Staff'} • {chefAuth?.id || ''}</span>
+            </div>
+            <button
+              type="button"
+              className="chef-logout-btn"
+              onClick={onLogout}
+              title="Log out of kitchen"
+            >
+              <LogOut size={13} />
+              <span>Logout</span>
+            </button>
+          </div>
+
+          <button
+            type="button"
+            className={'kds-btn-tool ' + (soundEnabled ? 'active' : '')}
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? 'Audio alerts active' : 'Audio alerts muted'}
+          >
+            {soundEnabled ? <Volume2 size={16} /> : <VolumeX size={16} />}
+            <span>{soundEnabled ? 'Sound ON' : 'Muted'}</span>
+          </button>
+
+          <button
+            type="button"
+            className="kds-btn-tool"
+            onClick={fetchOrdersAndStats}
+            title="Refresh orders"
+          >
+            <RefreshCw size={15} />
+            <span>Refresh</span>
+          </button>
+
+          <button
+            type="button"
+            className="kds-btn-tool"
+            onClick={handleSeedDemoOrder}
+            style={{ borderColor: 'var(--lime)', color: 'var(--lime)' }}
+          >
+            <Plus size={15} />
+            <span>+ Simulate Order</span>
+          </button>
+
+          <button
+            type="button"
+            className="kds-btn-tool"
+            onClick={onViewCustomerMenu}
+            title="Open customer menu view"
+          >
+            <UtensilsCrossed size={15} />
+            <span>Guest Menu</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Stats Bar */}
+      <div className="kds-stats-row">
+        <div className={'kds-stat-card ' + (stats.pendingCount > 0 ? 'alert' : '')}>
+          <div className="stat-icon-box pending">
+            <AlertTriangle size={20} />
+          </div>
+          <div className="stat-data">
+            <span className="stat-val">{stats.pendingCount}</span>
+            <span className="stat-lbl">Needs Approval</span>
+          </div>
+        </div>
+
+        <div className="kds-stat-card">
+          <div className="stat-icon-box cooking">
+            <Flame size={20} />
+          </div>
+          <div className="stat-data">
+            <span className="stat-val">{stats.preparingCount}</span>
+            <span className="stat-lbl">Cooking / In Kitchen</span>
+          </div>
+        </div>
+
+        <div className="kds-stat-card">
+          <div className="stat-icon-box ready">
+            <UtensilsCrossed size={20} />
+          </div>
+          <div className="stat-data">
+            <span className="stat-val">{stats.readyCount}</span>
+            <span className="stat-lbl">Ready to Serve</span>
+          </div>
+        </div>
+
+        <div className="kds-stat-card">
+          <div className="stat-icon-box completed">
+            <CheckCircle2 size={20} />
+          </div>
+          <div className="stat-data">
+            <span className="stat-val">{stats.completedToday}</span>
+            <span className="stat-lbl">Completed Today</span>
+          </div>
+        </div>
+
+        <div className="kds-stat-card">
+          <div className="stat-icon-box" style={{ background: '#22301e', color: 'var(--lime)' }}>
+            <b>₹</b>
+          </div>
+          <div className="stat-data">
+            <span className="stat-val">{formatPrice(stats.revenueToday)}</span>
+            <span className="stat-lbl">Today's Revenue</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="kds-filter-bar">
+        <div className="kds-tab-pills">
+          <button
+            type="button"
+            className={'kds-tab-btn ' + (activeTab === 'New' ? 'active' : '')}
+            onClick={() => setActiveTab('New')}
+          >
+            <span>Needs Approval</span>
+            <b className="kds-tab-count">{stats.pendingCount}</b>
+          </button>
+          <button
+            type="button"
+            className={'kds-tab-btn ' + (activeTab === 'Preparing' ? 'active' : '')}
+            onClick={() => setActiveTab('Preparing')}
+          >
+            <span>Cooking</span>
+            <b className="kds-tab-count">{stats.preparingCount}</b>
+          </button>
+          <button
+            type="button"
+            className={'kds-tab-btn ' + (activeTab === 'Ready' ? 'active' : '')}
+            onClick={() => setActiveTab('Ready')}
+          >
+            <span>Ready</span>
+            <b className="kds-tab-count">{stats.readyCount}</b>
+          </button>
+          <button
+            type="button"
+            className={'kds-tab-btn ' + (activeTab === 'AllActive' ? 'active' : '')}
+            onClick={() => setActiveTab('AllActive')}
+          >
+            <span>All Active</span>
+            <b className="kds-tab-count">{stats.pendingCount + stats.preparingCount + stats.readyCount}</b>
+          </button>
+          <button
+            type="button"
+            className={'kds-tab-btn ' + (activeTab === 'History' ? 'active' : '')}
+            onClick={() => setActiveTab('History')}
+          >
+            <span>History</span>
+          </button>
+        </div>
+
+        <div className="kds-search">
+          <Search size={15} />
+          <input
+            placeholder="Search tickets, table #, items..."
+            value={search}
+            onChange={e => setSearch(e.target.value)}
+          />
+        </div>
+      </div>
+
+      {/* Orders Grid */}
+      <div className="kds-orders-grid">
+        {filteredOrders.length > 0 ? (
+          filteredOrders.map(order => {
+            const selectedPrep = prepTimes[order.id] || order.estimatedPrepTime || 15;
+            return (
+              <div
+                key={order.id}
+                className={`kds-card status-${order.status?.toLowerCase() || 'new'}`}
+              >
+                {/* Header */}
+                <div className="kds-card-head">
+                  <div>
+                    <div className="kds-order-num">
+                      <span>#{order.id}</span>
+                    </div>
+                    <span className="kds-order-type">
+                      {order.mode === 'Dine in' ? `🍽️ ${order.table || 'Table 12'}` : '🛍️ Self Pickup'}
+                    </span>
+                  </div>
+                  <span className={`kds-badge badge-${order.status?.toLowerCase() || 'new'}`}>
+                    {order.status === 'New' ? 'Needs Approval' : order.status}
+                  </span>
+                </div>
+
+                {/* Metadata */}
+                <div className="kds-card-meta">
+                  <span>Ordered {timeAgo(order.createdAt)}</span>
+                  <span className="kds-elapsed">
+                    <Clock size={12} />
+                    {order.estimatedPrepTime ? `${order.estimatedPrepTime} min prep` : 'Pending prep'}
+                  </span>
+                </div>
+
+                {/* Items */}
+                <div className="kds-items-list">
+                  {order.items?.map((item, idx) => (
+                    <div className="kds-item-row" key={idx}>
+                      <div className="kds-item-main">
+                        <span className="kds-qty-badge">{item.qty}×</span>
+                        <span className="kds-item-name">{item.name}</span>
+                      </div>
+                      <span className="kds-item-price">{formatPrice(item.price * item.qty)}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Cooking Instructions Notice */}
+                {order.instructions ? (
+                  <div className="kds-instructions-alert">
+                    <AlertTriangle size={16} />
+                    <div>
+                      <b>Guest Cooking Request:</b>
+                      <span>"{order.instructions}"</span>
+                    </div>
+                  </div>
+                ) : null}
+
+                {/* Approved By Chef Tag */}
+                {order.approvedBy && (
+                  <div className="kds-chef-note-box">
+                    👨‍🍳 <b>Approved by:</b> {order.approvedBy}
+                  </div>
+                )}
+
+                {/* Rejection Reason Display */}
+                {order.status === 'Cancelled' && order.rejectionReason && (
+                  <div className="kds-instructions-alert" style={{ borderColor: '#ef5350', background: '#301818' }}>
+                    <X size={16} color="#ef5350" />
+                    <div>
+                      <b style={{ color: '#ef5350' }}>Rejection Reason:</b>
+                      <span style={{ color: '#ffcdd2' }}>{order.rejectionReason}</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer and Actions */}
+                <div className="kds-card-footer">
+                  <div className="kds-totals-summary">
+                    <span>{order.items?.reduce((s, i) => s + i.qty, 0)} items total</span>
+                    <b>Total: {formatPrice(order.total)}</b>
+                  </div>
+
+                  {/* Status: NEW (Needs Approval) */}
+                  {order.status === 'New' && (
+                    <>
+                      <div className="kds-prep-selector">
+                        <span>Prep:</span>
+                        {[10, 15, 20, 30].map(mins => (
+                          <button
+                            key={mins}
+                            type="button"
+                            className={`kds-prep-btn ${selectedPrep === mins ? 'selected' : ''}`}
+                            onClick={() => setPrepTimes(prev => ({ ...prev, [order.id]: mins }))}
+                          >
+                            {mins}m
+                          </button>
+                        ))}
+                      </div>
+
+                      <div className="kds-action-buttons">
+                        <button
+                          type="button"
+                          className="kds-btn-approve"
+                          onClick={() => handleApprove(order.id)}
+                        >
+                          <Check size={16} />
+                          <span>Approve ({selectedPrep}m)</span>
+                        </button>
+                        <button
+                          type="button"
+                          className="kds-btn-reject"
+                          onClick={() => setRejectingOrder(order)}
+                          title="Reject Order"
+                        >
+                          <X size={15} />
+                          <span>Reject</span>
+                        </button>
+                      </div>
+                    </>
+                  )}
+
+                  {/* Status: PREPARING (Cooking) */}
+                  {order.status === 'Preparing' && (
+                    <div className="kds-action-buttons">
+                      <button
+                        type="button"
+                        className="kds-btn-ready"
+                        onClick={() => handleStatusChange(order.id, 'Ready')}
+                      >
+                        <UtensilsCrossed size={16} />
+                        <span>Mark Food Ready</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Status: READY (Food Ready for serving) */}
+                  {order.status === 'Ready' && (
+                    <div className="kds-action-buttons">
+                      <button
+                        type="button"
+                        className="kds-btn-complete"
+                        onClick={() => handleStatusChange(order.id, 'Completed')}
+                      >
+                        <CheckCircle2 size={16} />
+                        <span>Mark Served / Complete</span>
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Status: COMPLETED or CANCELLED */}
+                  {(order.status === 'Completed' || order.status === 'Cancelled') && (
+                    <div className="kds-action-buttons">
+                      <span style={{ fontSize: '11px', color: 'var(--muted)', alignSelf: 'center' }}>
+                        {order.status === 'Completed' ? '✓ Served' : '✕ Cancelled'}
+                      </span>
+                      <button
+                        type="button"
+                        className="kds-btn-delete"
+                        onClick={() => handleDelete(order.id)}
+                        title="Delete ticket"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })
+        ) : (
+          <div className="kds-empty-state">
+            <ChefHat size={44} />
+            <h3>No orders in this view</h3>
+            <p>
+              {activeTab === 'New'
+                ? 'All incoming orders have been reviewed and approved.'
+                : 'No order tickets match the selected filter.'}
+            </p>
+            <button
+              type="button"
+              className="kds-btn-tool"
+              onClick={handleSeedDemoOrder}
+              style={{ display: 'inline-flex', margin: '0 auto' }}
+            >
+              <Plus size={15} /> Create a Test Order
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Reject Modal */}
+      {rejectingOrder && (
+        <div className="kds-modal-overlay" onClick={() => setRejectingOrder(null)}>
+          <div className="kds-modal-box" onClick={e => e.stopPropagation()}>
+            <h3>Reject Order #{rejectingOrder.id}</h3>
+            <p>Provide a reason for the guest (e.g. ingredient unavailable, kitchen at max capacity):</p>
+            <textarea
+              value={rejectReason}
+              onChange={e => setRejectReason(e.target.value)}
+              placeholder="Enter rejection reason..."
+            />
+            <div className="kds-modal-actions">
+              <button
+                type="button"
+                className="kds-modal-cancel"
+                onClick={() => setRejectingOrder(null)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="kds-modal-confirm-reject"
+                onClick={handleConfirmReject}
+              >
+                Confirm Rejection
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// LIVE CUSTOMER ORDER TRACKER COMPONENT
+// -------------------------------------------------------------
+function CustomerTracker({ orderId, onClose, onNewOrder }) {
+  const [order, setOrder] = useState(null);
+
+  useEffect(() => {
+    if (!orderId) return;
+    const fetchOrder = async () => {
+      try {
+        const res = await fetch(`/api/orders/${orderId}`);
+        if (res.ok) setOrder(await res.json());
+      } catch (err) {
+        console.error('Tracker error:', err);
+      }
+    };
+    fetchOrder();
+
+    let eventSource;
+    try {
+      eventSource = new EventSource('/api/events');
+      eventSource.addEventListener('order:updated', (e) => {
+        const updated = JSON.parse(e.data);
+        if (updated.id === orderId) setOrder(updated);
+      });
+    } catch {}
+
+    const interval = setInterval(fetchOrder, 3000);
+    return () => {
+      clearInterval(interval);
+      if (eventSource) eventSource.close();
+    };
+  }, [orderId]);
+
+  if (!order) return null;
+
+  const isApproved = order.status === 'Preparing' || order.status === 'Ready' || order.status === 'Completed';
+  const isReady = order.status === 'Ready' || order.status === 'Completed';
+  const isCompleted = order.status === 'Completed';
+  const isCancelled = order.status === 'Cancelled';
+
+  return (
+    <div className="tracker-card">
+      <div className="tracker-header">
+        <h4>
+          <Flame size={18} color="var(--lime)" />
+          Live Kitchen Tracking: #{order.id}
+        </h4>
+        <button type="button" onClick={onClose} aria-label="Close tracker">
+          <X size={18} />
+        </button>
+      </div>
+
+      {isCancelled ? (
+        <div style={{ padding: '10px 0', textAlign: 'center' }}>
+          <div style={{ color: '#ef5350', fontSize: '14px', fontWeight: '700', marginBottom: '6px' }}>
+            Order Cancelled by Kitchen
+          </div>
+          <p style={{ fontSize: '12px', color: 'var(--muted)', margin: 0 }}>
+            {order.rejectionReason || 'The kitchen was unable to fulfill your order at this time.'}
+          </p>
+        </div>
+      ) : (
+        <div className="tracker-stepper">
+          {/* Step 1 */}
+          <div className={`tracker-step ${isApproved ? 'completed' : 'current'}`}>
+            <div className="tracker-step-indicator">
+              {isApproved ? <Check size={14} /> : '1'}
+            </div>
+            <div className="tracker-step-content">
+              <b>Order Received by Kitchen</b>
+              <span>{isApproved ? 'Chef reviewed and approved' : 'Waiting for chef approval...'}</span>
+            </div>
+          </div>
+
+          {/* Step 2 */}
+          <div className={`tracker-step ${isReady ? 'completed' : order.status === 'Preparing' ? 'current' : ''}`}>
+            <div className="tracker-step-indicator">
+              {isReady ? <Check size={14} /> : '2'}
+            </div>
+            <div className="tracker-step-content">
+              <b>Chef Approved & Cooking</b>
+              <span>
+                {order.status === 'Preparing'
+                  ? 'Your food is sizzling in the kitchen!'
+                  : isReady
+                  ? 'Cooking finished'
+                  : 'Pending chef approval'}
+              </span>
+              {order.estimatedPrepTime && order.status === 'Preparing' && (
+                <div className="tracker-eta-badge">
+                  <Clock3 size={14} />
+                  <span>Estimated: ~{order.estimatedPrepTime} mins</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Step 3 */}
+          <div className={`tracker-step ${isCompleted ? 'completed' : order.status === 'Ready' ? 'current' : ''}`}>
+            <div className="tracker-step-indicator">
+              {isCompleted ? <Check size={14} /> : '3'}
+            </div>
+            <div className="tracker-step-content">
+              <b>Food Ready!</b>
+              <span>
+                {order.status === 'Ready'
+                  ? order.mode === 'Dine in'
+                    ? `Bringing directly to ${order.table || 'Table 12'}!`
+                    : 'Ready for pickup at counter!'
+                  : 'Preparing dishes...'}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="tracker-order-summary">
+        <div>
+          <span>Dining Mode:</span>
+          <b>{order.mode === 'Dine in' ? `${order.table || 'Table 12'}` : 'Self Pickup'}</b>
+        </div>
+        <div>
+          <span>Total Bill:</span>
+          <b>{formatPrice(order.total)}</b>
+        </div>
+        {order.instructions && (
+          <div style={{ marginTop: '4px', borderTop: '1px solid #232a25', paddingTop: '4px' }}>
+            <span>Note:</span> <i>"{order.instructions}"</i>
+          </div>
+        )}
+      </div>
+
+      <div className="tracker-actions">
+        <button type="button" className="tracker-btn-secondary" onClick={onClose}>
+          Hide Tracker
+        </button>
+        <button type="button" className="tracker-btn-primary" onClick={onNewOrder}>
+          + Order More Items
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// MAIN APPLICATION
+// -------------------------------------------------------------
+function App() {
+  const [currentView, setCurrentView] = useState('customer'); // 'customer' | 'chef'
+  const [chefAuth, setChefAuth] = useState(() => {
+    try {
+      const saved = localStorage.getItem('poddars_chef_auth');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  // Customer state
+  const [mode, setMode] = useState('Dine in');
+  const [category, setCategory] = useState('All');
+  const [diet, setDiet] = useState('All');
+  const [search, setSearch] = useState('');
+  const [cart, setCart] = useState([]);
+  const [cartOpen, setCartOpen] = useState(false);
+  const [notice, setNotice] = useState(false);
+  const [addedItem, setAddedItem] = useState('');
+  const [instruction, setInstruction] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [orderError, setOrderError] = useState('');
+  const [activeTrackingOrderId, setActiveTrackingOrderId] = useState(null);
+  const [showTracker, setShowTracker] = useState(false);
+
+  // URL Hash / Path detection for direct kitchen access
+  useEffect(() => {
+    const handleUrlCheck = () => {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      const query = window.location.search.toLowerCase();
+      if (path === '/chef' || path === '/kitchen' || hash === '#chef' || hash === '#kitchen' || query.includes('view=chef') || query.includes('view=kitchen')) {
+        setCurrentView('chef');
+      }
+    };
+    handleUrlCheck();
+    window.addEventListener('hashchange', handleUrlCheck);
+    window.addEventListener('popstate', handleUrlCheck);
+    return () => {
+      window.removeEventListener('hashchange', handleUrlCheck);
+      window.removeEventListener('popstate', handleUrlCheck);
+    };
+  }, []);
+
+  const handleChefLogin = (chefData, token) => {
+    setChefAuth(chefData);
+    try {
+      localStorage.setItem('poddars_chef_auth', JSON.stringify(chefData));
+      if (token) localStorage.setItem('poddars_chef_token', token);
+    } catch {}
+  };
+
+  const handleChefLogout = () => {
+    setChefAuth(null);
+    try {
+      localStorage.removeItem('poddars_chef_auth');
+      localStorage.removeItem('poddars_chef_token');
+    } catch {}
+  };
+
+  const visibleMenu = useMemo(() => {
+    return menu
+      .filter(
+        item =>
+          (category === 'All' || item.category === category) &&
+          (diet === 'All' || (diet === 'Veg' ? !nonVegIds.has(item.id) : nonVegIds.has(item.id))) &&
+          item.name.toLowerCase().includes(search.toLowerCase())
+      )
+      .sort((first, second) => {
+        const categoryOrder = eatingOrder.indexOf(first.category) - eatingOrder.indexOf(second.category);
+        return categoryOrder || Number(nonVegIds.has(first.id)) - Number(nonVegIds.has(second.id));
+      });
+  }, [category, diet, search]);
+
+  const count = cart.reduce((sum, item) => sum + item.qty, 0);
+  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const gst = subtotal * 0.05;
+  const total = subtotal + gst;
+
+  const updateCart = (item, delta) => {
+    if (delta > 0) setAddedItem(item.name);
+    setCart(current => {
+      const found = current.find(cartItem => cartItem.id === item.id);
+      if (!found && delta > 0) return [...current, { ...item, qty: 1 }];
+      return current
+        .map(cartItem => (cartItem.id === item.id ? { ...cartItem, qty: cartItem.qty + delta } : cartItem))
+        .filter(cartItem => cartItem.qty > 0);
+    });
+  };
+
+  const submitOrder = async () => {
+    if (!cart.length || submitting) return;
+    setSubmitting(true);
+    setOrderError('');
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          mode,
+          table: mode === 'Dine in' ? 'Table 12' : null,
+          items: cart.map(item => ({
+            id: item.id,
+            name: item.name,
+            price: item.price,
+            qty: item.qty,
+            color: item.color,
+            mark: item.mark
+          })),
+          instructions: instruction,
+          subtotal,
+          gst,
+          total
+        })
+      });
+      if (!response.ok) throw new Error('The hotel server could not receive the order.');
+      const createdOrder = await response.json();
+
+      // Open live tracker
+      setActiveTrackingOrderId(createdOrder.id);
+      setShowTracker(true);
+      setCartOpen(false);
+      setCart([]);
+      setInstruction('');
+    } catch (error) {
+      setOrderError(error.message);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <main>
+      {/* CHEF VIEW (Hidden from customer) */}
+      {currentView === 'chef' ? (
+        chefAuth ? (
+          <ChefPortal
+            chefAuth={chefAuth}
+            onLogout={handleChefLogout}
+            onViewCustomerMenu={() => {
+              window.location.hash = '';
+              setCurrentView('customer');
+            }}
+          />
+        ) : (
+          <ChefLogin
+            onLogin={handleChefLogin}
+            onBackToMenu={() => {
+              window.location.hash = '';
+              setCurrentView('customer');
+            }}
+          />
+        )
+      ) : (
+        /* CUSTOMER VIEW (Clean, unexposed to kitchen internals) */
+        <>
+          {/* Customer Header */}
+          <header>
+            <div className="brand">
+              <span className="brand-mark">
+                <UtensilsCrossed size={19} />
+              </span>
+              <span>
+                THE PODDARS
+                <br />
+                <i>food & bar</i>
+              </span>
+            </div>
+
+            <div className="service-status">
+              <span></span>Kitchen is accepting orders
+            </div>
+
+            <div className="header-actions">
+              {activeTrackingOrderId && (
+                <button
+                  type="button"
+                  className="kds-btn-tool active"
+                  onClick={() => setShowTracker(true)}
+                  style={{ fontSize: '11px', padding: '6px 12px' }}
+                >
+                  <Flame size={14} color="var(--lime)" />
+                  <span>Track Order</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                className={'icon-btn notification-button ' + (notice ? 'has-notice' : '')}
+                onClick={() => setNotice(!notice)}
+                aria-label="Toggle order updates"
+              >
+                <Bell size={19} />
+              </button>
+
+              <button
+                type="button"
+                className="cart-trigger"
+                onClick={() => setCartOpen(true)}
+                aria-label="Open cart"
+              >
+                <ShoppingBag size={18} /> <b>{count}</b>
+              </button>
+            </div>
+          </header>
+
+          <section className="welcome">
+            <div>
+              <p className="eyebrow">WELCOME TO SAFFRON</p>
+              <h1>
+                Good food,
+                <br />
+                on your terms.
+              </h1>
+              <p className="subcopy">
+                Freshly made, ready when you are. Choose how you would like to enjoy your meal.
+              </p>
+            </div>
+            <div className="mode-switch" role="group" aria-label="Order type">
+              <button
+                type="button"
+                className={mode === 'Dine in' ? 'active' : ''}
+                onClick={() => setMode('Dine in')}
+              >
+                <UtensilsCrossed size={20} />
+                <span>
+                  Dine in<small>Table 12</small>
+                </span>
+              </button>
+              <button
+                type="button"
+                className={mode === 'Self pickup' ? 'active' : ''}
+                onClick={() => setMode('Self pickup')}
+              >
+                <ShoppingBag size={20} />
+                <span>
+                  Self pickup<small>Ready in 20 min</small>
+                </span>
+              </button>
+            </div>
+          </section>
+
+          <nav className="diet-filter" aria-label="Diet preference">
+            <span>SHOWING</span>
+            {['All', 'Veg', 'Non-veg'].map(option => (
+              <button
+                type="button"
+                key={option}
+                className={diet === option ? 'selected' : ''}
+                onClick={() => setDiet(option)}
+              >
+                {option}
+              </button>
+            ))}
+          </nav>
+
+          {orderError && (
+            <div className="order-error">
+              {orderError} Start the hotel server with <code>npm.cmd run server</code>.
+            </div>
+          )}
+
+          <section className="menu-section">
+            <div className="menu-top">
+              <div>
+                <p className="eyebrow">EXPLORE THE MENU</p>
+                <h2>Indian favourites, made fresh.</h2>
+              </div>
+              <label className="search">
+                <Search size={18} />
+                <input
+                  placeholder="Search the menu"
+                  value={search}
+                  onChange={event => setSearch(event.target.value)}
+                />
+              </label>
+            </div>
+
+            <nav className="categories">
+              {categories.map(itemCategory => (
+                <button
+                  type="button"
+                  key={itemCategory}
+                  onClick={() => setCategory(itemCategory)}
+                  className={category === itemCategory ? 'selected' : ''}
+                >
+                  {itemCategory}
+                </button>
+              ))}
+            </nav>
+
+            <div className="grid">
+              {visibleMenu.map(item => {
+                const cartItem = cart.find(entry => entry.id === item.id);
+                return (
+                  <article className="dish" key={item.id}>
+                    <div className={'dish-image ' + item.color}>
+                      <span>{item.mark}</span>
+                      <div className="plate"></div>
+                    </div>
+                    <div className="dish-info">
+                      <div>
+                        <h3>{item.name}</h3>
+                        <p>{item.desc}</p>
+                      </div>
+                      <div className="dish-bottom">
+                        <b>{formatPrice(item.price)}</b>
+                        {cartItem ? (
+                          <div className="menu-quantity">
+                            <button
+                              type="button"
+                              aria-label={'Remove one ' + item.name}
+                              onClick={() => updateCart(item, -1)}
+                            >
+                              <Minus size={15} />
+                            </button>
+                            <b>{cartItem.qty}</b>
+                            <button
+                              type="button"
+                              aria-label={'Add one ' + item.name}
+                              onClick={() => updateCart(item, 1)}
+                            >
+                              <Plus size={15} />
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="add"
+                            aria-label={'Add ' + item.name}
+                            onClick={() => updateCart(item, 1)}
+                          >
+                            <Plus size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          </section>
+
+          {/* Mobile Cart Button */}
+          <div className="mobile-cart">
+            <button type="button" onClick={() => setCartOpen(true)}>
+              <ShoppingBag size={18} />
+              <span>View order</span>
+              <b>{count ? formatPrice(total) : 'Empty'}</b>
+            </button>
+          </div>
+
+          {/* Cart Drawer */}
+          {cartOpen && (
+            <aside className="drawer">
+              <div className="drawer-head">
+                <button type="button" className="icon-btn" onClick={() => setCartOpen(false)}>
+                  <ArrowLeft size={20} />
+                </button>
+                <h2>Your order</h2>
+                <span className="item-count">{count} items</span>
+              </div>
+
+              <div className="order-type">
+                <span>{mode === 'Dine in' ? <UtensilsCrossed size={18} /> : <MapPin size={18} />}</span>
+                <div>
+                  <b>{mode}</b>
+                  <small>{mode === 'Dine in' ? 'Table 12, main dining room' : 'Pick up at the counter'}</small>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setMode(mode === 'Dine in' ? 'Self pickup' : 'Dine in')}
+                >
+                  Change
+                </button>
+              </div>
+
+              <div className="cart-items">
+                {cart.length ? (
+                  cart.map(item => (
+                    <div className="cart-item" key={item.id}>
+                      <div className={'tiny ' + item.color}>{item.mark}</div>
+                      <div className="cart-name">
+                        <b>{item.name}</b>
+                        <span>{formatPrice(item.price)}</span>
+                      </div>
+                      <div className="quantity">
+                        <button type="button" onClick={() => updateCart(item, -1)}>
+                          <Minus size={14} />
+                        </button>
+                        <b>{item.qty}</b>
+                        <button type="button" onClick={() => updateCart(item, 1)}>
+                          <Plus size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="empty">
+                    <ShoppingBag size={30} />
+                    <p>Your bag is waiting for something delicious.</p>
+                  </div>
+                )}
+              </div>
+
+              <div className="drawer-footer">
+                <div className="totals">
+                  <span>Subtotal</span>
+                  <b>{formatPrice(subtotal)}</b>
+                  <span>GST (5%)</span>
+                  <b>{formatPrice(gst)}</b>
+                  <strong>
+                    Total <b>{formatPrice(total)}</b>
+                  </strong>
+                </div>
+                <button
+                  type="button"
+                  className="checkout"
+                  disabled={!cart.length || submitting}
+                  onClick={submitOrder}
+                >
+                  <span>{submitting ? 'Sending order...' : mode === 'Dine in' ? 'Send to kitchen' : 'Place pickup order'}</span>
+                  <span>→</span>
+                </button>
+              </div>
+            </aside>
+          )}
+
+          {cartOpen && <div className="backdrop" onClick={() => setCartOpen(false)}></div>}
+
+          {cartOpen && cart.length > 0 && (
+            <label className="instructions-panel">
+              <span>Special cooking instructions for chef</span>
+              <textarea
+                value={instruction}
+                onChange={event => setInstruction(event.target.value)}
+                placeholder="For example: less spicy, no onion, extra crispy..."
+              />
+            </label>
+          )}
+
+          {notice && (
+            <div className="notification-popover">
+              <b>Live kitchen connection active</b>
+              <span>The kitchen display system is online. Chefs receive orders instantly.</span>
+            </div>
+          )}
+
+          {addedItem && (
+            <button
+              type="button"
+              className="cart-toast"
+              onClick={() => {
+                setCartOpen(true);
+                setAddedItem('');
+              }}
+            >
+              {addedItem} added <ShoppingBag size={16} />
+            </button>
+          )}
+
+          {/* Customer Footer with discreet Staff Portal Link */}
+          <footer className="customer-footer">
+            <p>© {new Date().getFullYear()} The Poddars Food & Bar. Freshly prepared with love.</p>
+            <button
+              type="button"
+              className="staff-access-link"
+              onClick={() => {
+                window.location.hash = 'kitchen';
+                setCurrentView('chef');
+              }}
+            >
+              <Lock size={12} /> Staff & Kitchen Portal
+            </button>
+          </footer>
+        </>
+      )}
+
+      {/* Live Order Tracker Modal */}
+      {showTracker && activeTrackingOrderId && currentView === 'customer' && (
+        <CustomerTracker
+          orderId={activeTrackingOrderId}
+          onClose={() => setShowTracker(false)}
+          onNewOrder={() => {
+            setShowTracker(false);
+          }}
+        />
+      )}
+    </main>
+  );
+}
+
+createRoot(document.getElementById('root')).render(<App />);
+

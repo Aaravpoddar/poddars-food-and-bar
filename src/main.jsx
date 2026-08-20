@@ -146,9 +146,9 @@ const menu = [
   { id: 86, name: 'Bacardi Carta Blanca Rum (60ml)', desc: 'Classic superior white rum with subtle almond & floral notes', price: 299, category: 'Alcohol', color: 'cream', mark: 'BC', image: '/images/bacardi-carta-blanca.jpg' },
   { id: 87, name: 'Patrón Silver Tequila Shot', desc: '100% blue agave premium tequila with sea salt & lime', price: 349, category: 'Alcohol', color: 'green', mark: 'PT', image: '/images/patron-silver-tequila.png' },
   { id: 88, name: 'Jägermeister Shot', desc: 'Legendary German herbal liqueur with 56 herbs & spices', price: 329, category: 'Alcohol', color: 'purple', mark: 'JM', image: '/images/jagermeister-shot.jpg' },
-  { id: 89, name: 'Jacob’s Creek Cabernet (Glass)', desc: 'Australian red wine with ripe blackcurrant & oak notes', price: 399, category: 'Alcohol', color: 'wine', mark: 'JC', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80' },
-  { id: 90, name: 'Sula Sauvignon Blanc (Glass)', desc: 'Crisp Indian white wine with refreshing aromas of guava', price: 349, category: 'Alcohol', color: 'yellow', mark: 'SB', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80' },
-  { id: 91, name: 'Chandon Brut Sparkling (Glass)', desc: 'Elegant sparkling bubbly with green apple and brioche notes', price: 499, category: 'Alcohol', color: 'cream', mark: 'CB', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80' }
+  { id: 89, name: 'Jacob’s Creek Cabernet (Glass)', desc: 'Australian red wine with ripe blackcurrant & oak notes', price: 399, category: 'Alcohol', color: 'wine', mark: 'JC', image: '/images/jacobs-creek-cabernet.png' },
+  { id: 90, name: 'Sula Sauvignon Blanc (Glass)', desc: 'Crisp Indian white wine with refreshing aromas of guava', price: 349, category: 'Alcohol', color: 'yellow', mark: 'SB', image: '/images/sula-sauvignon-blanc.png' },
+  { id: 91, name: 'Chandon Brut Sparkling (Glass)', desc: 'Elegant sparkling bubbly with green apple and brioche notes', price: 499, category: 'Alcohol', color: 'cream', mark: 'CB', image: '/images/chandon-brut-sparkling.png' }
 ];
 
 const eatingOrder = ['Starters', 'Dosa', 'Chinese', 'Italian', 'Continental', 'Indian', 'Breads', 'Dessert', 'Beverages', 'Alcohol'];

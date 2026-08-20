@@ -202,6 +202,22 @@
 .staff-access-link{background:transparent;color:#6b766e;font-size:11px;font-family:'DM Mono';display:flex;align-items:center;gap:6px;transition:.2s ease;padding:6px 10px;border-radius:6px;border:1px dashed #303b33}
 .staff-access-link:hover{color:var(--lime);border-color:var(--lime)}
 
+/* Guest Login / Table Check-in Modal */
+.guest-login-overlay{position:fixed;inset:0;background:#000000d0;backdrop-filter:blur(8px);z-index:100;display:grid;place-items:center;padding:20px;animation:toast-in .25s ease}
+.guest-login-card{width:min(440px,100%);background:linear-gradient(145deg,#191e1b,#121614);border:1px solid #364239;border-radius:18px;box-shadow:0 24px 60px #000000cc;padding:32px 26px;text-align:center}
+.guest-modal-logo{margin:0 auto 16px;box-shadow:0 0 24px #d7f24a44}
+.guest-login-card h2{font-size:24px;margin:0 0 6px;color:#fff;font-family:'Playfair Display',serif}
+.guest-login-sub{font-size:12px;color:var(--muted);margin:0 0 20px}
+.guest-table-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:6px}
+.guest-table-chip{background:#131714;border:1px solid #2d3830;color:#b2bcb4;padding:8px 4px;border-radius:8px;font-size:11px;font-family:'DM Mono',monospace;transition:.15s ease;text-align:center}
+.guest-table-chip:hover{border-color:var(--lime);color:#fff}
+.guest-table-chip.selected{background:var(--lime);border-color:var(--lime);color:#111410;font-weight:700}
+.header-guest-pill{display:flex;align-items:center;gap:8px;background:#18201a;border:1px solid #303d32;padding:6px 12px;border-radius:20px;transition:.2s ease;text-align:left;color:var(--ink)}
+.header-guest-pill:hover{border-color:var(--lime);background:#202b23}
+.header-guest-pill div{display:flex;flex-direction:column;line-height:1.15}
+.header-guest-pill b{font-size:12px;color:#fff;max-width:110px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.header-guest-pill small{font-size:10px;font-family:'DM Mono',monospace;color:var(--lime)}
+
 /* Mobile Responsive Optimization & Touch Usability */
 html {
   -webkit-text-size-adjust: 100%;

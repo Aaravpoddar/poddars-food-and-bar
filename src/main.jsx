@@ -171,6 +171,145 @@ function timeAgo(dateString) {
 }
 
 // -------------------------------------------------------------
+// GUEST LOGIN / TABLE CHECK-IN MODAL
+// -------------------------------------------------------------
+function GuestLoginModal({ guest, onSaveGuest, isOpen, onClose }) {
+  const [name, setName] = useState(guest?.name || '');
+  const [table, setTable] = useState(guest?.table || 'Table 1');
+  const [diningMode, setDiningMode] = useState(guest?.mode || 'Dine in');
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (guest) {
+      setName(guest.name || '');
+      setTable(guest.table || 'Table 1');
+      setDiningMode(guest.mode || 'Dine in');
+    }
+  }, [guest, isOpen]);
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      setError('Please enter your name to continue.');
+      return;
+    }
+    setError('');
+    onSaveGuest({
+      name: name.trim(),
+      table: diningMode === 'Dine in' ? (table.trim() || 'Table 1') : null,
+      mode: diningMode
+    });
+  };
+
+  if (!isOpen) return null;
+
+  const quickTables = [
+    'Table 1', 'Table 2', 'Table 3', 'Table 4',
+    'Table 5', 'Table 6', 'Table 7', 'Table 8',
+    'Table 9', 'Table 10', 'Table 11', 'Table 12'
+  ];
+
+  return (
+    <div className="guest-login-overlay" onClick={guest?.name ? onClose : undefined}>
+      <div className="guest-login-card" onClick={e => e.stopPropagation()}>
+        <div className="brand-mark guest-modal-logo">
+          <UtensilsCrossed size={20} />
+        </div>
+        <h2>Welcome to The Poddar's</h2>
+        <p className="guest-login-sub">Please enter your name & table to begin dining</p>
+
+        {error && (
+          <div className="chef-login-error">
+            <AlertTriangle size={15} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        <form onSubmit={handleSave} className="guest-form">
+          <div className="chef-input-group">
+            <label><User size={13} /> Your Name / Party Name</label>
+            <div className="chef-input-box">
+              <User size={16} />
+              <input
+                placeholder="e.g. Aarav Poddar"
+                value={name}
+                onChange={e => setName(e.target.value)}
+                autoFocus
+              />
+            </div>
+          </div>
+
+          <div className="chef-input-group" style={{ marginTop: '14px' }}>
+            <label><UtensilsCrossed size={13} /> Dining Preference</label>
+            <div className="mode-switch" style={{ width: '100%', margin: 0, padding: '4px' }}>
+              <button
+                type="button"
+                className={diningMode === 'Dine in' ? 'active' : ''}
+                onClick={() => setDiningMode('Dine in')}
+                style={{ padding: '10px 8px', justifyContent: 'center' }}
+              >
+                <UtensilsCrossed size={15} />
+                <span>Dine In</span>
+              </button>
+              <button
+                type="button"
+                className={diningMode === 'Self pickup' ? 'active' : ''}
+                onClick={() => setDiningMode('Self pickup')}
+                style={{ padding: '10px 8px', justifyContent: 'center' }}
+              >
+                <ShoppingBag size={15} />
+                <span>Takeaway / Pickup</span>
+              </button>
+            </div>
+          </div>
+
+          {diningMode === 'Dine in' && (
+            <div className="chef-input-group" style={{ marginTop: '14px' }}>
+              <label><MapPin size={13} /> Select or Enter Table Number</label>
+              <div className="guest-table-grid">
+                {quickTables.map(t => (
+                  <button
+                    type="button"
+                    key={t}
+                    className={`guest-table-chip ${table === t ? 'selected' : ''}`}
+                    onClick={() => setTable(t)}
+                  >
+                    {t}
+                  </button>
+                ))}
+              </div>
+              <div className="chef-input-box" style={{ marginTop: '8px' }}>
+                <MapPin size={16} />
+                <input
+                  placeholder="Or custom: Table 15, VIP Lounge, Terrace 2"
+                  value={table}
+                  onChange={e => setTable(e.target.value)}
+                />
+              </div>
+            </div>
+          )}
+
+          <button type="submit" className="chef-login-btn" style={{ marginTop: '18px' }}>
+            <span>Explore Menu & Start Order →</span>
+          </button>
+
+          {guest?.name && (
+            <button
+              type="button"
+              className="chef-back-link"
+              onClick={onClose}
+              style={{ marginTop: '14px', width: '100%', justifyContent: 'center' }}
+            >
+              Keep Current Details
+            </button>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
 // CHEF LOGIN SCREEN COMPONENT
 // -------------------------------------------------------------
 function ChefLogin({ onLogin, onBackToMenu }) {
@@ -496,6 +635,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
         matchesSearch = (
           o.id.toLowerCase().includes(q) ||
           (o.table && o.table.toLowerCase().includes(q)) ||
+          (o.guestName && o.guestName.toLowerCase().includes(q)) ||
           o.mode?.toLowerCase().includes(q) ||
           (o.items && o.items.some(i => i.name.toLowerCase().includes(q)))
         );
@@ -707,7 +847,8 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
                       <span>#{order.id}</span>
                     </div>
                     <span className="kds-order-type">
-                      {order.mode === 'Dine in' ? `🍽️ ${order.table || 'Table 12'}` : '🛍️ Self Pickup'}
+                      {order.mode === 'Dine in' ? `🍽️ ${order.table || 'Table 1'}` : '🛍️ Self Pickup'}
+                      {order.guestName ? ` • 👤 ${order.guestName}` : ''}
                     </span>
                   </div>
                   <span className={`kds-badge badge-${order.status?.toLowerCase() || 'new'}`}>
@@ -1039,9 +1180,15 @@ function CustomerTracker({ orderId, onClose, onNewOrder }) {
       )}
 
       <div className="tracker-order-summary">
+        {order.guestName && (
+          <div>
+            <span>Guest Name:</span>
+            <b>{order.guestName}</b>
+          </div>
+        )}
         <div>
           <span>Dining Mode:</span>
-          <b>{order.mode === 'Dine in' ? `${order.table || 'Table 12'}` : 'Self Pickup'}</b>
+          <b>{order.mode === 'Dine in' ? `${order.table || 'Table 1'}` : 'Self Pickup'}</b>
         </div>
         <div>
           <span>Total Bill:</span>
@@ -1080,8 +1227,38 @@ function App() {
     }
   });
 
-  // Customer state
-  const [mode, setMode] = useState('Dine in');
+  // Customer state & guest session
+  const [guest, setGuest] = useState(() => {
+    try {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlTable = urlParams.get('table');
+      const urlName = urlParams.get('name');
+      const saved = localStorage.getItem('poddars_guest_session');
+      const parsed = saved ? JSON.parse(saved) : null;
+      if (urlTable || urlName) {
+        return {
+          name: urlName || parsed?.name || '',
+          table: urlTable ? (urlTable.startsWith('Table') ? urlTable : `Table ${urlTable}`) : (parsed?.table || 'Table 1'),
+          mode: parsed?.mode || 'Dine in'
+        };
+      }
+      return parsed;
+    } catch {
+      return null;
+    }
+  });
+
+  const [guestModalOpen, setGuestModalOpen] = useState(() => {
+    try {
+      const saved = localStorage.getItem('poddars_guest_session');
+      const parsed = saved ? JSON.parse(saved) : null;
+      return !parsed || !parsed.name;
+    } catch {
+      return true;
+    }
+  });
+
+  const [mode, setMode] = useState(() => guest?.mode || 'Dine in');
   const [category, setCategory] = useState('All');
   const [diet, setDiet] = useState('All');
   const [search, setSearch] = useState('');
@@ -1164,6 +1341,10 @@ function App() {
 
   const submitOrder = async () => {
     if (!cart.length || submitting) return;
+    if (!guest?.name) {
+      setGuestModalOpen(true);
+      return;
+    }
     setSubmitting(true);
     setOrderError('');
     try {
@@ -1171,8 +1352,9 @@ function App() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          guestName: guest.name,
           mode,
-          table: mode === 'Dine in' ? 'Table 12' : null,
+          table: mode === 'Dine in' ? (guest.table || 'Table 1') : null,
           items: cart.map(item => ({
             id: item.id,
             name: item.name,
@@ -1245,6 +1427,19 @@ function App() {
               <span></span>Kitchen is accepting orders
             </div>
 
+            <button
+              type="button"
+              className="header-guest-pill"
+              onClick={() => setGuestModalOpen(true)}
+              title="Click to change your Name or Table"
+            >
+              <User size={15} color="var(--lime)" />
+              <div>
+                <b>{guest?.name || 'Guest Check-in'}</b>
+                <small>{mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</small>
+              </div>
+            </button>
+
             <div className="header-actions">
               {activeTrackingOrderId && (
                 <button
@@ -1280,7 +1475,9 @@ function App() {
 
           <section className="welcome">
             <div>
-              <p className="eyebrow">WELCOME TO THE PODDAR'S</p>
+              <p className="eyebrow">
+                WELCOME TO THE PODDAR'S{guest?.name ? ` • HI ${guest.name.toUpperCase()}!` : ''}
+              </p>
               <h1>
                 Good food,
                 <br />
@@ -1294,11 +1491,14 @@ function App() {
               <button
                 type="button"
                 className={mode === 'Dine in' ? 'active' : ''}
-                onClick={() => setMode('Dine in')}
+                onClick={() => {
+                  setMode('Dine in');
+                  if (!guest?.table) setGuestModalOpen(true);
+                }}
               >
                 <UtensilsCrossed size={20} />
                 <span>
-                  Dine in<small>Table 12</small>
+                  Dine in<small>{guest?.table || 'Choose Table'}</small>
                 </span>
               </button>
               <button
@@ -1438,14 +1638,14 @@ function App() {
               </div>
 
               <div className="order-type">
-                <span>{mode === 'Dine in' ? <UtensilsCrossed size={18} /> : <MapPin size={18} />}</span>
+                <span>{mode === 'Dine in' ? <UtensilsCrossed size={18} /> : <ShoppingBag size={18} />}</span>
                 <div>
-                  <b>{mode}</b>
-                  <small>{mode === 'Dine in' ? 'Table 12, main dining room' : 'Pick up at the counter'}</small>
+                  <b>{guest?.name || 'Guest'} • {mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Self Pickup'}</b>
+                  <small>{mode === 'Dine in' ? 'Food served to your table' : 'Pick up at the counter'}</small>
                 </div>
                 <button
                   type="button"
-                  onClick={() => setMode(mode === 'Dine in' ? 'Self pickup' : 'Dine in')}
+                  onClick={() => setGuestModalOpen(true)}
                 >
                   Change
                 </button>
@@ -1495,7 +1695,7 @@ function App() {
                   disabled={!cart.length || submitting}
                   onClick={submitOrder}
                 >
-                  <span>{submitting ? 'Sending order...' : mode === 'Dine in' ? 'Send to kitchen' : 'Place pickup order'}</span>
+                  <span>{submitting ? 'Sending order...' : mode === 'Dine in' ? `Send to kitchen (${guest?.table || 'Table 1'})` : 'Place pickup order'}</span>
                   <span>→</span>
                 </button>
               </div>
@@ -1551,6 +1751,21 @@ function App() {
           </footer>
         </>
       )}
+
+      {/* Guest Login / Table Check-in Modal */}
+      <GuestLoginModal
+        guest={guest}
+        isOpen={guestModalOpen}
+        onClose={() => setGuestModalOpen(false)}
+        onSaveGuest={savedGuest => {
+          setGuest(savedGuest);
+          setMode(savedGuest.mode || 'Dine in');
+          setGuestModalOpen(false);
+          try {
+            localStorage.setItem('poddars_guest_session', JSON.stringify(savedGuest));
+          } catch {}
+        }}
+      />
 
       {/* Live Order Tracker Modal */}
       {showTracker && activeTrackingOrderId && currentView === 'customer' && (

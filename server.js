@@ -221,6 +221,7 @@ const server = createServer(async (request, response) => {
         orders = orders.filter(o => 
           o.id.toLowerCase().includes(q) ||
           (o.table && o.table.toLowerCase().includes(q)) ||
+          (o.guestName && o.guestName.toLowerCase().includes(q)) ||
           (o.items && o.items.some(i => i.name.toLowerCase().includes(q)))
         );
       }
@@ -250,8 +251,9 @@ const server = createServer(async (request, response) => {
         id: `TP-${Math.floor(100000 + Math.random() * 900000)}`,
         status: 'New',
         createdAt: new Date().toISOString(),
+        guestName: String(payload.guestName || '').trim().slice(0, 100) || 'Guest',
         mode: payload.mode === 'Self pickup' ? 'Self pickup' : 'Dine in',
-        table: payload.mode === 'Dine in' ? (payload.table || 'Table 12') : null,
+        table: payload.mode === 'Dine in' ? (payload.table || 'Table 1') : null,
         items: payload.items.map(item => ({
           id: item.id,
           name: item.name,

@@ -1,11 +1,71 @@
 import { createServer } from 'node:http';
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { mkdir, readFile, writeFile, stat } from 'node:fs/promises';
+import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { networkInterfaces } from 'node:os';
 
 const rootDirectory = dirname(fileURLToPath(import.meta.url));
+const distDirectory = join(rootDirectory, 'dist');
 const ordersFile = join(rootDirectory, 'data', 'orders.json');
 const port = 3002;
+
+const mimeTypes = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.gif': 'image/gif',
+  '.svg': 'image/svg+xml',
+  '.ico': 'image/x-icon',
+  '.webp': 'image/webp',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.ttf': 'font/ttf'
+};
+
+async function serveStaticFile(response, pathname) {
+  let targetPath = join(distDirectory, pathname === '/' ? 'index.html' : pathname);
+  try {
+    const fileStat = await stat(targetPath);
+    if (fileStat.isDirectory()) {
+      targetPath = join(targetPath, 'index.html');
+    }
+    const content = await readFile(targetPath);
+    const ext = extname(targetPath).toLowerCase();
+    const contentType = mimeTypes[ext] || 'application/octet-stream';
+    response.writeHead(200, { 'Content-Type': contentType });
+    return response.end(content);
+  } catch {
+    try {
+      const indexContent = await readFile(join(distDirectory, 'index.html'));
+      response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      return response.end(indexContent);
+    } catch {
+      response.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+      return response.end(`
+        <h2>The Poddar's - Food & Bar</h2>
+        <p>Please build the frontend using <code>npm run build</code> or run in development mode with <code>npm run dev</code>.</p>
+      `);
+    }
+  }
+}
+
+function getLocalIpAddresses() {
+  const interfaces = networkInterfaces();
+  const addresses = [];
+  for (const name of Object.keys(interfaces)) {
+    for (const iface of interfaces[name] || []) {
+      if (iface.family === 'IPv4' && !iface.internal) {
+        addresses.push(iface.address);
+      }
+    }
+  }
+  return addresses;
+}
 
 // Connected SSE clients for live synchronization
 const sseClients = new Set();
@@ -311,6 +371,11 @@ const server = createServer(async (request, response) => {
       return send(response, 200, { success: true, message: 'Order removed' });
     }
 
+    // Serve Frontend Static Web App for all other routes
+    if (!pathname.startsWith('/api')) {
+      return serveStaticFile(response, pathname);
+    }
+
     return send(response, 404, { error: 'Route not found.' });
   } catch (error) {
     console.error(error);
@@ -318,4 +383,18 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(port, () => console.log(`Chef & Restaurant API is running at http://localhost:${port}`));
+server.listen(port, '0.0.0.0', () => {
+  const ips = getLocalIpAddresses();
+  console.log(`\n==================================================`);
+  console.log(`🍽️  The Poddar's - Food & Bar Server is Running!`);
+  console.log(`==================================================`);
+  console.log(`➜ Local (This PC):   http://localhost:${port}`);
+  if (ips.length > 0) {
+    ips.forEach(ip => {
+      console.log(`➜ Mobile / Network:  http://${ip}:${port}`);
+    });
+  }
+  console.log(`\n📱 Mobile Access: Connect your phone to the same Wi-Fi`);
+  console.log(`   and open the Mobile URL above in your browser.`);
+  console.log(`==================================================\n`);
+});

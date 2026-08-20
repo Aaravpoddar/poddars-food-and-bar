@@ -1416,13 +1416,15 @@ function App() {
           </section>
 
           {/* Mobile Cart Button */}
-          <div className="mobile-cart">
-            <button type="button" onClick={() => setCartOpen(true)}>
-              <ShoppingBag size={18} />
-              <span>View order</span>
-              <b>{count ? formatPrice(total) : 'Empty'}</b>
-            </button>
-          </div>
+          {count > 0 && (
+            <div className="mobile-cart">
+              <button type="button" onClick={() => setCartOpen(true)}>
+                <ShoppingBag size={18} />
+                <span>View order ({count} items)</span>
+                <b>{formatPrice(total)} →</b>
+              </button>
+            </div>
+          )}
 
           {/* Cart Drawer */}
           {cartOpen && (

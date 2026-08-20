@@ -202,4 +202,63 @@
 .staff-access-link{background:transparent;color:#6b766e;font-size:11px;font-family:'DM Mono';display:flex;align-items:center;gap:6px;transition:.2s ease;padding:6px 10px;border-radius:6px;border:1px dashed #303b33}
 .staff-access-link:hover{color:var(--lime);border-color:var(--lime)}
 
+/* Mobile Responsive Optimization & Touch Usability */
+html {
+  -webkit-text-size-adjust: 100%;
+  touch-action: manipulation;
+}
+
+@supports (padding: max(0px)) {
+  body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  header {
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+}
+
+@media(max-width:768px){
+  header{height:64px;padding:0 14px}
+  .brand{font-size:13px;gap:8px}
+  .brand-mark{width:30px;height:30px}
+  .header-actions{gap:8px}
+  .cart-trigger{height:36px;padding:0 10px}
+  .icon-btn{width:36px;height:36px}
+  .welcome{padding:26px 14px 22px}
+  .welcome h1{font-size:28px;line-height:1.1}
+  .subcopy{font-size:12px;margin-top:8px}
+  .mode-switch{margin-top:16px;border-radius:8px}
+  .mode-switch button{padding:10px 8px;font-size:12px}
+  .diet-filter{padding:10px 14px;gap:6px;-webkit-overflow-scrolling:touch}
+  .diet-filter button{padding:6px 13px;font-size:11px;border-radius:18px}
+  .menu-section{padding:22px 14px 110px}
+  .menu-top h2{font-size:22px}
+  .search{width:100%;margin-top:12px}
+  .search input{font-size:14px}
+  .categories{margin:16px 0 14px;gap:6px;-webkit-overflow-scrolling:touch}
+  .categories button{padding:7px 13px;font-size:11px;border-radius:18px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .dish{border-radius:10px;overflow:hidden}
+  .dish-info{padding:10px 8px 8px;min-height:110px}
+  .dish h3{font-size:14px;margin-bottom:4px}
+  .dish p{font-size:10px;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+  .dish-bottom b{font-size:13px}
+  .add{width:32px;height:32px;border-radius:6px}
+  .mobile-cart{display:block;position:fixed;bottom:calc(14px + env(safe-area-inset-bottom, 0px));left:14px;right:14px;z-index:99}
+  .mobile-cart button{width:100%;background:var(--lime);color:#111410;padding:14px 18px;border-radius:12px;display:flex;align-items:center;justify-content:space-between;font-weight:700;font-size:13px;box-shadow:0 10px 28px rgba(0,0,0,0.65)}
+  .mobile-cart button b{font-family:'DM Mono';font-size:14px}
+  .drawer{width:100%;max-width:100%;height:100vh;height:100dvh}
+  .drawer-footer{padding-bottom:calc(24px + env(safe-area-inset-bottom, 0px))}
+  .tracker-card{left:12px;right:12px;bottom:calc(12px + env(safe-area-inset-bottom, 0px));width:auto;max-width:calc(100% - 24px);border-radius:14px}
+  .kds-container{padding:16px 12px 60px}
+}
+
+@media(max-width:380px){
+  .grid{grid-template-columns:1fr;gap:12px}
+  .dish-image{aspect-ratio:1.6}
+}
+
 

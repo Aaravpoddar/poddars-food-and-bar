@@ -116,15 +116,26 @@ function readBody(request) {
 }
 
 function getStats(orders) {
-  const today = new Date().toISOString().slice(0, 10);
-  const todaysOrders = orders.filter(o => o.createdAt && o.createdAt.startsWith(today));
+  const now = new Date();
+  const todayUtc = now.toISOString().slice(0, 10);
+  
+  const todaysOrders = orders.filter(o => {
+    if (!o.createdAt) return false;
+    if (o.createdAt.startsWith(todayUtc)) return true;
+    const od = new Date(o.createdAt);
+    return (
+      od.getFullYear() === now.getFullYear() &&
+      od.getMonth() === now.getMonth() &&
+      od.getDate() === now.getDate()
+    );
+  });
   
   const pendingCount = orders.filter(o => o.status === 'New').length;
   const preparingCount = orders.filter(o => o.status === 'Preparing').length;
   const readyCount = orders.filter(o => o.status === 'Ready').length;
   const completedToday = todaysOrders.filter(o => o.status === 'Completed').length;
   const revenueToday = todaysOrders
-    .filter(o => o.status === 'Completed' || o.status === 'Ready' || o.status === 'Preparing')
+    .filter(o => o.status === 'Completed' || o.status === 'Ready' || o.status === 'Preparing' || o.status === 'New')
     .reduce((sum, o) => sum + (Number(o.total) || 0), 0);
 
   return {

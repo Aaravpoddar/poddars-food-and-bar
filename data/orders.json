@@ -1,5 +1,187 @@
 [
   {
+    "id": "TP-554103",
+    "status": "Completed",
+    "createdAt": "2026-08-20T11:08:10.432Z",
+    "guestName": "Vanisha",
+    "mode": "Dine in",
+    "table": "Table 1",
+    "items": [
+      {
+        "id": 21,
+        "name": "Mysore Masala Dosa",
+        "price": 149,
+        "qty": 1,
+        "color": "coral",
+        "mark": "MM"
+      },
+      {
+        "id": 55,
+        "name": "Farmhouse Pizza",
+        "price": 279,
+        "qty": 1,
+        "color": "green",
+        "mark": "FP"
+      },
+      {
+        "id": 18,
+        "name": "Brownie with Ice Cream",
+        "price": 119,
+        "qty": 1,
+        "color": "coral",
+        "mark": "BI"
+      },
+      {
+        "id": 41,
+        "name": "Cold Coffee",
+        "price": 89,
+        "qty": 1,
+        "color": "cream",
+        "mark": "CF"
+      }
+    ],
+    "instructions": "Less Spicy",
+    "subtotal": 636,
+    "gst": 31.8,
+    "total": 667.8,
+    "estimatedPrepTime": 20,
+    "approvedAt": "2026-08-20T11:08:39.433Z",
+    "readyAt": "2026-08-20T11:09:13.607Z",
+    "completedAt": "2026-08-20T11:09:18.512Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "Chef Aarav"
+  },
+  {
+    "id": "TP-562413",
+    "status": "Completed",
+    "createdAt": "2026-08-20T10:54:04.180Z",
+    "guestName": "Aarav Poddar",
+    "mode": "Dine in",
+    "table": "Table 6",
+    "items": [
+      {
+        "id": 62,
+        "name": "Nachos Supreme",
+        "price": 169,
+        "qty": 1,
+        "color": "orange",
+        "mark": "NS"
+      },
+      {
+        "id": 21,
+        "name": "Mysore Masala Dosa",
+        "price": 149,
+        "qty": 1,
+        "color": "coral",
+        "mark": "MM"
+      }
+    ],
+    "instructions": "extra crispy",
+    "subtotal": 318,
+    "gst": 15.9,
+    "total": 333.9,
+    "estimatedPrepTime": 15,
+    "approvedAt": "2026-08-20T10:54:30.391Z",
+    "readyAt": "2026-08-20T10:54:35.557Z",
+    "completedAt": "2026-08-20T10:54:41.839Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "Chef Aarav"
+  },
+  {
+    "id": "TP-403439",
+    "status": "Completed",
+    "createdAt": "2026-08-20T07:26:26.162Z",
+    "mode": "Dine in",
+    "table": "Table 15",
+    "items": [
+      {
+        "id": 1,
+        "name": "Butter Chicken",
+        "price": 289,
+        "qty": 1,
+        "color": "coral",
+        "mark": "BC"
+      },
+      {
+        "id": 25,
+        "name": "Butter Naan",
+        "price": 45,
+        "qty": 2,
+        "color": "orange",
+        "mark": "BN"
+      },
+      {
+        "id": 19,
+        "name": "Masala Chai",
+        "price": 35,
+        "qty": 2,
+        "color": "orange",
+        "mark": "MC"
+      }
+    ],
+    "instructions": "Extra spicy Butter Chicken, serve hot naan with melted butter.",
+    "subtotal": 449,
+    "gst": 22.450000000000003,
+    "total": 471.45,
+    "estimatedPrepTime": 15,
+    "approvedAt": "2026-08-20T07:26:35.294Z",
+    "readyAt": "2026-08-20T10:54:37.671Z",
+    "completedAt": "2026-08-20T10:54:42.904Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "Chef Aarav"
+  },
+  {
+    "id": "TP-475074",
+    "status": "Completed",
+    "createdAt": "2026-08-20T07:26:04.577Z",
+    "mode": "Dine in",
+    "table": "Table 6",
+    "items": [
+      {
+        "id": 37,
+        "name": "Spring Rolls",
+        "price": 129,
+        "qty": 1,
+        "color": "green",
+        "mark": "SR"
+      },
+      {
+        "id": 16,
+        "name": "French Fries",
+        "price": 89,
+        "qty": 1,
+        "color": "yellow",
+        "mark": "FF"
+      },
+      {
+        "id": 82,
+        "name": "Johnnie Walker Black (60ml)",
+        "price": 499,
+        "qty": 1,
+        "color": "orange",
+        "mark": "JW"
+      }
+    ],
+    "instructions": "",
+    "subtotal": 717,
+    "gst": 35.85,
+    "total": 752.85,
+    "estimatedPrepTime": 20,
+    "approvedAt": "2026-08-20T07:26:19.471Z",
+    "readyAt": "2026-08-20T07:26:24.912Z",
+    "completedAt": "2026-08-20T07:26:28.336Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "Chef Aarav"
+  },
+  {
     "id": "TP-115333",
     "status": "Completed",
     "createdAt": "2026-08-20T05:56:21.816Z",

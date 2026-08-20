@@ -40,17 +40,17 @@ const menu = [
   { id: 9, name: 'Veg Manchurian', desc: 'Vegetable dumplings in a tangy soy sauce', price: 179, category: 'Chinese', color: 'green', mark: 'VM', image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop&q=80' },
   { id: 10, name: 'Chicken Fried Rice', desc: 'Wok-fried rice, chicken, egg and vegetables', price: 199, category: 'Chinese', color: 'coral', mark: 'FR', image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&auto=format&fit=crop&q=80' },
   { id: 11, name: 'Margherita Pizza', desc: 'Tomato, mozzarella and fresh basil', price: 229, category: 'Italian', color: 'yellow', mark: 'MP', image: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600&auto=format&fit=crop&q=80' },
-  { id: 12, name: 'White Sauce Pasta', desc: 'Penne, creamy herb sauce and sweet corn', price: 199, category: 'Italian', color: 'cream', mark: 'WP', image: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281290?w=600&auto=format&fit=crop&q=80' },
+  { id: 12, name: 'White Sauce Pasta', desc: 'Penne, creamy herb sauce and sweet corn', price: 199, category: 'Italian', color: 'cream', mark: 'WP', image: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=600&auto=format&fit=crop&q=80' },
   { id: 13, name: 'Chicken Alfredo Pasta', desc: 'Grilled chicken, penne and parmesan sauce', price: 269, category: 'Italian', color: 'blue', mark: 'CA', image: 'https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600&auto=format&fit=crop&q=80' },
   { id: 14, name: 'Veg Club Sandwich', desc: 'Grilled vegetables, cheese and house spread', price: 159, category: 'Continental', color: 'purple', mark: 'VS', image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80' },
   { id: 15, name: 'Crispy Chicken Burger', desc: 'Fried chicken, lettuce, cheese and fries', price: 229, category: 'Continental', color: 'orange', mark: 'CB', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80' },
-  { id: 16, name: 'French Fries', desc: 'Crisp golden fries with seasoning', price: 89, category: 'Starters', color: 'yellow', mark: 'FF', image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80' },
-  { id: 17, name: 'Gulab Jamun', desc: 'Warm milk dumplings in rose syrup', price: 79, category: 'Dessert', color: 'pink', mark: 'GJ', image: 'https://images.unsplash.com/photo-1605197143984-7e8894101e4a?w=600&auto=format&fit=crop&q=80' },
+  { id: 16, name: 'French Fries', desc: 'Crisp golden fries with seasoning', price: 89, category: 'Starters', color: 'yellow', mark: 'FF', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&auto=format&fit=crop&q=80' },
+  { id: 17, name: 'Gulab Jamun', desc: 'Warm milk dumplings in rose syrup', price: 79, category: 'Dessert', color: 'pink', mark: 'GJ', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
   { id: 18, name: 'Brownie with Ice Cream', desc: 'Warm chocolate brownie and vanilla scoop', price: 119, category: 'Dessert', color: 'coral', mark: 'BI', image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80' },
   { id: 19, name: 'Masala Chai', desc: 'Assam tea with ginger and cardamom', price: 35, category: 'Beverages', color: 'orange', mark: 'MC', image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80' },
   { id: 20, name: 'Fresh Lime Soda', desc: 'Sweet or salted chilled lime soda', price: 59, category: 'Beverages', color: 'green', mark: 'LS', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80' },
-  { id: 21, name: 'Mysore Masala Dosa', desc: 'Spicy red chutney, potato masala, sambar', price: 149, category: 'Dosa', color: 'coral', mark: 'MM', image: 'https://images.unsplash.com/photo-1681881858021-e0e6ebf5a894?w=600&auto=format&fit=crop&q=80' },
-  { id: 22, name: 'Onion Rava Dosa', desc: 'Crispy semolina dosa with onion and pepper', price: 139, category: 'Dosa', color: 'yellow', mark: 'OR', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
+  { id: 21, name: 'Mysore Masala Dosa', desc: 'Spicy red chutney, potato masala, sambar', price: 149, category: 'Dosa', color: 'coral', mark: 'MM', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
+  { id: 22, name: 'Onion Rava Dosa', desc: 'Crispy semolina dosa with onion and pepper', price: 139, category: 'Dosa', color: 'yellow', mark: 'OR', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80' },
   { id: 23, name: 'Cheese Dosa', desc: 'Golden dosa, cheese, potato masala and chutney', price: 159, category: 'Dosa', color: 'cream', mark: 'CD', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
   { id: 24, name: 'Plain Dosa', desc: 'Classic crisp dosa served with sambar and chutneys', price: 89, category: 'Dosa', color: 'green', mark: 'PD', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80' },
   { id: 25, name: 'Butter Naan', desc: 'Soft tandoor-baked naan brushed with butter', price: 45, category: 'Breads', color: 'orange', mark: 'BN', image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?w=600&auto=format&fit=crop&q=80' },
@@ -173,7 +173,7 @@ function timeAgo(dateString) {
 // -------------------------------------------------------------
 // GUEST LOGIN / TABLE CHECK-IN MODAL
 // -------------------------------------------------------------
-function GuestLoginModal({ guest, onSaveGuest, isOpen, onClose }) {
+function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose }) {
   const [name, setName] = useState(guest?.name || '');
   const [table, setTable] = useState(guest?.table || 'Table 1');
   const [diningMode, setDiningMode] = useState(guest?.mode || 'Dine in');
@@ -184,6 +184,10 @@ function GuestLoginModal({ guest, onSaveGuest, isOpen, onClose }) {
       setName(guest.name || '');
       setTable(guest.table || 'Table 1');
       setDiningMode(guest.mode || 'Dine in');
+    } else {
+      setName('');
+      setTable('Table 1');
+      setDiningMode('Dine in');
     }
   }, [guest, isOpen]);
 
@@ -290,18 +294,35 @@ function GuestLoginModal({ guest, onSaveGuest, isOpen, onClose }) {
           )}
 
           <button type="submit" className="chef-login-btn" style={{ marginTop: '18px' }}>
-            <span>Explore Menu & Start Order →</span>
+            <span>Save & Explore Menu →</span>
           </button>
 
           {guest?.name && (
-            <button
-              type="button"
-              className="chef-back-link"
-              onClick={onClose}
-              style={{ marginTop: '14px', width: '100%', justifyContent: 'center' }}
-            >
-              Keep Current Details
-            </button>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+              <button
+                type="button"
+                className="chef-back-link"
+                onClick={onClose}
+                style={{ flex: 1, justifyContent: 'center', margin: 0 }}
+              >
+                Close
+              </button>
+              <button
+                type="button"
+                onClick={onLogoutGuest}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid #452a2a',
+                  color: '#ef5350',
+                  borderRadius: '8px',
+                  padding: '8px 12px',
+                  fontSize: '12px',
+                  cursor: 'pointer'
+                }}
+              >
+                Log Out / Switch
+              </button>
+            </div>
           )}
         </form>
       </div>
@@ -1487,7 +1508,79 @@ function App() {
                 Freshly made, ready when you are. Choose how you would like to enjoy your meal.
               </p>
             </div>
-            <div className="mode-switch" role="group" aria-label="Order type">
+
+            {!guest?.name ? (
+              <div style={{
+                background: 'linear-gradient(135deg, rgba(215, 242, 74, 0.15), rgba(30, 40, 32, 0.7))',
+                border: '1px solid rgba(215, 242, 74, 0.4)',
+                borderRadius: '12px',
+                padding: '14px 18px',
+                marginTop: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                flexWrap: 'wrap',
+                gap: '12px'
+              }}>
+                <div>
+                  <b style={{ color: '#fff', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <User size={16} color="var(--lime)" /> Please check in with your Name & Table
+                  </b>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--muted)' }}>
+                    Your name and table number will be printed on your kitchen food ticket.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setGuestModalOpen(true)}
+                  style={{
+                    background: 'var(--lime)',
+                    color: '#111',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '8px 16px',
+                    fontWeight: '700',
+                    fontSize: '13px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  Guest Login →
+                </button>
+              </div>
+            ) : (
+              <div style={{
+                background: '#151b17',
+                border: '1px solid #28342b',
+                borderRadius: '10px',
+                padding: '10px 14px',
+                marginTop: '14px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                fontSize: '12px',
+                color: 'var(--muted)'
+              }}>
+                <span>
+                  👤 Guest: <b style={{ color: '#fff' }}>{guest.name}</b> • <b style={{ color: 'var(--lime)' }}>{mode === 'Dine in' ? (guest.table || 'Table 1') : 'Self Pickup'}</b>
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setGuestModalOpen(true)}
+                  style={{
+                    background: 'transparent',
+                    border: 'none',
+                    color: 'var(--lime)',
+                    cursor: 'pointer',
+                    textDecoration: 'underline',
+                    fontSize: '12px'
+                  }}
+                >
+                  Change / Switch
+                </button>
+              </div>
+            )}
+
+            <div className="mode-switch" role="group" aria-label="Order type" style={{ marginTop: '14px' }}>
               <button
                 type="button"
                 className={mode === 'Dine in' ? 'active' : ''}
@@ -1784,6 +1877,13 @@ function App() {
         guest={guest}
         isOpen={guestModalOpen}
         onClose={() => setGuestModalOpen(false)}
+        onLogoutGuest={() => {
+          setGuest(null);
+          try {
+            localStorage.removeItem('poddars_guest_session');
+          } catch {}
+          setGuestModalOpen(true);
+        }}
         onSaveGuest={savedGuest => {
           setGuest(savedGuest);
           setMode(savedGuest.mode || 'Dine in');

@@ -1919,20 +1919,27 @@ header {
 
 .kds-stats-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  gap: 14px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
   margin-bottom: 24px;
+}
+
+@media (max-width: 1200px) {
+  .kds-stats-row {
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  }
 }
 
 .kds-stat-card {
   background: var(--bg-card);
   border: 1px solid var(--line);
-  padding: 16px;
+  padding: 14px 16px;
   border-radius: 12px;
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
   box-shadow: var(--shadow-sm);
+  min-width: 0;
 }
 
 .kds-stat-card.alert {
@@ -1945,8 +1952,8 @@ header {
 }
 
 .stat-icon-box {
-  width: 44px;
-  height: 44px;
+  width: 42px;
+  height: 42px;
   border-radius: 10px;
   display: grid;
   place-items: center;
@@ -1960,21 +1967,36 @@ header {
 .stat-icon-box.completed { background: #f5f3ff; color: #7c3aed; border: 1px solid #ddd6fe; }
 .stat-icon-box.revenue { background: #ecfdf5; color: #059669; border: 1px solid #a7f3d0; font-weight: 800; }
 
+.stat-data {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
 .stat-val {
   font-family: 'DM Mono', monospace;
-  font-size: 22px;
+  font-size: 20px;
   font-weight: 800;
   color: var(--text-main);
-  line-height: 1.1;
+  line-height: 1.15;
+  white-space: nowrap;
 }
 
 .stat-lbl {
-  font-size: 11.5px;
+  font-size: 11px;
   color: var(--text-muted);
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   font-weight: 700;
-  margin-top: 4px;
+  margin-top: 3px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
 }
 
 .kds-filter-bar {
@@ -2487,8 +2509,9 @@ header {
 .kds-modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(5, 8, 12, 0.85);
+  background: rgba(15, 23, 42, 0.55);
   backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   z-index: 150;
   display: grid;
   place-items: center;
@@ -2496,63 +2519,79 @@ header {
 }
 
 .kds-modal-box {
-  background: #111620;
+  background: #ffffff;
   border: 1px solid var(--line);
-  border-radius: 12px;
+  border-radius: 14px;
   padding: 22px;
-  width: min(420px, 100%);
+  width: min(440px, 94vw);
+  box-shadow: var(--shadow-lg);
 }
 
 .kds-modal-box h3 {
   margin: 0 0 8px;
   font-size: 17px;
-  color: #ffffff;
+  font-weight: 800;
+  color: var(--text-main);
 }
 
 .kds-modal-box p {
   margin: 0 0 14px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--text-muted);
 }
 
 .kds-modal-box textarea {
   width: 100%;
-  background: #090c10;
+  background: #ffffff;
   border: 1px solid var(--line);
-  color: #ffffff;
-  padding: 10px;
-  border-radius: 6px;
-  font-size: 12px;
-  min-height: 70px;
+  color: var(--text-main);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  min-height: 80px;
   outline: none;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .kds-modal-box textarea:focus {
-  border-color: var(--neon-pink);
+  border-color: var(--brand-red);
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
 }
 
 .kds-modal-actions {
   display: flex;
   justify-content: flex-end;
   gap: 8px;
-  margin-top: 14px;
+  margin-top: 16px;
 }
 
 .kds-modal-actions button {
-  padding: 8px 14px;
-  border-radius: 6px;
-  font-size: 12px;
-  font-weight: 600;
+  padding: 9px 16px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 700;
+  transition: all 0.15s ease;
 }
 
 .kds-modal-cancel {
-  background: #1e2634;
-  color: #cbd5e1;
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  color: var(--text-main);
+}
+
+.kds-modal-cancel:hover {
+  background: #ffffff;
 }
 
 .kds-modal-confirm-reject {
-  background: var(--neon-pink);
+  background: var(--brand-red);
   color: #ffffff;
+  box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.kds-modal-confirm-reject:hover {
+  background: #dc2626;
 }
 
 /* Chef Session in KDS */
@@ -2562,47 +2601,60 @@ header {
   gap: 10px;
   background: var(--bg-card);
   border: 1px solid var(--line);
-  padding: 4px 12px;
+  padding: 4px 10px 4px 6px;
   border-radius: 20px;
+  box-shadow: var(--shadow-sm);
 }
 
 .chef-avatar {
-  width: 26px;
-  height: 26px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
-  background: var(--neon-green);
-  color: #06090e;
+  background: var(--brand-soft);
+  border: 1px solid #ffccbc;
+  color: var(--brand-primary);
   display: grid;
   place-items: center;
-  font-weight: 700;
+  font-weight: 800;
   font-size: 12px;
 }
 
 .chef-user-details {
   display: flex;
   flex-direction: column;
+  line-height: 1.2;
 }
 
 .chef-user-name {
   font-size: 12px;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--text-main);
 }
 
 .chef-user-id {
   font-family: 'DM Mono', monospace;
   font-size: 10px;
-  color: var(--neon-green);
+  color: var(--text-muted);
+  font-weight: 600;
 }
 
 .chef-logout-btn {
   background: transparent;
-  color: var(--neon-pink);
+  color: var(--brand-red);
+  border: 1px solid transparent;
   padding: 4px 8px;
+  border-radius: 6px;
   font-size: 11px;
+  font-weight: 600;
   display: flex;
   align-items: center;
   gap: 4px;
+  transition: all 0.15s ease;
+}
+
+.chef-logout-btn:hover {
+  background: var(--brand-red-soft);
+  border-color: #fecaca;
 }
 
 /* Chef Login Screen */

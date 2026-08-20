@@ -47,8 +47,8 @@ const menu = [
   { id: 16, name: 'French Fries', desc: 'Crisp golden fries with seasoning', price: 89, category: 'Starters', color: 'yellow', mark: 'FF' },
   { id: 17, name: 'Gulab Jamun', desc: 'Warm milk dumplings in rose syrup', price: 79, category: 'Dessert', color: 'pink', mark: 'GJ' },
   { id: 18, name: 'Brownie with Ice Cream', desc: 'Warm chocolate brownie and vanilla scoop', price: 119, category: 'Dessert', color: 'coral', mark: 'BI' },
-  { id: 19, name: 'Masala Chai', desc: 'Assam tea with ginger and cardamom', price: 35, category: 'Drinks', color: 'orange', mark: 'MC' },
-  { id: 20, name: 'Fresh Lime Soda', desc: 'Sweet or salted chilled lime soda', price: 59, category: 'Drinks', color: 'green', mark: 'LS' },
+  { id: 19, name: 'Masala Chai', desc: 'Assam tea with ginger and cardamom', price: 35, category: 'Beverages', color: 'orange', mark: 'MC' },
+  { id: 20, name: 'Fresh Lime Soda', desc: 'Sweet or salted chilled lime soda', price: 59, category: 'Beverages', color: 'green', mark: 'LS' },
   { id: 21, name: 'Mysore Masala Dosa', desc: 'Spicy red chutney, potato masala, sambar', price: 149, category: 'Dosa', color: 'coral', mark: 'MM' },
   { id: 22, name: 'Onion Rava Dosa', desc: 'Crispy semolina dosa with onion and pepper', price: 139, category: 'Dosa', color: 'yellow', mark: 'OR' },
   { id: 23, name: 'Cheese Dosa', desc: 'Golden dosa, cheese, potato masala and chutney', price: 159, category: 'Dosa', color: 'cream', mark: 'CD' },
@@ -69,8 +69,8 @@ const menu = [
   { id: 38, name: 'Chicken Tikka', desc: 'Char-grilled chicken with mint chutney', price: 249, category: 'Starters', color: 'orange', mark: 'CT' },
   { id: 39, name: 'Mexican Veg Pizza', desc: 'Corn, peppers, jalapenos and mozzarella', price: 259, category: 'Italian', color: 'pink', mark: 'MX' },
   { id: 40, name: 'Grilled Chicken Sandwich', desc: 'Herbed chicken, lettuce, cheese and fries', price: 219, category: 'Continental', color: 'blue', mark: 'GS' },
-  { id: 41, name: 'Cold Coffee', desc: 'Creamy chilled coffee with vanilla ice cream', price: 89, category: 'Drinks', color: 'cream', mark: 'CF' },
-  { id: 42, name: 'Mango Lassi', desc: 'Thick yogurt drink with ripe mango', price: 79, category: 'Drinks', color: 'yellow', mark: 'ML' },
+  { id: 41, name: 'Cold Coffee', desc: 'Creamy chilled coffee with vanilla ice cream', price: 89, category: 'Beverages', color: 'cream', mark: 'CF' },
+  { id: 42, name: 'Mango Lassi', desc: 'Thick yogurt drink with ripe mango', price: 79, category: 'Beverages', color: 'yellow', mark: 'ML' },
   { id: 43, name: 'Chole Bhature', desc: 'Spiced chickpeas with fluffy fried bread', price: 159, category: 'Indian', color: 'orange', mark: 'CB' },
   { id: 44, name: 'Palak Paneer', desc: 'Paneer in a smooth spinach and garlic gravy', price: 229, category: 'Indian', color: 'green', mark: 'PP' },
   { id: 45, name: 'Chicken Curry', desc: 'Home-style chicken curry with warming spices', price: 269, category: 'Indian', color: 'coral', mark: 'CC' },
@@ -93,12 +93,48 @@ const menu = [
   { id: 62, name: 'Nachos Supreme', desc: 'Crisp nachos, salsa, beans and cheese', price: 169, category: 'Starters', color: 'orange', mark: 'NS' },
   { id: 63, name: 'Crispy Corn', desc: 'Golden fried corn with spices and lime', price: 129, category: 'Starters', color: 'green', mark: 'CC' },
   { id: 64, name: 'Kesar Pista Kulfi', desc: 'Traditional saffron and pistachio kulfi', price: 89, category: 'Dessert', color: 'cream', mark: 'KP' },
-  { id: 65, name: 'Chocolate Shake', desc: 'Thick chocolate shake with a scoop of ice cream', price: 99, category: 'Drinks', color: 'coral', mark: 'CS' },
-  { id: 66, name: 'Virgin Mojito', desc: 'Mint, lime and sparkling soda', price: 89, category: 'Drinks', color: 'green', mark: 'VM' },
-  { id: 67, name: 'Iced Tea', desc: 'Chilled lemon tea with mint', price: 69, category: 'Drinks', color: 'orange', mark: 'IT' }
+  { id: 65, name: 'Chocolate Shake', desc: 'Thick chocolate shake with a scoop of ice cream', price: 99, category: 'Beverages', color: 'coral', mark: 'CS' },
+  { id: 66, name: 'Virgin Mojito', desc: 'Mint, lime and sparkling soda', price: 89, category: 'Beverages', color: 'green', mark: 'VM' },
+  { id: 67, name: 'Iced Tea', desc: 'Chilled lemon tea with mint', price: 69, category: 'Beverages', color: 'orange', mark: 'IT' },
+  { id: 92, name: 'Red Bull Energy Drink (Can)', desc: 'Chilled iconic energy drink to vitalize body and mind', price: 165, category: 'Beverages', color: 'blue', mark: 'RB' },
+  { id: 93, name: 'Red Bull Sugarfree (Can)', desc: 'Wings without sugar, crisp and chilled', price: 165, category: 'Beverages', color: 'blue', mark: 'RS' },
+  { id: 94, name: 'Monster Energy Drink (Can)', desc: 'Smooth, bold energy blend with an intense punch', price: 175, category: 'Beverages', color: 'green', mark: 'ME' },
+  { id: 95, name: 'Ginger Ale (Can)', desc: 'Crisp, sparkling spiced ginger refresher', price: 89, category: 'Beverages', color: 'yellow', mark: 'GA' },
+  { id: 96, name: 'Tonic Water (Can)', desc: 'Effervescent botanical mixer with subtle citrus notes', price: 89, category: 'Beverages', color: 'blue', mark: 'TW' },
+  { id: 97, name: 'Diet Coke / Coke Zero (Can)', desc: 'Crisp, chilled zero-calorie sparkling cola', price: 69, category: 'Beverages', color: 'red', mark: 'DC' },
+  { id: 98, name: 'Coca-Cola / Thums Up (Can)', desc: 'Classic chilled carbonated soda', price: 59, category: 'Beverages', color: 'red', mark: 'CC' },
+  { id: 99, name: 'Blue Lagoon Mocktail', desc: 'Curacao syrup, crushed ice, lemon and fizzy sprite', price: 129, category: 'Beverages', color: 'blue', mark: 'BL' },
+  { id: 100, name: 'Fresh Watermelon Mint Juice', desc: 'Cold-pressed natural watermelon juice with fresh mint', price: 109, category: 'Beverages', color: 'pink', mark: 'WM' },
+  { id: 101, name: 'Perrier Sparkling Water', desc: 'Natural sparkling mineral water from France (330ml)', price: 159, category: 'Beverages', color: 'green', mark: 'PW' },
+  { id: 102, name: 'Sweet / Salted Lassi', desc: 'Traditional creamy churned yogurt drink with cardamom', price: 79, category: 'Beverages', color: 'cream', mark: 'SL' },
+  // Alcohol & Bar Section
+  { id: 68, name: 'Kingfisher Ultra (Pint)', desc: 'Crisp, premium lager with smooth malt finish', price: 249, category: 'Alcohol', color: 'yellow', mark: 'KF' },
+  { id: 69, name: 'Corona Extra with Lime', desc: 'Imported Mexican lager served with fresh lime', price: 349, category: 'Alcohol', color: 'yellow', mark: 'CE' },
+  { id: 70, name: 'Bira 91 White Wheat Beer', desc: 'Aromatic Belgian style wheat beer with citrus & coriander', price: 299, category: 'Alcohol', color: 'orange', mark: 'BW' },
+  { id: 71, name: 'Heineken Silver (Pint)', desc: 'Smooth, easy-drinking crisp European lager', price: 289, category: 'Alcohol', color: 'green', mark: 'HN' },
+  { id: 72, name: 'Budweiser Magnum', desc: 'Super-premium strong craft lager with rich maltiness', price: 279, category: 'Alcohol', color: 'coral', mark: 'BM' },
+  { id: 73, name: 'Long Island Iced Tea (LIIT)', desc: 'Vodka, gin, rum, tequila, triple sec & cola splash', price: 479, category: 'Alcohol', color: 'coral', mark: 'LI' },
+  { id: 74, name: 'Classic Old Fashioned', desc: 'Bourbon whiskey, aromatic bitters, orange peel & cane sugar', price: 449, category: 'Alcohol', color: 'orange', mark: 'OF' },
+  { id: 75, name: 'Smoked Whiskey Sour', desc: 'Bourbon whiskey, fresh citrus juice & aromatic bitters', price: 429, category: 'Alcohol', color: 'cream', mark: 'WS' },
+  { id: 76, name: 'Botanical Gin & Tonic', desc: 'Artisanal dry gin, elderflower tonic & fresh rosemary', price: 399, category: 'Alcohol', color: 'blue', mark: 'GT' },
+  { id: 77, name: 'Espresso Martini', desc: 'Vodka, fresh espresso shot, Kahlúa coffee liqueur', price: 429, category: 'Alcohol', color: 'purple', mark: 'EM' },
+  { id: 78, name: 'Passionfruit Spiked Mojito', desc: 'White rum, passionfruit pulp, fresh mint & sparkling soda', price: 369, category: 'Alcohol', color: 'green', mark: 'PM' },
+  { id: 79, name: 'Cosmopolitan Cocktail', desc: 'Citron vodka, triple sec, cranberry & flamed orange twist', price: 389, category: 'Alcohol', color: 'pink', mark: 'CP' },
+  { id: 80, name: 'Spicy Mango Margarita', desc: 'Tequila, triple sec, sweet mango, lime & tajín chili rim', price: 419, category: 'Alcohol', color: 'yellow', mark: 'MM' },
+  { id: 81, name: 'Glenfiddich 12 Yrs (60ml)', desc: 'Speyside single malt scotch with fresh pear & subtle oak', price: 599, category: 'Alcohol', color: 'amber', mark: 'GF' },
+  { id: 82, name: 'Johnnie Walker Black (60ml)', desc: 'Iconic 12-year blended scotch with deep smoky notes', price: 499, category: 'Alcohol', color: 'orange', mark: 'JW' },
+  { id: 83, name: 'Jameson Irish Whiskey (60ml)', desc: 'Triple-distilled Irish whiskey with smooth vanilla finish', price: 429, category: 'Alcohol', color: 'green', mark: 'JM' },
+  { id: 84, name: 'Grey Goose Vodka (60ml)', desc: 'Ultra-premium French wheat vodka on rocks or mixer', price: 469, category: 'Alcohol', color: 'blue', mark: 'GG' },
+  { id: 85, name: 'Bombay Sapphire Gin (60ml)', desc: 'Vapour-infused London dry gin with 10 exotic botanicals', price: 399, category: 'Alcohol', color: 'blue', mark: 'BS' },
+  { id: 86, name: 'Bacardi Carta Blanca Rum (60ml)', desc: 'Classic superior white rum with subtle almond & floral notes', price: 299, category: 'Alcohol', color: 'cream', mark: 'BC' },
+  { id: 87, name: 'Patrón Silver Tequila Shot', desc: '100% blue agave premium tequila with sea salt & lime', price: 349, category: 'Alcohol', color: 'green', mark: 'PT' },
+  { id: 88, name: 'Jägermeister Shot', desc: 'Legendary German herbal liqueur with 56 herbs & spices', price: 329, category: 'Alcohol', color: 'purple', mark: 'JM' },
+  { id: 89, name: 'Jacob’s Creek Cabernet (Glass)', desc: 'Australian red wine with ripe blackcurrant & oak notes', price: 399, category: 'Alcohol', color: 'wine', mark: 'JC' },
+  { id: 90, name: 'Sula Sauvignon Blanc (Glass)', desc: 'Crisp Indian white wine with refreshing aromas of guava', price: 349, category: 'Alcohol', color: 'yellow', mark: 'SB' },
+  { id: 91, name: 'Chandon Brut Sparkling (Glass)', desc: 'Elegant sparkling bubbly with green apple and brioche notes', price: 499, category: 'Alcohol', color: 'cream', mark: 'CB' }
 ];
 
-const eatingOrder = ['Starters', 'Dosa', 'Chinese', 'Italian', 'Continental', 'Indian', 'Breads', 'Dessert', 'Drinks'];
+const eatingOrder = ['Starters', 'Dosa', 'Chinese', 'Italian', 'Continental', 'Indian', 'Breads', 'Dessert', 'Beverages', 'Alcohol'];
 const categories = ['All', ...eatingOrder];
 const nonVegIds = new Set([1, 4, 8, 10, 13, 15, 38, 40, 45, 51, 56, 58]);
 const formatPrice = amount => `₹${Math.round(amount).toLocaleString('en-IN')}`;
@@ -180,7 +216,7 @@ function ChefLogin({ onLogin, onBackToMenu }) {
           <ChefHat size={32} />
         </div>
         <h2>Kitchen Portal Access</h2>
-        <p className="chef-login-subtitle">Poddars Food & Bar Kitchen Display System (KDS)</p>
+        <p className="chef-login-subtitle">The Poddar's Kitchen Display System (KDS)</p>
 
         {error && (
           <div className="chef-login-error">
@@ -960,13 +996,13 @@ function CustomerTracker({ orderId, onClose, onNewOrder }) {
               {isReady ? <Check size={14} /> : '2'}
             </div>
             <div className="tracker-step-content">
-              <b>Chef Approved & Cooking</b>
+              <b>{isReady ? 'Chef Cooking Completed' : 'Chef Approved & Cooking'}</b>
               <span>
                 {order.status === 'Preparing'
                   ? 'Your food is sizzling in the kitchen!'
                   : isReady
-                  ? 'Cooking finished'
-                  : 'Pending chef approval'}
+                  ? 'Dishes prepared and plated in kitchen'
+                  : 'Pending chef confirmation'}
               </span>
               {order.estimatedPrepTime && order.status === 'Preparing' && (
                 <div className="tracker-eta-badge">
@@ -983,13 +1019,19 @@ function CustomerTracker({ orderId, onClose, onNewOrder }) {
               {isCompleted ? <Check size={14} /> : '3'}
             </div>
             <div className="tracker-step-content">
-              <b>Food Ready!</b>
+              <b>{isCompleted ? 'Served & Completed' : 'Food Ready!'}</b>
               <span>
                 {order.status === 'Ready'
                   ? order.mode === 'Dine in'
-                    ? `Bringing directly to ${order.table || 'Table 12'}!`
-                    : 'Ready for pickup at counter!'
-                  : 'Preparing dishes...'}
+                    ? `Bringing freshly prepared dishes directly to ${order.table || 'Table 12'}!`
+                    : 'Dishes are packed and ready for pickup at the counter!'
+                  : isCompleted
+                  ? order.mode === 'Dine in'
+                    ? `Delivered to ${order.table || 'your table'}. Enjoy your meal!`
+                    : 'Order collected. Enjoy your meal!'
+                  : order.status === 'Preparing'
+                  ? 'Will be served hot as soon as cooking finishes'
+                  : 'Upcoming after cooking'}
               </span>
             </div>
           </div>
@@ -1090,12 +1132,14 @@ function App() {
 
   const visibleMenu = useMemo(() => {
     return menu
-      .filter(
-        item =>
-          (category === 'All' || item.category === category) &&
-          (diet === 'All' || (diet === 'Veg' ? !nonVegIds.has(item.id) : nonVegIds.has(item.id))) &&
-          item.name.toLowerCase().includes(search.toLowerCase())
-      )
+      .filter(item => {
+        const matchesCategory = category === 'All' || item.category === category;
+        const matchesDiet =
+          diet === 'All' ||
+          (diet === 'Veg' ? !nonVegIds.has(item.id) : nonVegIds.has(item.id));
+        const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+        return matchesCategory && matchesDiet && matchesSearch;
+      })
       .sort((first, second) => {
         const categoryOrder = eatingOrder.indexOf(first.category) - eatingOrder.indexOf(second.category);
         return categoryOrder || Number(nonVegIds.has(first.id)) - Number(nonVegIds.has(second.id));
@@ -1191,7 +1235,7 @@ function App() {
                 <UtensilsCrossed size={19} />
               </span>
               <span>
-                THE PODDARS
+                THE PODDAR'S
                 <br />
                 <i>food & bar</i>
               </span>
@@ -1236,7 +1280,7 @@ function App() {
 
           <section className="welcome">
             <div>
-              <p className="eyebrow">WELCOME TO SAFFRON</p>
+              <p className="eyebrow">WELCOME TO THE PODDAR'S</p>
               <h1>
                 Good food,
                 <br />
@@ -1294,7 +1338,7 @@ function App() {
             <div className="menu-top">
               <div>
                 <p className="eyebrow">EXPLORE THE MENU</p>
-                <h2>Indian favourites, made fresh.</h2>
+                <h2>Finest food & drinks, made fresh.</h2>
               </div>
               <label className="search">
                 <Search size={18} />
@@ -1491,7 +1535,7 @@ function App() {
 
           {/* Customer Footer with discreet Staff Portal Link */}
           <footer className="customer-footer">
-            <p>© {new Date().getFullYear()} The Poddars Food & Bar. Freshly prepared with love.</p>
+            <p>© {new Date().getFullYear()} The Poddar's Food & Bar. Freshly prepared with love.</p>
             <button
               type="button"
               className="staff-access-link"

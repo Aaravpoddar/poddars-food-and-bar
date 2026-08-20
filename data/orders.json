@@ -1,5 +1,90 @@
 [
   {
+    "id": "TP-115333",
+    "status": "Completed",
+    "createdAt": "2026-08-20T05:56:21.816Z",
+    "mode": "Dine in",
+    "table": "Table 12",
+    "items": [
+      {
+        "id": 71,
+        "name": "Heineken Silver (Pint)",
+        "price": 289,
+        "qty": 1,
+        "color": "green",
+        "mark": "HN"
+      },
+      {
+        "id": 73,
+        "name": "Long Island Iced Tea (LIIT)",
+        "price": 479,
+        "qty": 1,
+        "color": "coral",
+        "mark": "LI"
+      },
+      {
+        "id": 75,
+        "name": "Smoked Whiskey Sour",
+        "price": 429,
+        "qty": 1,
+        "color": "cream",
+        "mark": "WS"
+      },
+      {
+        "id": 76,
+        "name": "Botanical Gin & Tonic",
+        "price": 399,
+        "qty": 1,
+        "color": "blue",
+        "mark": "GT"
+      },
+      {
+        "id": 77,
+        "name": "Espresso Martini",
+        "price": 429,
+        "qty": 1,
+        "color": "purple",
+        "mark": "EM"
+      },
+      {
+        "id": 78,
+        "name": "Passionfruit Spiked Mojito",
+        "price": 369,
+        "qty": 1,
+        "color": "green",
+        "mark": "PM"
+      },
+      {
+        "id": 79,
+        "name": "Cosmopolitan Cocktail",
+        "price": 389,
+        "qty": 1,
+        "color": "pink",
+        "mark": "CP"
+      },
+      {
+        "id": 88,
+        "name": "Jägermeister Shot",
+        "price": 329,
+        "qty": 1,
+        "color": "purple",
+        "mark": "JM"
+      }
+    ],
+    "instructions": "Give a Red Bull",
+    "subtotal": 3112,
+    "gst": 155.60000000000002,
+    "total": 3267.6,
+    "estimatedPrepTime": 10,
+    "approvedAt": "2026-08-20T05:56:46.628Z",
+    "readyAt": "2026-08-20T05:56:53.222Z",
+    "completedAt": "2026-08-20T05:56:59.588Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "Chef Aarav"
+  },
+  {
     "id": "TP-538736",
     "status": "Completed",
     "createdAt": "2026-08-20T04:34:01.811Z",

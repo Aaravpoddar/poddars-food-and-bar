@@ -3,65 +3,82 @@ import { createRoot } from 'react-dom/client';
 import {
   AlertTriangle,
   ArrowLeft,
+  Beer,
   Bell,
+  Cake,
   Check,
   CheckCircle2,
   ChefHat,
   Clock,
   Clock3,
+  Coffee,
   Flame,
+  GlassWater,
+  IceCream,
   Lock,
   LogOut,
   MapPin,
+  Martini,
   Minus,
+  Pizza,
   Plus,
   RefreshCw,
   Search,
   ShieldCheck,
   ShoppingBag,
+  Soup,
+  Sparkles,
+  Star,
   Trash2,
   User,
+  Utensils,
   UtensilsCrossed,
   Volume2,
   VolumeX,
-  X
+  Wine,
+  X,
+  Zap,
+  Receipt,
+  Printer,
+  CreditCard,
+  QrCode
 } from 'lucide-react';
 import './style.css';
 
 const menu = [
-  { id: 1, name: 'Butter Chicken', desc: 'Tandoori chicken in creamy tomato gravy', price: 289, category: 'Indian', color: 'coral', mark: 'BC', image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=600&auto=format&fit=crop&q=80' },
+  { id: 1, name: 'Butter Chicken', desc: 'Tandoori chicken in creamy tomato gravy', price: 289, category: 'Indian', color: 'coral', mark: 'BC', image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600&auto=format&fit=crop&q=80' },
   { id: 2, name: 'Paneer Tikka Masala', desc: 'Charred paneer in rich makhani gravy', price: 249, category: 'Indian', color: 'cream', mark: 'PT', image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&auto=format&fit=crop&q=80' },
   { id: 3, name: 'Rajma Chawal', desc: 'Slow-cooked rajma with steamed basmati rice', price: 159, category: 'Indian', color: 'green', mark: 'RC', image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80' },
   { id: 4, name: 'Chicken Biryani', desc: 'Aromatic basmati, chicken, fried onions and raita', price: 249, category: 'Indian', color: 'blue', mark: 'CB', image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80' },
   { id: 5, name: 'Samosa Chaat', desc: 'Crisp samosa, chickpeas, chutneys and sev', price: 99, category: 'Starters', color: 'yellow', mark: 'SC', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&auto=format&fit=crop&q=80' },
   { id: 6, name: 'Masala Dosa', desc: 'Crisp dosa, potato masala, sambar and chutney', price: 129, category: 'Dosa', color: 'purple', mark: 'MD', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80' },
   { id: 7, name: 'Veg Hakka Noodles', desc: 'Wok-tossed noodles with crunchy vegetables', price: 169, category: 'Chinese', color: 'pink', mark: 'VN', image: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=600&auto=format&fit=crop&q=80' },
-  { id: 8, name: 'Chilli Chicken', desc: 'Crispy chicken, peppers and chilli sauce', price: 219, category: 'Chinese', color: 'orange', mark: 'CC', image: 'https://images.unsplash.com/photo-1525755662778-989d0524087e?w=600&auto=format&fit=crop&q=80' },
-  { id: 9, name: 'Veg Manchurian', desc: 'Vegetable dumplings in a tangy soy sauce', price: 179, category: 'Chinese', color: 'green', mark: 'VM', image: 'https://images.unsplash.com/photo-1569718212165-3a8278d5f624?w=600&auto=format&fit=crop&q=80' },
+  { id: 8, name: 'Chilli Chicken', desc: 'Crispy chicken, peppers and chilli sauce', price: 219, category: 'Chinese', color: 'orange', mark: 'CC', image: 'https://images.unsplash.com/photo-1567620832903-9fc6debc209f?w=600&auto=format&fit=crop&q=80' },
+  { id: 9, name: 'Veg Manchurian', desc: 'Vegetable dumplings in a tangy soy sauce', price: 179, category: 'Chinese', color: 'green', mark: 'VM', image: 'https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=600&auto=format&fit=crop&q=80' },
   { id: 10, name: 'Chicken Fried Rice', desc: 'Wok-fried rice, chicken, egg and vegetables', price: 199, category: 'Chinese', color: 'coral', mark: 'FR', image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&auto=format&fit=crop&q=80' },
   { id: 11, name: 'Margherita Pizza', desc: 'Tomato, mozzarella and fresh basil', price: 229, category: 'Italian', color: 'yellow', mark: 'MP', image: 'https://images.unsplash.com/photo-1604382355076-af4b0eb60143?w=600&auto=format&fit=crop&q=80' },
-  { id: 12, name: 'White Sauce Pasta', desc: 'Penne, creamy herb sauce and sweet corn', price: 199, category: 'Italian', color: 'cream', mark: 'WP', image: 'https://images.unsplash.com/photo-1608897013039-887f21d8c804?w=600&auto=format&fit=crop&q=80' },
+  { id: 12, name: 'White Sauce Pasta', desc: 'Penne, creamy herb sauce and sweet corn', price: 199, category: 'Italian', color: 'cream', mark: 'WP', image: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281093?w=600&auto=format&fit=crop&q=80' },
   { id: 13, name: 'Chicken Alfredo Pasta', desc: 'Grilled chicken, penne and parmesan sauce', price: 269, category: 'Italian', color: 'blue', mark: 'CA', image: 'https://images.unsplash.com/photo-1645112411341-6c4fd023714a?w=600&auto=format&fit=crop&q=80' },
   { id: 14, name: 'Veg Club Sandwich', desc: 'Grilled vegetables, cheese and house spread', price: 159, category: 'Continental', color: 'purple', mark: 'VS', image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80' },
   { id: 15, name: 'Crispy Chicken Burger', desc: 'Fried chicken, lettuce, cheese and fries', price: 229, category: 'Continental', color: 'orange', mark: 'CB', image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80' },
-  { id: 16, name: 'French Fries', desc: 'Crisp golden fries with seasoning', price: 89, category: 'Starters', color: 'yellow', mark: 'FF', image: 'https://images.unsplash.com/photo-1573080496219-bb080dd4f877?w=600&auto=format&fit=crop&q=80' },
+  { id: 16, name: 'French Fries', desc: 'Crisp golden fries with seasoning', price: 89, category: 'Starters', color: 'yellow', mark: 'FF', image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80' },
   { id: 17, name: 'Gulab Jamun', desc: 'Warm milk dumplings in rose syrup', price: 79, category: 'Dessert', color: 'pink', mark: 'GJ', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
-  { id: 18, name: 'Brownie with Ice Cream', desc: 'Warm chocolate brownie and vanilla scoop', price: 119, category: 'Dessert', color: 'coral', mark: 'BI', image: 'https://images.unsplash.com/photo-1606313564200-e75d5e30476c?w=600&auto=format&fit=crop&q=80' },
+  { id: 18, name: 'Brownie with Ice Cream', desc: 'Warm chocolate brownie and vanilla scoop', price: 119, category: 'Dessert', color: 'coral', mark: 'BI', image: 'https://images.unsplash.com/photo-1564355808539-22fda35bed7e?w=600&auto=format&fit=crop&q=80' },
   { id: 19, name: 'Masala Chai', desc: 'Assam tea with ginger and cardamom', price: 35, category: 'Beverages', color: 'orange', mark: 'MC', image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80' },
   { id: 20, name: 'Fresh Lime Soda', desc: 'Sweet or salted chilled lime soda', price: 59, category: 'Beverages', color: 'green', mark: 'LS', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80' },
-  { id: 21, name: 'Mysore Masala Dosa', desc: 'Spicy red chutney, potato masala, sambar', price: 149, category: 'Dosa', color: 'coral', mark: 'MM', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
+  { id: 21, name: 'Mysore Masala Dosa', desc: 'Spicy red chutney, potato masala, sambar', price: 149, category: 'Dosa', color: 'coral', mark: 'MM', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80' },
   { id: 22, name: 'Onion Rava Dosa', desc: 'Crispy semolina dosa with onion and pepper', price: 139, category: 'Dosa', color: 'yellow', mark: 'OR', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80' },
-  { id: 23, name: 'Cheese Dosa', desc: 'Golden dosa, cheese, potato masala and chutney', price: 159, category: 'Dosa', color: 'cream', mark: 'CD', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
+  { id: 23, name: 'Cheese Dosa', desc: 'Golden dosa, cheese, potato masala and chutney', price: 159, category: 'Dosa', color: 'cream', mark: 'CD', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80' },
   { id: 24, name: 'Plain Dosa', desc: 'Classic crisp dosa served with sambar and chutneys', price: 89, category: 'Dosa', color: 'green', mark: 'PD', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80' },
-  { id: 25, name: 'Butter Naan', desc: 'Soft tandoor-baked naan brushed with butter', price: 45, category: 'Breads', color: 'orange', mark: 'BN', image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?w=600&auto=format&fit=crop&q=80' },
+  { id: 25, name: 'Butter Naan', desc: 'Soft tandoor-baked naan brushed with butter', price: 45, category: 'Breads', color: 'orange', mark: 'BN', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&auto=format&fit=crop&q=80' },
   { id: 26, name: 'Garlic Naan', desc: 'Tandoor naan with garlic, coriander and butter', price: 55, category: 'Breads', color: 'purple', mark: 'GN', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&auto=format&fit=crop&q=80' },
-  { id: 27, name: 'Tandoori Roti', desc: 'Whole-wheat bread straight from the tandoor', price: 25, category: 'Breads', color: 'yellow', mark: 'TR', image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&auto=format&fit=crop&q=80' },
-  { id: 28, name: 'Laccha Paratha', desc: 'Flaky layered whole-wheat paratha', price: 45, category: 'Breads', color: 'blue', mark: 'LP', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
-  { id: 29, name: 'Rasmalai', desc: 'Saffron milk dumplings with pistachio', price: 99, category: 'Dessert', color: 'cream', mark: 'RM', image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=600&auto=format&fit=crop&q=80' },
-  { id: 30, name: 'Kulfi Falooda', desc: 'Malai kulfi, vermicelli, basil seeds and rose syrup', price: 109, category: 'Dessert', color: 'pink', mark: 'KF', image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=600&auto=format&fit=crop&q=80' },
+  { id: 27, name: 'Tandoori Roti', desc: 'Whole-wheat bread straight from the tandoor', price: 25, category: 'Breads', color: 'yellow', mark: 'TR', image: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=600&auto=format&fit=crop&q=80' },
+  { id: 28, name: 'Laccha Paratha', desc: 'Flaky layered whole-wheat paratha', price: 45, category: 'Breads', color: 'blue', mark: 'LP', image: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=600&auto=format&fit=crop&q=80' },
+  { id: 29, name: 'Rasmalai', desc: 'Saffron milk dumplings with pistachio', price: 99, category: 'Dessert', color: 'cream', mark: 'RM', image: 'https://images.unsplash.com/photo-1541832676-9b763b0239ab?w=600&auto=format&fit=crop&q=80' },
+  { id: 30, name: 'Kulfi Falooda', desc: 'Malai kulfi, vermicelli, basil seeds and rose syrup', price: 109, category: 'Dessert', color: 'pink', mark: 'KF', image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=600&auto=format&fit=crop&q=80' },
   { id: 31, name: 'Ice Cream Sundae', desc: 'Vanilla ice cream, chocolate sauce and nuts', price: 89, category: 'Dessert', color: 'blue', mark: 'IS', image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=600&auto=format&fit=crop&q=80' },
-  { id: 32, name: 'Carrot Halwa', desc: 'Slow-cooked gajar halwa with almonds', price: 79, category: 'Dessert', color: 'orange', mark: 'GH', image: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=600&auto=format&fit=crop&q=80' },
-  { id: 33, name: 'Dal Makhani', desc: 'Creamy black lentils slow-cooked overnight', price: 189, category: 'Indian', color: 'purple', mark: 'DM', image: 'https://images.unsplash.com/photo-1546833998-877b37c2e5c6?w=600&auto=format&fit=crop&q=80' },
+  { id: 32, name: 'Carrot Halwa', desc: 'Slow-cooked gajar halwa with almonds', price: 79, category: 'Dessert', color: 'orange', mark: 'GH', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
+  { id: 33, name: 'Dal Makhani', desc: 'Creamy black lentils slow-cooked overnight', price: 189, category: 'Indian', color: 'purple', mark: 'DM', image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80' },
   { id: 34, name: 'Kadai Paneer', desc: 'Paneer, capsicum and onion in a spiced gravy', price: 239, category: 'Indian', color: 'coral', mark: 'KP', image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&auto=format&fit=crop&q=80' },
   { id: 35, name: 'Veg Thali', desc: 'Dal, seasonal vegetables, rice, roti and salad', price: 199, category: 'Indian', color: 'yellow', mark: 'VT', image: 'https://images.unsplash.com/photo-1610057099443-fde8c4d50f91?w=600&auto=format&fit=crop&q=80' },
   { id: 36, name: 'Idli Sambar', desc: 'Four soft idlis with sambar and chutneys', price: 99, category: 'Dosa', color: 'cream', mark: 'IS', image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80' },
@@ -69,75 +86,110 @@ const menu = [
   { id: 38, name: 'Chicken Tikka', desc: 'Char-grilled chicken with mint chutney', price: 249, category: 'Starters', color: 'orange', mark: 'CT', image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=600&auto=format&fit=crop&q=80' },
   { id: 39, name: 'Mexican Veg Pizza', desc: 'Corn, peppers, jalapenos and mozzarella', price: 259, category: 'Italian', color: 'pink', mark: 'MX', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80' },
   { id: 40, name: 'Grilled Chicken Sandwich', desc: 'Herbed chicken, lettuce, cheese and fries', price: 219, category: 'Continental', color: 'blue', mark: 'GS', image: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?w=600&auto=format&fit=crop&q=80' },
-  { id: 41, name: 'Cold Coffee', desc: 'Creamy chilled coffee with vanilla ice cream', price: 89, category: 'Beverages', color: 'cream', mark: 'CF', image: 'https://images.unsplash.com/photo-1517256064527-09c73fc73e38?w=600&auto=format&fit=crop&q=80' },
-  { id: 42, name: 'Mango Lassi', desc: 'Thick yogurt drink with ripe mango', price: 79, category: 'Beverages', color: 'yellow', mark: 'ML', image: 'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=600&auto=format&fit=crop&q=80' },
+  { id: 41, name: 'Cold Coffee', desc: 'Creamy chilled coffee with vanilla ice cream', price: 89, category: 'Beverages', color: 'cream', mark: 'CF', image: 'https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?w=600&auto=format&fit=crop&q=80' },
+  { id: 42, name: 'Mango Lassi', desc: 'Thick yogurt drink with ripe mango', price: 79, category: 'Beverages', color: 'yellow', mark: 'ML', image: 'https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=600&auto=format&fit=crop&q=80' },
   { id: 43, name: 'Chole Bhature', desc: 'Spiced chickpeas with fluffy fried bread', price: 159, category: 'Indian', color: 'orange', mark: 'CB', image: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=600&auto=format&fit=crop&q=80' },
   { id: 44, name: 'Palak Paneer', desc: 'Paneer in a smooth spinach and garlic gravy', price: 229, category: 'Indian', color: 'green', mark: 'PP', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&auto=format&fit=crop&q=80' },
-  { id: 45, name: 'Chicken Curry', desc: 'Home-style chicken curry with warming spices', price: 269, category: 'Indian', color: 'coral', mark: 'CC', image: 'https://images.unsplash.com/photo-1589302168068-964664d93dc0?w=600&auto=format&fit=crop&q=80' },
+  { id: 45, name: 'Chicken Curry', desc: 'Home-style chicken curry with warming spices', price: 269, category: 'Indian', color: 'coral', mark: 'CC', image: 'https://images.unsplash.com/photo-1588166524941-3bf61a9c41db?w=600&auto=format&fit=crop&q=80' },
   { id: 46, name: 'Podi Dosa', desc: 'Crisp dosa dusted with spiced lentil powder', price: 139, category: 'Dosa', color: 'orange', mark: 'PD', image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80' },
-  { id: 47, name: 'Stuffed Kulcha', desc: 'Tandoor bread filled with potato and spices', price: 75, category: 'Breads', color: 'yellow', mark: 'SK', image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?w=600&auto=format&fit=crop&q=80' },
-  { id: 48, name: 'Missi Roti', desc: 'Spiced gram flour and wheat flatbread', price: 35, category: 'Breads', color: 'cream', mark: 'MR', image: 'https://images.unsplash.com/photo-1565557623262-b51c2513a641?w=600&auto=format&fit=crop&q=80' },
-  { id: 49, name: 'Cheese Garlic Bread', desc: 'Toasted bread with garlic butter and cheese', price: 89, category: 'Breads', color: 'pink', mark: 'GB', image: 'https://images.unsplash.com/photo-1619860860774-1e2e17343432?w=600&auto=format&fit=crop&q=80' },
+  { id: 47, name: 'Stuffed Kulcha', desc: 'Tandoor bread filled with potato and spices', price: 75, category: 'Breads', color: 'yellow', mark: 'SK', image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&auto=format&fit=crop&q=80' },
+  { id: 48, name: 'Missi Roti', desc: 'Spiced gram flour and wheat flatbread', price: 35, category: 'Breads', color: 'cream', mark: 'MR', image: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=600&auto=format&fit=crop&q=80' },
+  { id: 49, name: 'Cheese Garlic Bread', desc: 'Toasted bread with garlic butter and cheese', price: 89, category: 'Breads', color: 'pink', mark: 'GB', image: 'https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?w=600&auto=format&fit=crop&q=80' },
   { id: 50, name: 'Veg Schezwan Rice', desc: 'Wok-fried rice in a bold schezwan sauce', price: 179, category: 'Chinese', color: 'red', mark: 'SR', image: 'https://images.unsplash.com/photo-1603133872878-684f208fb84b?w=600&auto=format&fit=crop&q=80' },
-  { id: 51, name: 'Chicken Momos', desc: 'Steamed chicken dumplings with chilli chutney', price: 149, category: 'Chinese', color: 'blue', mark: 'CM', image: 'https://images.unsplash.com/photo-1625246333195-78d9c38ad449?w=600&auto=format&fit=crop&q=80' },
-  { id: 52, name: 'Honey Chilli Potato', desc: 'Crisp potato tossed in sweet chilli sauce', price: 139, category: 'Chinese', color: 'yellow', mark: 'HP', image: 'https://images.unsplash.com/photo-1585032226651-759b368d7246?w=600&auto=format&fit=crop&q=80' },
+  { id: 51, name: 'Chicken Momos', desc: 'Steamed chicken dumplings with chilli chutney', price: 149, category: 'Chinese', color: 'blue', mark: 'CM', image: 'https://images.unsplash.com/photo-1625220194771-7ebdea0b70b9?w=600&auto=format&fit=crop&q=80' },
+  { id: 52, name: 'Honey Chilli Potato', desc: 'Crisp potato tossed in sweet chilli sauce', price: 139, category: 'Chinese', color: 'yellow', mark: 'HP', image: 'https://images.unsplash.com/photo-1576107232684-1279f3908594?w=600&auto=format&fit=crop&q=80' },
   { id: 53, name: 'Sweet Corn Soup', desc: 'Comforting soup with corn and vegetables', price: 99, category: 'Chinese', color: 'cream', mark: 'CS', image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&auto=format&fit=crop&q=80' },
   { id: 54, name: 'Veg Arrabbiata Pasta', desc: 'Penne in a spicy tomato and herb sauce', price: 189, category: 'Italian', color: 'coral', mark: 'AP', image: 'https://images.unsplash.com/photo-1551183053-bf91a1d81141?w=600&auto=format&fit=crop&q=80' },
-  { id: 55, name: 'Farmhouse Pizza', desc: 'Mushroom, corn, peppers and mozzarella', price: 279, category: 'Italian', color: 'green', mark: 'FP', image: 'https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=600&auto=format&fit=crop&q=80' },
+  { id: 55, name: 'Farmhouse Pizza', desc: 'Mushroom, corn, peppers and mozzarella', price: 279, category: 'Italian', color: 'green', mark: 'FP', image: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?w=600&auto=format&fit=crop&q=80' },
   { id: 56, name: 'Chicken Lasagna', desc: 'Layers of chicken, pasta and béchamel sauce', price: 299, category: 'Italian', color: 'orange', mark: 'CL', image: 'https://images.unsplash.com/photo-1574894709920-11b28e7367e3?w=600&auto=format&fit=crop&q=80' },
   { id: 57, name: 'Veg Burger', desc: 'Crispy veg patty, cheese and fries', price: 169, category: 'Continental', color: 'green', mark: 'VB', image: 'https://images.unsplash.com/photo-1550547660-d9450f859349?w=600&auto=format&fit=crop&q=80' },
-  { id: 58, name: 'Fish and Chips', desc: 'Crispy fish fillet with seasoned fries', price: 279, category: 'Continental', color: 'blue', mark: 'FC', image: 'https://images.unsplash.com/photo-1579888944880-d98341245702?w=600&auto=format&fit=crop&q=80' },
+  { id: 58, name: 'Fish and Chips', desc: 'Crispy fish fillet with seasoned fries', price: 279, category: 'Continental', color: 'blue', mark: 'FC', image: 'https://images.unsplash.com/photo-1579208575657-c595a053b9b7?w=600&auto=format&fit=crop&q=80' },
   { id: 59, name: 'Grilled Veggies', desc: 'Seasonal vegetables with herb butter', price: 149, category: 'Continental', color: 'purple', mark: 'GV', image: 'https://images.unsplash.com/photo-1540420773420-3366772f4999?w=600&auto=format&fit=crop&q=80' },
   { id: 60, name: 'Tomato Basil Soup', desc: 'Creamy tomato soup with croutons', price: 99, category: 'Continental', color: 'coral', mark: 'TS', image: 'https://images.unsplash.com/photo-1547592166-23ac45744acd?w=600&auto=format&fit=crop&q=80' },
-  { id: 61, name: 'Paneer Tikka', desc: 'Char-grilled paneer with mint chutney', price: 199, category: 'Starters', color: 'yellow', mark: 'PK', image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&auto=format&fit=crop&q=80' },
+  { id: 61, name: 'Paneer Tikka', desc: 'Char-grilled paneer with mint chutney', price: 199, category: 'Starters', color: 'yellow', mark: 'PK', image: 'https://images.unsplash.com/photo-1599488615731-7e5c2823ff28?w=600&auto=format&fit=crop&q=80' },
   { id: 62, name: 'Nachos Supreme', desc: 'Crisp nachos, salsa, beans and cheese', price: 169, category: 'Starters', color: 'orange', mark: 'NS', image: 'https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?w=600&auto=format&fit=crop&q=80' },
-  { id: 63, name: 'Crispy Corn', desc: 'Golden fried corn with spices and lime', price: 129, category: 'Starters', color: 'green', mark: 'CC', image: 'https://images.unsplash.com/photo-1551754655-cd27e38d2076?w=600&auto=format&fit=crop&q=80' },
-  { id: 64, name: 'Kesar Pista Kulfi', desc: 'Traditional saffron and pistachio kulfi', price: 89, category: 'Dessert', color: 'cream', mark: 'KP', image: 'https://images.unsplash.com/photo-1579954115545-a95591f28bfc?w=600&auto=format&fit=crop&q=80' },
+  { id: 63, name: 'Crispy Corn', desc: 'Golden fried corn with spices and lime', price: 129, category: 'Starters', color: 'green', mark: 'CC', image: 'https://images.unsplash.com/photo-1551782450-a2132b4ba21d?w=600&auto=format&fit=crop&q=80' },
+  { id: 64, name: 'Kesar Pista Kulfi', desc: 'Traditional saffron and pistachio kulfi', price: 89, category: 'Dessert', color: 'cream', mark: 'KP', image: 'https://images.unsplash.com/photo-1563805042-7684c019e1cb?w=600&auto=format&fit=crop&q=80' },
   { id: 65, name: 'Chocolate Shake', desc: 'Thick chocolate shake with a scoop of ice cream', price: 99, category: 'Beverages', color: 'coral', mark: 'CS', image: 'https://images.unsplash.com/photo-1572490122747-3968b75cc699?w=600&auto=format&fit=crop&q=80' },
   { id: 66, name: 'Virgin Mojito', desc: 'Mint, lime and sparkling soda', price: 89, category: 'Beverages', color: 'green', mark: 'VM', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80' },
   { id: 67, name: 'Iced Tea', desc: 'Chilled lemon tea with mint', price: 69, category: 'Beverages', color: 'orange', mark: 'IT', image: 'https://images.unsplash.com/photo-1556679343-c7306c1976bc?w=600&auto=format&fit=crop&q=80' },
-  { id: 92, name: 'Red Bull Energy Drink (Can)', desc: 'Chilled iconic energy drink to vitalize body and mind', price: 165, category: 'Beverages', color: 'blue', mark: 'RB', image: 'https://images.unsplash.com/photo-1527661591475-527312dd65f5?w=600&auto=format&fit=crop&q=80' },
-  { id: 93, name: 'Red Bull Sugarfree (Can)', desc: 'Wings without sugar, crisp and chilled', price: 165, category: 'Beverages', color: 'blue', mark: 'RS', image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600&auto=format&fit=crop&q=80' },
-  { id: 94, name: 'Monster Energy Drink (Can)', desc: 'Smooth, bold energy blend with an intense punch', price: 175, category: 'Beverages', color: 'green', mark: 'ME', image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80' },
+  { id: 92, name: 'Red Bull Energy Drink (Can)', desc: 'Chilled iconic energy drink to vitalize body and mind', price: 165, category: 'Beverages', color: 'blue', mark: 'RB', image: 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=600&auto=format&fit=crop&q=80' },
+  { id: 93, name: 'Red Bull Sugarfree (Can)', desc: 'Wings without sugar, crisp and chilled', price: 165, category: 'Beverages', color: 'blue', mark: 'RS', image: 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=600&auto=format&fit=crop&q=80' },
+  { id: 94, name: 'Monster Energy Drink (Can)', desc: 'Smooth, bold energy blend with an intense punch', price: 175, category: 'Beverages', color: 'green', mark: 'ME', image: 'https://images.unsplash.com/photo-1622543925917-763c34d1a86e?w=600&auto=format&fit=crop&q=80' },
   { id: 95, name: 'Ginger Ale (Can)', desc: 'Crisp, sparkling spiced ginger refresher', price: 89, category: 'Beverages', color: 'yellow', mark: 'GA', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80' },
-  { id: 96, name: 'Tonic Water (Can)', desc: 'Effervescent botanical mixer with subtle citrus notes', price: 89, category: 'Beverages', color: 'blue', mark: 'TW', image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&auto=format&fit=crop&q=80' },
-  { id: 97, name: 'Diet Coke / Coke Zero (Can)', desc: 'Crisp, chilled zero-calorie sparkling cola', price: 69, category: 'Beverages', color: 'red', mark: 'DC', image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80' },
+  { id: 96, name: 'Tonic Water (Can)', desc: 'Effervescent botanical mixer with subtle citrus notes', price: 89, category: 'Beverages', color: 'blue', mark: 'TW', image: 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600&auto=format&fit=crop&q=80' },
+  { id: 97, name: 'Diet Coke / Coke Zero (Can)', desc: 'Crisp, chilled zero-calorie sparkling cola', price: 69, category: 'Beverages', color: 'red', mark: 'DC', image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&auto=format&fit=crop&q=80' },
   { id: 98, name: 'Coca-Cola / Thums Up (Can)', desc: 'Classic chilled carbonated soda', price: 59, category: 'Beverages', color: 'red', mark: 'CC', image: 'https://images.unsplash.com/photo-1554866585-cd94860890b7?w=600&auto=format&fit=crop&q=80' },
-  { id: 99, name: 'Blue Lagoon Mocktail', desc: 'Curacao syrup, crushed ice, lemon and fizzy sprite', price: 129, category: 'Beverages', color: 'blue', mark: 'BL', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80' },
+  { id: 99, name: 'Blue Lagoon Mocktail', desc: 'Curacao syrup, crushed ice, lemon and fizzy sprite', price: 129, category: 'Beverages', color: 'blue', mark: 'BL', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80' },
   { id: 100, name: 'Fresh Watermelon Mint Juice', desc: 'Cold-pressed natural watermelon juice with fresh mint', price: 109, category: 'Beverages', color: 'pink', mark: 'WM', image: 'https://images.unsplash.com/photo-1589733955941-5eeaf752f6dd?w=600&auto=format&fit=crop&q=80' },
-  { id: 101, name: 'Perrier Sparkling Water', desc: 'Natural sparkling mineral water from France (330ml)', price: 159, category: 'Beverages', color: 'green', mark: 'PW', image: 'https://images.unsplash.com/photo-1559839914-17aae19cec71?w=600&auto=format&fit=crop&q=80' },
-  { id: 102, name: 'Sweet / Salted Lassi', desc: 'Traditional creamy churned yogurt drink with cardamom', price: 79, category: 'Beverages', color: 'cream', mark: 'SL', image: 'https://images.unsplash.com/photo-1571115177098-24ec42ed204d?w=600&auto=format&fit=crop&q=80' },
+  { id: 101, name: 'Perrier Sparkling Water', desc: 'Natural sparkling mineral water from France (330ml)', price: 159, category: 'Beverages', color: 'green', mark: 'PW', image: 'https://images.unsplash.com/photo-1548839140-29a749e1bc4e?w=600&auto=format&fit=crop&q=80' },
+  { id: 102, name: 'Sweet / Salted Lassi', desc: 'Traditional creamy churned yogurt drink with cardamom', price: 79, category: 'Beverages', color: 'cream', mark: 'SL', image: 'https://images.unsplash.com/photo-1525385133512-2f3bdd039054?w=600&auto=format&fit=crop&q=80' },
   // Alcohol & Bar Section
-  { id: 68, name: 'Kingfisher Ultra (Pint)', desc: 'Crisp, premium lager with smooth malt finish', price: 249, category: 'Alcohol', color: 'yellow', mark: 'KF', image: 'https://images.unsplash.com/photo-1608270586620-248524c67de9?w=600&auto=format&fit=crop&q=80' },
+  { id: 68, name: 'Kingfisher Ultra (Pint)', desc: 'Crisp, premium lager with smooth malt finish', price: 249, category: 'Alcohol', color: 'yellow', mark: 'KF', image: 'https://images.unsplash.com/photo-1608270546103-975c7429009e?w=600&auto=format&fit=crop&q=80' },
   { id: 69, name: 'Corona Extra with Lime', desc: 'Imported Mexican lager served with fresh lime', price: 349, category: 'Alcohol', color: 'yellow', mark: 'CE', image: 'https://images.unsplash.com/photo-1584225064785-c62a8b43d148?w=600&auto=format&fit=crop&q=80' },
-  { id: 70, name: 'Bira 91 White Wheat Beer', desc: 'Aromatic Belgian style wheat beer with citrus & coriander', price: 299, category: 'Alcohol', color: 'orange', mark: 'BW', image: 'https://images.unsplash.com/photo-1618183479302-1e0aa382c36b?w=600&auto=format&fit=crop&q=80' },
-  { id: 71, name: 'Heineken Silver (Pint)', desc: 'Smooth, easy-drinking crisp European lager', price: 289, category: 'Alcohol', color: 'green', mark: 'HN', image: 'https://images.unsplash.com/photo-1618886614638-80e3c103d31a?w=600&auto=format&fit=crop&q=80' },
-  { id: 72, name: 'Budweiser Magnum', desc: 'Super-premium strong craft lager with rich maltiness', price: 279, category: 'Alcohol', color: 'coral', mark: 'BM', image: 'https://images.unsplash.com/photo-1535958636474-b021ee887b13?w=600&auto=format&fit=crop&q=80' },
+  { id: 70, name: 'Bira 91 White Wheat Beer', desc: 'Aromatic Belgian style wheat beer with citrus & coriander', price: 299, category: 'Alcohol', color: 'orange', mark: 'BW', image: 'https://images.unsplash.com/photo-1608270546103-975c7429009e?w=600&auto=format&fit=crop&q=80' },
+  { id: 71, name: 'Heineken Silver (Pint)', desc: 'Smooth, easy-drinking crisp European lager', price: 289, category: 'Alcohol', color: 'green', mark: 'HN', image: 'https://images.unsplash.com/photo-1584225064785-c62a8b43d148?w=600&auto=format&fit=crop&q=80' },
+  { id: 72, name: 'Budweiser Magnum', desc: 'Super-premium strong craft lager with rich maltiness', price: 279, category: 'Alcohol', color: 'coral', mark: 'BM', image: 'https://images.unsplash.com/photo-1608270546103-975c7429009e?w=600&auto=format&fit=crop&q=80' },
   { id: 73, name: 'Long Island Iced Tea (LIIT)', desc: 'Vodka, gin, rum, tequila, triple sec & cola splash', price: 479, category: 'Alcohol', color: 'coral', mark: 'LI', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80' },
   { id: 74, name: 'Classic Old Fashioned', desc: 'Bourbon whiskey, aromatic bitters, orange peel & cane sugar', price: 449, category: 'Alcohol', color: 'orange', mark: 'OF', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80' },
-  { id: 75, name: 'Smoked Whiskey Sour', desc: 'Bourbon whiskey, fresh citrus juice & aromatic bitters', price: 429, category: 'Alcohol', color: 'cream', mark: 'WS', image: 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600&auto=format&fit=crop&q=80' },
-  { id: 76, name: 'Botanical Gin & Tonic', desc: 'Artisanal dry gin, elderflower tonic & fresh rosemary', price: 399, category: 'Alcohol', color: 'blue', mark: 'GT', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80' },
-  { id: 77, name: 'Espresso Martini', desc: 'Vodka, fresh espresso shot, Kahlúa coffee liqueur', price: 429, category: 'Alcohol', color: 'purple', mark: 'EM', image: 'https://images.unsplash.com/photo-1545438102-799c3991ffb2?w=600&auto=format&fit=crop&q=80' },
+  { id: 75, name: 'Smoked Whiskey Sour', desc: 'Bourbon whiskey, fresh citrus juice & aromatic bitters', price: 429, category: 'Alcohol', color: 'cream', mark: 'WS', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80' },
+  { id: 76, name: 'Botanical Gin & Tonic', desc: 'Artisanal dry gin, elderflower tonic & fresh rosemary', price: 399, category: 'Alcohol', color: 'blue', mark: 'GT', image: 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600&auto=format&fit=crop&q=80' },
+  { id: 77, name: 'Espresso Martini', desc: 'Vodka, fresh espresso shot, Kahlúa coffee liqueur', price: 429, category: 'Alcohol', color: 'purple', mark: 'EM', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80' },
   { id: 78, name: 'Passionfruit Spiked Mojito', desc: 'White rum, passionfruit pulp, fresh mint & sparkling soda', price: 369, category: 'Alcohol', color: 'green', mark: 'PM', image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80' },
-  { id: 79, name: 'Cosmopolitan Cocktail', desc: 'Citron vodka, triple sec, cranberry & flamed orange twist', price: 389, category: 'Alcohol', color: 'pink', mark: 'CP', image: 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600&auto=format&fit=crop&q=80' },
-  { id: 80, name: 'Spicy Mango Margarita', desc: 'Tequila, triple sec, sweet mango, lime & tajín chili rim', price: 419, category: 'Alcohol', color: 'yellow', mark: 'MM', image: 'https://images.unsplash.com/photo-1556881286-fc6915169721?w=600&auto=format&fit=crop&q=80' },
+  { id: 79, name: 'Cosmopolitan Cocktail', desc: 'Citron vodka, triple sec, cranberry & flamed orange twist', price: 389, category: 'Alcohol', color: 'pink', mark: 'CP', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80' },
+  { id: 80, name: 'Spicy Mango Margarita', desc: 'Tequila, triple sec, sweet mango, lime & tajín chili rim', price: 419, category: 'Alcohol', color: 'yellow', mark: 'MM', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80' },
   { id: 81, name: 'Glenfiddich 12 Yrs (60ml)', desc: 'Speyside single malt scotch with fresh pear & subtle oak', price: 599, category: 'Alcohol', color: 'amber', mark: 'GF', image: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=600&auto=format&fit=crop&q=80' },
-  { id: 82, name: 'Johnnie Walker Black (60ml)', desc: 'Iconic 12-year blended scotch with deep smoky notes', price: 499, category: 'Alcohol', color: 'orange', mark: 'JW', image: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=600&auto=format&fit=crop&q=80' },
+  { id: 82, name: 'Johnnie Walker Black (60ml)', desc: 'Iconic 12-year blended scotch with deep smoky notes', price: 499, category: 'Alcohol', color: 'orange', mark: 'JW', image: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=600&auto=format&fit=crop&q=80' },
   { id: 83, name: 'Jameson Irish Whiskey (60ml)', desc: 'Triple-distilled Irish whiskey with smooth vanilla finish', price: 429, category: 'Alcohol', color: 'green', mark: 'JM', image: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=600&auto=format&fit=crop&q=80' },
-  { id: 84, name: 'Grey Goose Vodka (60ml)', desc: 'Ultra-premium French wheat vodka on rocks or mixer', price: 469, category: 'Alcohol', color: 'blue', mark: 'GG', image: 'https://images.unsplash.com/photo-1569529465841-dfecdab7503b?w=600&auto=format&fit=crop&q=80' },
-  { id: 85, name: 'Bombay Sapphire Gin (60ml)', desc: 'Vapour-infused London dry gin with 10 exotic botanicals', price: 399, category: 'Alcohol', color: 'blue', mark: 'BS', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80' },
+  { id: 84, name: 'Grey Goose Vodka (60ml)', desc: 'Ultra-premium French wheat vodka on rocks or mixer', price: 469, category: 'Alcohol', color: 'blue', mark: 'GG', image: 'https://images.unsplash.com/photo-1551024709-8f23befc6f87?w=600&auto=format&fit=crop&q=80' },
+  { id: 85, name: 'Bombay Sapphire Gin (60ml)', desc: 'Vapour-infused London dry gin with 10 exotic botanicals', price: 399, category: 'Alcohol', color: 'blue', mark: 'BS', image: 'https://images.unsplash.com/photo-1551538827-9c037cb4f32a?w=600&auto=format&fit=crop&q=80' },
   { id: 86, name: 'Bacardi Carta Blanca Rum (60ml)', desc: 'Classic superior white rum with subtle almond & floral notes', price: 299, category: 'Alcohol', color: 'cream', mark: 'BC', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80' },
-  { id: 87, name: 'Patrón Silver Tequila Shot', desc: '100% blue agave premium tequila with sea salt & lime', price: 349, category: 'Alcohol', color: 'green', mark: 'PT', image: 'https://images.unsplash.com/photo-1516997121675-4c2d1684aa3e?w=600&auto=format&fit=crop&q=80' },
-  { id: 88, name: 'Jägermeister Shot', desc: 'Legendary German herbal liqueur with 56 herbs & spices', price: 329, category: 'Alcohol', color: 'purple', mark: 'JM', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80' },
+  { id: 87, name: 'Patrón Silver Tequila Shot', desc: '100% blue agave premium tequila with sea salt & lime', price: 349, category: 'Alcohol', color: 'green', mark: 'PT', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80' },
+  { id: 88, name: 'Jägermeister Shot', desc: 'Legendary German herbal liqueur with 56 herbs & spices', price: 329, category: 'Alcohol', color: 'purple', mark: 'JM', image: 'https://images.unsplash.com/photo-1527281400683-1aae777175f8?w=600&auto=format&fit=crop&q=80' },
   { id: 89, name: 'Jacob’s Creek Cabernet (Glass)', desc: 'Australian red wine with ripe blackcurrant & oak notes', price: 399, category: 'Alcohol', color: 'wine', mark: 'JC', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80' },
-  { id: 90, name: 'Sula Sauvignon Blanc (Glass)', desc: 'Crisp Indian white wine with refreshing aromas of guava', price: 349, category: 'Alcohol', color: 'yellow', mark: 'SB', image: 'https://images.unsplash.com/photo-1558001373-7b93ee48ffa0?w=600&auto=format&fit=crop&q=80' },
-  { id: 91, name: 'Chandon Brut Sparkling (Glass)', desc: 'Elegant sparkling bubbly with green apple and brioche notes', price: 499, category: 'Alcohol', color: 'cream', mark: 'CB', image: 'https://images.unsplash.com/photo-1569919659476-f0852f6834b7?w=600&auto=format&fit=crop&q=80' }
+  { id: 90, name: 'Sula Sauvignon Blanc (Glass)', desc: 'Crisp Indian white wine with refreshing aromas of guava', price: 349, category: 'Alcohol', color: 'yellow', mark: 'SB', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80' },
+  { id: 91, name: 'Chandon Brut Sparkling (Glass)', desc: 'Elegant sparkling bubbly with green apple and brioche notes', price: 499, category: 'Alcohol', color: 'cream', mark: 'CB', image: 'https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?w=600&auto=format&fit=crop&q=80' }
 ];
 
 const eatingOrder = ['Starters', 'Dosa', 'Chinese', 'Italian', 'Continental', 'Indian', 'Breads', 'Dessert', 'Beverages', 'Alcohol'];
 const categories = ['All', ...eatingOrder];
 const nonVegIds = new Set([1, 4, 8, 10, 13, 15, 38, 40, 45, 51, 56, 58]);
 const formatPrice = amount => `₹${Math.round(amount).toLocaleString('en-IN')}`;
+
+const categoryMetadata = {
+  'All': { label: 'All Dishes', icon: '✨' },
+  'Starters': { label: 'Starters', icon: '🍟' },
+  'Dosa': { label: 'South Indian', icon: '🥞' },
+  'Chinese': { label: 'Chinese', icon: '🍜' },
+  'Italian': { label: 'Italian', icon: '🍕' },
+  'Continental': { label: 'Burgers & Wraps', icon: '🥪' },
+  'Indian': { label: 'Main Curries', icon: '🍛' },
+  'Breads': { label: 'Tandoor Breads', icon: '🫓' },
+  'Dessert': { label: 'Desserts', icon: '🍨' },
+  'Beverages': { label: 'Beverages', icon: '🥤' },
+  'Alcohol': { label: 'Bar & Cocktails', icon: '🍸' }
+};
+
+const bestsellerIds = new Set([1, 4, 6, 11, 15, 18, 33, 38, 61, 73, 81]);
+const chefPickIds = new Set([2, 5, 8, 13, 21, 30, 43, 76, 77]);
+const ratingMap = { 1: '4.9', 2: '4.8', 4: '4.9', 6: '4.8', 8: '4.7', 11: '4.9', 15: '4.8', 18: '4.9', 33: '4.9', 38: '4.8', 61: '4.8', 73: '4.9', 81: '5.0' };
+
+function getCategoryIcon(cat, id) {
+  if (cat === 'Alcohol') {
+    if ([68, 69, 70, 71, 72].includes(id)) return <Beer size={12} />;
+    if ([89, 90, 91].includes(id)) return <Wine size={12} />;
+    return <Martini size={12} />;
+  }
+  if (cat === 'Italian') return <Pizza size={12} />;
+  if (cat === 'Chinese') return <Soup size={12} />;
+  if (cat === 'Dessert') return <IceCream size={12} />;
+  if (cat === 'Beverages') {
+    if ([19, 41].includes(id)) return <Coffee size={12} />;
+    return <GlassWater size={12} />;
+  }
+  if (cat === 'Indian') return <Flame size={12} />;
+  return <Utensils size={12} />;
+}
 
 function playKitchenChime() {
   try {
@@ -208,34 +260,37 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
   if (!isOpen) return null;
 
   const quickTables = [
-    'Table 1', 'Table 2', 'Table 3', 'Table 4',
-    'Table 5', 'Table 6', 'Table 7', 'Table 8',
-    'Table 9', 'Table 10', 'Table 11', 'Table 12'
+    'Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5', 'Table 6',
+    'Table 7', 'Table 8', 'Table 9', 'Table 10', 'Table 11', 'Table 12'
   ];
 
   return (
     <div className="guest-login-overlay" onClick={guest?.name ? onClose : undefined}>
-      <div className="guest-login-card" onClick={e => e.stopPropagation()}>
-        <div className="brand-mark guest-modal-logo">
-          <UtensilsCrossed size={20} />
+      <div className="guest-login-card compact-modal" onClick={e => e.stopPropagation()}>
+        <div className="guest-modal-top">
+          <div className="brand-mark guest-modal-logo">
+            <UtensilsCrossed size={18} />
+          </div>
+          <div>
+            <h2>Table Check-in</h2>
+            <p className="guest-login-sub">The Poddar's Food & Bar</p>
+          </div>
         </div>
-        <h2>Welcome to The Poddar's</h2>
-        <p className="guest-login-sub">Please enter your name & table to begin dining</p>
 
         {error && (
           <div className="chef-login-error">
-            <AlertTriangle size={15} />
+            <AlertTriangle size={14} />
             <span>{error}</span>
           </div>
         )}
 
         <form onSubmit={handleSave} className="guest-form">
           <div className="chef-input-group">
-            <label><User size={13} /> Your Name / Party Name</label>
+            <label><User size={12} /> Guest / Party Name</label>
             <div className="chef-input-box">
-              <User size={16} />
+              <User size={15} />
               <input
-                placeholder="e.g. Aarav Poddar"
+                placeholder="Enter your name (e.g. Aarav)"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 autoFocus
@@ -243,34 +298,32 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
             </div>
           </div>
 
-          <div className="chef-input-group" style={{ marginTop: '14px' }}>
-            <label><UtensilsCrossed size={13} /> Dining Preference</label>
-            <div className="mode-switch" style={{ width: '100%', margin: 0, padding: '4px' }}>
+          <div className="chef-input-group" style={{ marginTop: '10px' }}>
+            <label><UtensilsCrossed size={12} /> Dining Mode</label>
+            <div className="mode-switch-compact">
               <button
                 type="button"
                 className={diningMode === 'Dine in' ? 'active' : ''}
                 onClick={() => setDiningMode('Dine in')}
-                style={{ padding: '10px 8px', justifyContent: 'center' }}
               >
-                <UtensilsCrossed size={15} />
+                <UtensilsCrossed size={14} />
                 <span>Dine In</span>
               </button>
               <button
                 type="button"
                 className={diningMode === 'Self pickup' ? 'active' : ''}
                 onClick={() => setDiningMode('Self pickup')}
-                style={{ padding: '10px 8px', justifyContent: 'center' }}
               >
-                <ShoppingBag size={15} />
-                <span>Takeaway / Pickup</span>
+                <ShoppingBag size={14} />
+                <span>Takeaway</span>
               </button>
             </div>
           </div>
 
           {diningMode === 'Dine in' && (
-            <div className="chef-input-group" style={{ marginTop: '14px' }}>
-              <label><MapPin size={13} /> Select or Enter Table Number</label>
-              <div className="guest-table-grid">
+            <div className="chef-input-group" style={{ marginTop: '10px' }}>
+              <label><MapPin size={12} /> Select Table Number</label>
+              <div className="guest-table-grid compact-grid">
                 {quickTables.map(t => (
                   <button
                     type="button"
@@ -278,49 +331,51 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
                     className={`guest-table-chip ${table === t ? 'selected' : ''}`}
                     onClick={() => setTable(t)}
                   >
-                    {t}
+                    {t.replace('Table ', 'T')}
                   </button>
                 ))}
               </div>
-              <div className="chef-input-box" style={{ marginTop: '8px' }}>
-                <MapPin size={16} />
+              <div className="chef-input-box" style={{ marginTop: '6px' }}>
+                <MapPin size={14} />
                 <input
-                  placeholder="Or custom: Table 15, VIP Lounge, Terrace 2"
+                  placeholder="Or enter custom table (e.g. Table 15, VIP)"
                   value={table}
                   onChange={e => setTable(e.target.value)}
+                  style={{ padding: '8px 12px 8px 36px', fontSize: '13px' }}
                 />
               </div>
             </div>
           )}
 
-          <button type="submit" className="chef-login-btn" style={{ marginTop: '18px' }}>
-            <span>Save & Explore Menu →</span>
+          <button type="submit" className="chef-login-btn" style={{ marginTop: '14px', padding: '11px' }}>
+            <span>Save & View Menu →</span>
           </button>
 
           {guest?.name && (
-            <div style={{ display: 'flex', gap: '8px', marginTop: '12px' }}>
+            <div style={{ display: 'flex', gap: '8px', marginTop: '10px' }}>
               <button
                 type="button"
                 className="chef-back-link"
                 onClick={onClose}
-                style={{ flex: 1, justifyContent: 'center', margin: 0 }}
+                style={{ flex: 1, justifyContent: 'center', margin: 0, padding: '6px', fontSize: '12px' }}
               >
-                Close
+                Cancel / Close
               </button>
               <button
                 type="button"
                 onClick={onLogoutGuest}
                 style={{
                   background: 'transparent',
-                  border: '1px solid #452a2a',
-                  color: '#ef5350',
+                  border: '1px solid #fca5a5',
+                  color: '#ef4444',
                   borderRadius: '8px',
-                  padding: '8px 12px',
+                  padding: '6px 12px',
                   fontSize: '12px',
+                  fontWeight: '600',
                   cursor: 'pointer'
                 }}
               >
-                Log Out / Switch
+                Log Out
               </button>
             </div>
           )}
@@ -856,6 +911,12 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
         {filteredOrders.length > 0 ? (
           filteredOrders.map(order => {
             const selectedPrep = prepTimes[order.id] || order.estimatedPrepTime || 15;
+            const createdTime = new Date(order.createdAt || Date.now()).getTime();
+            const elapsedMins = Math.max(0, Math.floor((Date.now() - createdTime) / 60000));
+            const targetPrep = order.estimatedPrepTime || selectedPrep || 15;
+            const remainingMins = Math.max(0, targetPrep - elapsedMins);
+            const isOverdue = order.status === 'Preparing' && elapsedMins > targetPrep;
+
             return (
               <div
                 key={order.id}
@@ -877,16 +938,49 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
                   </span>
                 </div>
 
-                {/* Metadata */}
+                {/* Metadata with High-Contrast Cooking Time Chip */}
                 <div className="kds-card-meta">
-                  <span>Ordered {timeAgo(order.createdAt)}</span>
-                  <span className="kds-elapsed">
-                    <Clock size={12} />
-                    {order.estimatedPrepTime ? `${order.estimatedPrepTime} min prep` : 'Pending prep'}
+                  <span className="kds-order-time">
+                    <Clock size={13} />
+                    <span>Ordered {timeAgo(order.createdAt)}</span>
+                  </span>
+                  <span className={`kds-prep-chip status-chip-${order.status?.toLowerCase()}`}>
+                    <Clock3 size={13} />
+                    <b>{targetPrep}m Prep Target</b>
                   </span>
                 </div>
 
-                {/* Items */}
+                {/* High-Visibility Cooking In Progress Timer Banner */}
+                {order.status === 'Preparing' && (
+                  <div className={`kds-cooking-banner ${isOverdue ? 'overdue' : 'on-track'}`}>
+                    <div className="kds-cooking-pulse"></div>
+                    <Flame size={18} className="kds-flame-icon" />
+                    <div className="kds-cooking-info">
+                      <div className="kds-cooking-timer-row">
+                        <b className="kds-cooking-primary-timer">
+                          {isOverdue ? `⚠️ OVERDUE (+${elapsedMins - targetPrep}m)` : `⏳ ~${remainingMins} mins remaining`}
+                        </b>
+                        <span className="kds-cooking-target-badge">{targetPrep}m Target</span>
+                      </div>
+                      <span className="kds-cooking-elapsed-sub">
+                        Elapsed: {elapsedMins} mins • Placed {timeAgo(order.createdAt)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Status: Ready Banner */}
+                {order.status === 'Ready' && (
+                  <div className="kds-ready-banner">
+                    <UtensilsCrossed size={16} />
+                    <div>
+                      <b>FOOD READY & PLATED</b>
+                      <span>Completed in ~{elapsedMins}m • Ready for table delivery</span>
+                    </div>
+                  </div>
+                )}
+
+                {/* Items List */}
                 <div className="kds-items-list">
                   {order.items?.map((item, idx) => (
                     <div className="kds-item-row" key={idx}>
@@ -935,21 +1029,23 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
                     <b>Total: {formatPrice(order.total)}</b>
                   </div>
 
-                  {/* Status: NEW (Needs Approval) */}
+                  {/* Status: NEW (Needs Approval & Prep Time Selection) */}
                   {order.status === 'New' && (
                     <>
                       <div className="kds-prep-selector">
-                        <span>Prep:</span>
-                        {[10, 15, 20, 30].map(mins => (
-                          <button
-                            key={mins}
-                            type="button"
-                            className={`kds-prep-btn ${selectedPrep === mins ? 'selected' : ''}`}
-                            onClick={() => setPrepTimes(prev => ({ ...prev, [order.id]: mins }))}
-                          >
-                            {mins}m
-                          </button>
-                        ))}
+                        <span className="kds-prep-label">⏱️ COOK TIME:</span>
+                        <div className="kds-prep-btns-wrap">
+                          {[10, 15, 20, 30].map(mins => (
+                            <button
+                              key={mins}
+                              type="button"
+                              className={`kds-prep-btn ${selectedPrep === mins ? 'selected' : ''}`}
+                              onClick={() => setPrepTimes(prev => ({ ...prev, [order.id]: mins }))}
+                            >
+                              {mins}m
+                            </button>
+                          ))}
+                        </div>
                       </div>
 
                       <div className="kds-action-buttons">
@@ -959,7 +1055,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
                           onClick={() => handleApprove(order.id)}
                         >
                           <Check size={16} />
-                          <span>Approve ({selectedPrep}m)</span>
+                          <span>Approve & Start ({selectedPrep}m)</span>
                         </button>
                         <button
                           type="button"
@@ -983,7 +1079,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
                         onClick={() => handleStatusChange(order.id, 'Ready')}
                       >
                         <UtensilsCrossed size={16} />
-                        <span>Mark Food Ready</span>
+                        <span>✓ Mark Cooking Complete & Food Ready</span>
                       </button>
                     </div>
                   )}
@@ -1005,8 +1101,8 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
                   {/* Status: COMPLETED or CANCELLED */}
                   {(order.status === 'Completed' || order.status === 'Cancelled') && (
                     <div className="kds-action-buttons">
-                      <span style={{ fontSize: '11px', color: 'var(--muted)', alignSelf: 'center' }}>
-                        {order.status === 'Completed' ? '✓ Served' : '✕ Cancelled'}
+                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', alignSelf: 'center', fontWeight: '600' }}>
+                        {order.status === 'Completed' ? '✓ Served & Done' : '✕ Cancelled Ticket'}
                       </span>
                       <button
                         type="button"
@@ -1078,10 +1174,254 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
 }
 
 // -------------------------------------------------------------
+// FINAL BILL & INVOICE MODAL (SHOWS COMPLETE ITEMIZED BILL)
+// -------------------------------------------------------------
+function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
+  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi' | 'cash_card'
+  const [isPaid, setIsPaid] = useState(order?.paymentStatus === 'Paid' || false);
+  const [settling, setSettling] = useState(false);
+
+  if (!order) return null;
+
+  const orderDate = order.createdAt ? new Date(order.createdAt) : new Date();
+  const formattedDate = orderDate.toLocaleDateString('en-IN', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric'
+  });
+  const formattedTime = orderDate.toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+
+  const subtotal = Number(order.subtotal || order.items?.reduce((s, i) => s + (i.price * i.qty), 0) || 0);
+  const cgst = subtotal * 0.025;
+  const sgst = subtotal * 0.025;
+  const gst = cgst + sgst;
+  const total = subtotal + gst;
+
+  const handleSettlePayment = () => {
+    setSettling(true);
+    setTimeout(() => {
+      setIsPaid(true);
+      setSettling(false);
+    }, 600);
+  };
+
+  const handlePrint = () => {
+    window.print();
+    // After printing the bill, log out the customer and open the main menu login dialog
+    if (onPrintAndLogout) {
+      setTimeout(() => {
+        onPrintAndLogout();
+      }, 400);
+    }
+  };
+
+  return (
+    <div className="bill-modal-overlay" onClick={onClose}>
+      <div className="bill-modal-card" onClick={e => e.stopPropagation()}>
+        {/* Close Button */}
+        <button type="button" className="bill-close-btn" onClick={onClose} aria-label="Close Bill">
+          <X size={18} />
+        </button>
+
+        {/* Printable Bill Area */}
+        <div className="bill-printable-content" id="printable-invoice">
+          {/* Bill Restaurant Header */}
+          <div className="bill-header">
+            <div className="bill-brand-badge">
+              <Sparkles size={15} />
+              <span>THE PODDAR'S</span>
+            </div>
+            <h2>FOOD & BAR</h2>
+            <p className="bill-tagline">Fine Dining • Signature Bar • Live Gourmet Kitchen</p>
+            <p className="bill-tax-info">GSTIN: 07AABCT2024P1Z4 • FSSAI Lic: 10022011000452</p>
+            <div className="bill-invoice-type">FINAL DINING TAX INVOICE</div>
+          </div>
+
+          {/* Bill Metadata Grid */}
+          <div className="bill-meta-grid">
+            <div>
+              <span>INVOICE NUMBER:</span>
+              <b>#INV-{order.id}</b>
+            </div>
+            <div>
+              <span>DATE & TIME:</span>
+              <b>{formattedDate}, {formattedTime}</b>
+            </div>
+            <div>
+              <span>GUEST NAME:</span>
+              <b>{order.guestName || 'Valued Guest'}</b>
+            </div>
+            <div>
+              <span>SERVICE / TABLE:</span>
+              <b className="bill-table-highlight">{order.mode === 'Dine in' ? (order.table || 'Table 1') : 'Self Pickup'}</b>
+            </div>
+          </div>
+
+          <div className="bill-divider"></div>
+
+          {/* Itemized Table */}
+          <div className="bill-items-table">
+            <div className="bill-table-head">
+              <span className="col-item">ITEM DESCRIPTION</span>
+              <span className="col-qty">QTY</span>
+              <span className="col-rate">RATE</span>
+              <span className="col-amount">AMOUNT</span>
+            </div>
+
+            <div className="bill-table-body">
+              {order.items?.map((item, index) => (
+                <div className="bill-item-row" key={index}>
+                  <div className="col-item">
+                    <span className="item-title">{item.name}</span>
+                  </div>
+                  <span className="col-qty">{item.qty}</span>
+                  <span className="col-rate">{formatPrice(item.price)}</span>
+                  <span className="col-amount"><b>{formatPrice(item.price * item.qty)}</b></span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {order.instructions && (
+            <div className="bill-special-note">
+              <span>Chef Cooking Note:</span> <i>"{order.instructions}"</i>
+            </div>
+          )}
+
+          <div className="bill-divider"></div>
+
+          {/* Calculation Breakdown */}
+          <div className="bill-totals-breakdown">
+            <div className="bill-row">
+              <span>Food & Beverage Subtotal:</span>
+              <b>{formatPrice(subtotal)}</b>
+            </div>
+            <div className="bill-row">
+              <span>CGST (2.5%):</span>
+              <b>{formatPrice(cgst)}</b>
+            </div>
+            <div className="bill-row">
+              <span>SGST (2.5%):</span>
+              <b>{formatPrice(sgst)}</b>
+            </div>
+            <div className="bill-row grand-total-row">
+              <div>
+                <span>FINAL PAYABLE BILL:</span>
+                <small>Net inclusive of all taxes</small>
+              </div>
+              <b className="bill-final-amount">{formatPrice(total)}</b>
+            </div>
+          </div>
+
+          {/* Payment Status Banner */}
+          <div className={`bill-status-banner ${isPaid ? 'paid' : 'pending'}`}>
+            {isPaid ? (
+              <>
+                <CheckCircle2 size={20} />
+                <div>
+                  <b>BILL SETTLED & PAID IN FULL</b>
+                  <span>Thank you for dining at The Poddar's! We hope you enjoyed your experience.</span>
+                </div>
+              </>
+            ) : (
+              <>
+                <Clock3 size={20} />
+                <div>
+                  <b>FINAL BILL TO BE PAID: {formatPrice(total)}</b>
+                  <span>Pay instantly via UPI QR code below or settle with your server at table.</span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Interactive Payment Methods (If Not Paid) */}
+        {!isPaid && (
+          <div className="bill-payment-section">
+            <span className="payment-section-title">SELECT PAYMENT METHOD</span>
+            <div className="payment-options-tabs">
+              <button
+                type="button"
+                className={`pay-tab ${paymentMethod === 'upi' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('upi')}
+              >
+                <QrCode size={16} /> Pay via UPI / QR Code
+              </button>
+              <button
+                type="button"
+                className={`pay-tab ${paymentMethod === 'cash_card' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('cash_card')}
+              >
+                <CreditCard size={16} /> Pay at Table (Card / Cash)
+              </button>
+            </div>
+
+            {paymentMethod === 'upi' ? (
+              <div className="upi-payment-box">
+                <div className="mock-qr-wrap">
+                  <img
+                    src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa=thepoddars@icici&pn=The%20Poddars%20Food%20and%20Bar&am=${total}&cu=INR`}
+                    alt="UPI QR Code"
+                    className="upi-qr-image"
+                  />
+                  <small>Scan with GPay, PhonePe, Paytm or BHIM</small>
+                </div>
+                <div className="upi-details">
+                  <span>Merchant UPI: <b>thepoddars@icici</b></span>
+                  <p>Amount: <b>{formatPrice(total)}</b></p>
+                  <button
+                    type="button"
+                    className="pay-settle-btn"
+                    onClick={handleSettlePayment}
+                    disabled={settling}
+                  >
+                    {settling ? 'Verifying payment...' : '✓ Confirm UPI Payment Completed'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="cash-payment-box">
+                <p>A server will bring the wireless card machine or collect cash at your table ({order.table || 'Table 1'}).</p>
+                <button
+                  type="button"
+                  className="pay-settle-btn"
+                  onClick={handleSettlePayment}
+                  disabled={settling}
+                >
+                  {settling ? 'Updating table status...' : '✓ Settle Bill with Server'}
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Modal Bottom Actions */}
+        <div className="bill-bottom-actions">
+          <button type="button" className="bill-btn-print" onClick={handlePrint}>
+            <Printer size={15} /> Print Bill & Finish Dining
+          </button>
+          <button
+            type="button"
+            className="bill-btn-add-more"
+            onClick={onAddMore}
+          >
+            <Plus size={15} /> + Add More Items
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
 // LIVE CUSTOMER ORDER TRACKER COMPONENT
 // -------------------------------------------------------------
-function CustomerTracker({ orderId, onClose, onNewOrder }) {
+function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
   const [order, setOrder] = useState(null);
+  const [showBillModal, setShowBillModal] = useState(false);
 
   useEffect(() => {
     if (!orderId) return;
@@ -1119,118 +1459,154 @@ function CustomerTracker({ orderId, onClose, onNewOrder }) {
   const isCancelled = order.status === 'Cancelled';
 
   return (
-    <div className="tracker-card">
-      <div className="tracker-header">
-        <h4>
-          <Flame size={18} color="var(--lime)" />
-          Live Kitchen Tracking: #{order.id}
-        </h4>
-        <button type="button" onClick={onClose} aria-label="Close tracker">
-          <X size={18} />
-        </button>
-      </div>
-
-      {isCancelled ? (
-        <div style={{ padding: '10px 0', textAlign: 'center' }}>
-          <div style={{ color: '#ef5350', fontSize: '14px', fontWeight: '700', marginBottom: '6px' }}>
-            Order Cancelled by Kitchen
-          </div>
-          <p style={{ fontSize: '12px', color: 'var(--muted)', margin: 0 }}>
-            {order.rejectionReason || 'The kitchen was unable to fulfill your order at this time.'}
-          </p>
+    <>
+      <div className="tracker-card">
+        <div className="tracker-header">
+          <h4>
+            <Flame size={18} color="var(--brand-primary)" />
+            Live Kitchen Tracking: #{order.id}
+          </h4>
+          <button type="button" onClick={onClose} aria-label="Close tracker">
+            <X size={18} />
+          </button>
         </div>
-      ) : (
-        <div className="tracker-stepper">
-          {/* Step 1 */}
-          <div className={`tracker-step ${isApproved ? 'completed' : 'current'}`}>
-            <div className="tracker-step-indicator">
-              {isApproved ? <Check size={14} /> : '1'}
+
+        {isCancelled ? (
+          <div style={{ padding: '10px 0', textAlign: 'center' }}>
+            <div style={{ color: '#ef4444', fontSize: '14px', fontWeight: '700', marginBottom: '6px' }}>
+              Order Cancelled by Kitchen
             </div>
-            <div className="tracker-step-content">
-              <b>Order Received by Kitchen</b>
-              <span>{isApproved ? 'Chef reviewed and approved' : 'Waiting for chef approval...'}</span>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+              {order.rejectionReason || 'The kitchen was unable to fulfill your order at this time.'}
+            </p>
+          </div>
+        ) : (
+          <div className="tracker-stepper">
+            {/* Step 1 */}
+            <div className={`tracker-step ${isApproved ? 'completed' : 'current'}`}>
+              <div className="tracker-step-indicator">
+                {isApproved ? <Check size={14} /> : '1'}
+              </div>
+              <div className="tracker-step-content">
+                <b>Order Received by Kitchen</b>
+                <span>{isApproved ? 'Chef reviewed and approved' : 'Waiting for chef approval...'}</span>
+              </div>
+            </div>
+
+            {/* Step 2 */}
+            <div className={`tracker-step ${isReady ? 'completed' : order.status === 'Preparing' ? 'current' : ''}`}>
+              <div className="tracker-step-indicator">
+                {isReady ? <Check size={14} /> : '2'}
+              </div>
+              <div className="tracker-step-content">
+                <b>{isReady ? 'Chef Cooking Completed' : 'Chef Approved & Cooking'}</b>
+                <span>
+                  {order.status === 'Preparing'
+                    ? 'Your food is sizzling in the kitchen!'
+                    : isReady
+                    ? 'Dishes prepared and plated in kitchen'
+                    : 'Pending chef confirmation'}
+                </span>
+                {order.estimatedPrepTime && order.status === 'Preparing' && (
+                  <div className="tracker-eta-badge">
+                    <Clock3 size={14} />
+                    <span>Estimated: ~{order.estimatedPrepTime} mins</span>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Step 3 */}
+            <div className={`tracker-step ${isCompleted ? 'completed' : order.status === 'Ready' ? 'current' : ''}`}>
+              <div className="tracker-step-indicator">
+                {isCompleted ? <Check size={14} /> : '3'}
+              </div>
+              <div className="tracker-step-content">
+                <b>{isCompleted ? 'Served & Completed' : 'Food Ready!'}</b>
+                <span>
+                  {order.status === 'Ready'
+                    ? order.mode === 'Dine in'
+                      ? `Bringing freshly prepared dishes directly to ${order.table || 'Table 12'}!`
+                      : 'Dishes are packed and ready for pickup at the counter!'
+                    : isCompleted
+                    ? order.mode === 'Dine in'
+                      ? `Delivered to ${order.table || 'your table'}. Enjoy your meal!`
+                      : 'Order collected. Enjoy your meal!'
+                    : order.status === 'Preparing'
+                    ? 'Will be served hot as soon as cooking finishes'
+                    : 'Upcoming after cooking'}
+                </span>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* Step 2 */}
-          <div className={`tracker-step ${isReady ? 'completed' : order.status === 'Preparing' ? 'current' : ''}`}>
-            <div className="tracker-step-indicator">
-              {isReady ? <Check size={14} /> : '2'}
+        <div className="tracker-order-summary">
+          {order.guestName && (
+            <div>
+              <span>Guest Name:</span>
+              <b>{order.guestName}</b>
             </div>
-            <div className="tracker-step-content">
-              <b>{isReady ? 'Chef Cooking Completed' : 'Chef Approved & Cooking'}</b>
-              <span>
-                {order.status === 'Preparing'
-                  ? 'Your food is sizzling in the kitchen!'
-                  : isReady
-                  ? 'Dishes prepared and plated in kitchen'
-                  : 'Pending chef confirmation'}
-              </span>
-              {order.estimatedPrepTime && order.status === 'Preparing' && (
-                <div className="tracker-eta-badge">
-                  <Clock3 size={14} />
-                  <span>Estimated: ~{order.estimatedPrepTime} mins</span>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Step 3 */}
-          <div className={`tracker-step ${isCompleted ? 'completed' : order.status === 'Ready' ? 'current' : ''}`}>
-            <div className="tracker-step-indicator">
-              {isCompleted ? <Check size={14} /> : '3'}
-            </div>
-            <div className="tracker-step-content">
-              <b>{isCompleted ? 'Served & Completed' : 'Food Ready!'}</b>
-              <span>
-                {order.status === 'Ready'
-                  ? order.mode === 'Dine in'
-                    ? `Bringing freshly prepared dishes directly to ${order.table || 'Table 12'}!`
-                    : 'Dishes are packed and ready for pickup at the counter!'
-                  : isCompleted
-                  ? order.mode === 'Dine in'
-                    ? `Delivered to ${order.table || 'your table'}. Enjoy your meal!`
-                    : 'Order collected. Enjoy your meal!'
-                  : order.status === 'Preparing'
-                  ? 'Will be served hot as soon as cooking finishes'
-                  : 'Upcoming after cooking'}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      <div className="tracker-order-summary">
-        {order.guestName && (
+          )}
           <div>
-            <span>Guest Name:</span>
-            <b>{order.guestName}</b>
+            <span>Dining Mode:</span>
+            <b>{order.mode === 'Dine in' ? `${order.table || 'Table 1'}` : 'Self Pickup'}</b>
           </div>
-        )}
-        <div>
-          <span>Dining Mode:</span>
-          <b>{order.mode === 'Dine in' ? `${order.table || 'Table 1'}` : 'Self Pickup'}</b>
-        </div>
-        <div>
-          <span>Total Bill:</span>
-          <b>{formatPrice(order.total)}</b>
-        </div>
-        {order.instructions && (
-          <div style={{ marginTop: '4px', borderTop: '1px solid #232a25', paddingTop: '4px' }}>
-            <span>Note:</span> <i>"{order.instructions}"</i>
+          <div>
+            <span>Total Bill:</span>
+            <b>{formatPrice(order.total)}</b>
           </div>
-        )}
+          {order.instructions && (
+            <div style={{ marginTop: '4px', borderTop: '1px solid var(--line)', paddingTop: '4px' }}>
+              <span>Note:</span> <i>"{order.instructions}"</i>
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons: View Final Bill, Add More Items, and Hide Tracker */}
+        <div className="tracker-actions">
+          <button
+            type="button"
+            className="tracker-btn-bill"
+            onClick={() => setShowBillModal(true)}
+          >
+            <Receipt size={14} />
+            <span>View Final Bill</span>
+          </button>
+          <button
+            type="button"
+            className="tracker-btn-primary"
+            onClick={onNewOrder}
+          >
+            <Plus size={14} />
+            <span>+ Add More Items</span>
+          </button>
+          <button
+            type="button"
+            className="tracker-btn-secondary"
+            onClick={onClose}
+          >
+            Hide Tracker
+          </button>
+        </div>
       </div>
 
-      <div className="tracker-actions">
-        <button type="button" className="tracker-btn-secondary" onClick={onClose}>
-          Hide Tracker
-        </button>
-        <button type="button" className="tracker-btn-primary" onClick={onNewOrder}>
-          + Order More Items
-        </button>
-      </div>
-    </div>
+      {/* Final Bill Modal Popup */}
+      {showBillModal && (
+        <FinalBillModal
+          order={order}
+          onClose={() => setShowBillModal(false)}
+          onAddMore={() => {
+            setShowBillModal(false);
+            onNewOrder();
+          }}
+          onPrintAndLogout={() => {
+            setShowBillModal(false);
+            if (onPrintAndLogout) onPrintAndLogout();
+          }}
+        />
+      )}
+    </>
   );
 }
 
@@ -1494,132 +1870,97 @@ function App() {
             </div>
           </header>
 
-          <section className="welcome">
-            <div>
-              <p className="eyebrow">
-                WELCOME TO THE PODDAR'S{guest?.name ? ` • HI ${guest.name.toUpperCase()}!` : ''}
-              </p>
+          <section className="welcome-hero">
+            <div className="welcome-content">
+              <div className="hero-top-badges">
+                <span className="hero-live-badge">
+                  <span className="live-pulse"></span>
+                  <Zap size={13} />
+                  <span>KITCHEN & BAR LIVE</span>
+                </span>
+                <span className="hero-feature-chip">
+                  <Clock size={12} /> ~15-20m Express Prep
+                </span>
+                <span className="hero-feature-chip">
+                  <Star size={12} color="var(--neon-yellow)" /> 4.9★ Rated Dining
+                </span>
+              </div>
+
               <h1>
-                Good food,
-                <br />
-                on your terms.
+                Welcome to <span className="neon-text-glow">The Poddar's</span>
               </h1>
               <p className="subcopy">
-                Freshly made, ready when you are. Choose how you would like to enjoy your meal.
+                Gourmet dishes, signature cocktails & sizzling street delicacies crafted fresh for your table.
               </p>
+
+              {/* Guest Session Card */}
+              {!guest?.name ? (
+                <div className="guest-hero-banner unauthenticated">
+                  <div className="guest-banner-info">
+                    <b>
+                      <User size={16} /> Fast Table Check-in
+                    </b>
+                    <p>Enter your party name & table number for seamless kitchen service.</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="guest-hero-btn"
+                    onClick={() => setGuestModalOpen(true)}
+                  >
+                    <span>Check In Now</span>
+                    <Sparkles size={14} />
+                  </button>
+                </div>
+              ) : (
+                <div className="guest-hero-banner authenticated">
+                  <div className="guest-banner-info">
+                    <span className="guest-vip-label">ACTIVE DINING PASS</span>
+                    <b>
+                      👤 {guest.name} • <span className="guest-table-highlight">{mode === 'Dine in' ? (guest.table || 'Table 1') : 'Self Pickup'}</span>
+                    </b>
+                  </div>
+                  <button
+                    type="button"
+                    className="guest-switch-link"
+                    onClick={() => setGuestModalOpen(true)}
+                  >
+                    Switch Table / Name
+                  </button>
+                </div>
+              )}
             </div>
 
-            {!guest?.name ? (
-              <div style={{
-                background: 'linear-gradient(135deg, rgba(215, 242, 74, 0.15), rgba(30, 40, 32, 0.7))',
-                border: '1px solid rgba(215, 242, 74, 0.4)',
-                borderRadius: '12px',
-                padding: '14px 18px',
-                marginTop: '16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '12px'
-              }}>
-                <div>
-                  <b style={{ color: '#fff', fontSize: '14px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <User size={16} color="var(--lime)" /> Please check in with your Name & Table
-                  </b>
-                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: 'var(--muted)' }}>
-                    Your name and table number will be printed on your kitchen food ticket.
-                  </p>
-                </div>
+            {/* Dining Mode Selector */}
+            <div className="hero-mode-container">
+              <div className="mode-switch" role="group" aria-label="Order type">
                 <button
                   type="button"
-                  onClick={() => setGuestModalOpen(true)}
-                  style={{
-                    background: 'var(--lime)',
-                    color: '#111',
-                    border: 'none',
-                    borderRadius: '8px',
-                    padding: '8px 16px',
-                    fontWeight: '700',
-                    fontSize: '13px',
-                    cursor: 'pointer'
+                  className={mode === 'Dine in' ? 'active' : ''}
+                  onClick={() => {
+                    setMode('Dine in');
+                    if (!guest?.table) setGuestModalOpen(true);
                   }}
                 >
-                  Guest Login →
+                  <UtensilsCrossed size={18} />
+                  <div>
+                    <span>Dine-In Table</span>
+                    <small>{guest?.table || 'Select Table #'}</small>
+                  </div>
                 </button>
-              </div>
-            ) : (
-              <div style={{
-                background: '#151b17',
-                border: '1px solid #28342b',
-                borderRadius: '10px',
-                padding: '10px 14px',
-                marginTop: '14px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                fontSize: '12px',
-                color: 'var(--muted)'
-              }}>
-                <span>
-                  👤 Guest: <b style={{ color: '#fff' }}>{guest.name}</b> • <b style={{ color: 'var(--lime)' }}>{mode === 'Dine in' ? (guest.table || 'Table 1') : 'Self Pickup'}</b>
-                </span>
                 <button
                   type="button"
-                  onClick={() => setGuestModalOpen(true)}
-                  style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--lime)',
-                    cursor: 'pointer',
-                    textDecoration: 'underline',
-                    fontSize: '12px'
-                  }}
+                  className={mode === 'Self pickup' ? 'active' : ''}
+                  onClick={() => setMode('Self pickup')}
                 >
-                  Change / Switch
+                  <ShoppingBag size={18} />
+                  <div>
+                    <span>Takeaway / Pickup</span>
+                    <small>Packed & Ready in 20m</small>
+                  </div>
                 </button>
               </div>
-            )}
-
-            <div className="mode-switch" role="group" aria-label="Order type" style={{ marginTop: '14px' }}>
-              <button
-                type="button"
-                className={mode === 'Dine in' ? 'active' : ''}
-                onClick={() => {
-                  setMode('Dine in');
-                  if (!guest?.table) setGuestModalOpen(true);
-                }}
-              >
-                <UtensilsCrossed size={20} />
-                <span>
-                  Dine in<small>{guest?.table || 'Choose Table'}</small>
-                </span>
-              </button>
-              <button
-                type="button"
-                className={mode === 'Self pickup' ? 'active' : ''}
-                onClick={() => setMode('Self pickup')}
-              >
-                <ShoppingBag size={20} />
-                <span>
-                  Self pickup<small>Ready in 20 min</small>
-                </span>
-              </button>
             </div>
           </section>
-
-          <nav className="diet-filter" aria-label="Diet preference">
-            <span>SHOWING</span>
-            {['All', 'Veg', 'Non-veg'].map(option => (
-              <button
-                type="button"
-                key={option}
-                className={diet === option ? 'selected' : ''}
-                onClick={() => setDiet(option)}
-              >
-                {option}
-              </button>
-            ))}
-          </nav>
 
           {orderError && (
             <div className="order-error">
@@ -1627,66 +1968,133 @@ function App() {
             </div>
           )}
 
+          {/* Menu Main Section */}
           <section className="menu-section">
-            <div className="menu-top">
-              <div>
-                <p className="eyebrow">EXPLORE THE MENU</p>
-                <h2>Finest food & drinks, made fresh.</h2>
-              </div>
-              <label className="search">
-                <Search size={18} />
+            {/* Clean Integrated Controls Bar */}
+            <div className="menu-controls-bar">
+              <div className="search-wrap">
+                <Search size={16} />
                 <input
-                  placeholder="Search the menu"
+                  placeholder="Search dishes, drinks, desserts..."
                   value={search}
                   onChange={event => setSearch(event.target.value)}
                 />
-              </label>
+                {search && (
+                  <button type="button" className="search-clear" onClick={() => setSearch('')}>
+                    <X size={14} />
+                  </button>
+                )}
+              </div>
+
+              {/* Dietary Filter Segmented Switch */}
+              <div className="diet-filter-pill" role="group" aria-label="Diet preference">
+                {['All', 'Veg', 'Non-veg'].map(option => (
+                  <button
+                    type="button"
+                    key={option}
+                    className={diet === option ? 'selected' : ''}
+                    onClick={() => setDiet(option)}
+                  >
+                    {option === 'Veg' && <span className="diet-dot veg-dot"></span>}
+                    {option === 'Non-veg' && <span className="diet-dot nonveg-dot"></span>}
+                    <span>{option}</span>
+                  </button>
+                ))}
+              </div>
             </div>
 
+            {/* Category Navigation Pills */}
             <nav className="categories">
-              {categories.map(itemCategory => (
-                <button
-                  type="button"
-                  key={itemCategory}
-                  onClick={() => setCategory(itemCategory)}
-                  className={category === itemCategory ? 'selected' : ''}
-                >
-                  {itemCategory}
-                </button>
-              ))}
+              {categories.map(itemCategory => {
+                const meta = categoryMetadata[itemCategory] || { label: itemCategory, icon: '🍽️' };
+                const countInCategory = menu.filter(i => {
+                  const matchesCat = itemCategory === 'All' || i.category === itemCategory;
+                  const matchesD = diet === 'All' || (diet === 'Veg' ? !nonVegIds.has(i.id) : nonVegIds.has(i.id));
+                  return matchesCat && matchesD;
+                }).length;
+                return (
+                  <button
+                    type="button"
+                    key={itemCategory}
+                    onClick={() => setCategory(itemCategory)}
+                    className={category === itemCategory ? 'selected' : ''}
+                  >
+                    <span className="cat-icon">{meta.icon}</span>
+                    <span className="cat-label">{meta.label}</span>
+                    <span className="cat-badge">{countInCategory}</span>
+                  </button>
+                );
+              })}
             </nav>
 
+            {/* Dishes Grid */}
             <div className="grid">
               {visibleMenu.map(item => {
                 const cartItem = cart.find(entry => entry.id === item.id);
+                const isBestseller = bestsellerIds.has(item.id);
+                const isChefPick = chefPickIds.has(item.id);
+                const rating = ratingMap[item.id] || '4.8';
+
                 return (
                   <article className="dish" key={item.id}>
-                    <div className={'dish-image ' + item.color}>
-                      {item.image && (
+                    <div className="dish-image">
+                      {item.image ? (
                         <img
                           src={item.image}
                           alt={item.name}
-                          loading="lazy"
                           className="dish-photo"
-                          onError={e => {
+                          loading="lazy"
+                          onError={(e) => {
                             e.currentTarget.style.display = 'none';
                           }}
                         />
-                      )}
-                      <span className="dish-badge-mark">{item.mark}</span>
-                      <div className="dish-diet-tag">
-                        <span className={nonVegIds.has(item.id) ? 'tag-nonveg' : 'tag-veg'} title={nonVegIds.has(item.id) ? 'Non-Veg' : 'Pure Veg'}>
-                          <i></i>
+                      ) : null}
+
+                      {/* Top Badges */}
+                      <div className="dish-top-badges">
+                        <span className="dish-cuisine-badge">
+                          {getCategoryIcon(item.category, item.id)}
+                          <span>{item.category}</span>
+                        </span>
+                        
+                        <div className="dish-diet-tag">
+                          <span className={nonVegIds.has(item.id) ? 'tag-nonveg' : 'tag-veg'} title={nonVegIds.has(item.id) ? 'Non-Veg' : 'Pure Veg'}>
+                            <i></i>
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Bottom Image Badges */}
+                      <div className="dish-img-footer-badges">
+                        {isBestseller ? (
+                          <span className="dish-highlight-badge bestseller">
+                            <Flame size={11} /> BESTSELLER
+                          </span>
+                        ) : isChefPick ? (
+                          <span className="dish-highlight-badge chefpick">
+                            <Sparkles size={11} /> CHEF'S CHOICE
+                          </span>
+                        ) : null}
+
+                        <span className="dish-rating-badge">
+                          <Star size={11} color="var(--neon-yellow)" />
+                          <span>{rating}</span>
                         </span>
                       </div>
                     </div>
+
                     <div className="dish-info">
                       <div>
                         <h3>{item.name}</h3>
                         <p>{item.desc}</p>
                       </div>
+
                       <div className="dish-bottom">
-                        <b>{formatPrice(item.price)}</b>
+                        <div className="dish-price-box">
+                          <span className="dish-price-label">PRICE</span>
+                          <b>{formatPrice(item.price)}</b>
+                        </div>
+
                         {cartItem ? (
                           <div className="menu-quantity">
                             <button
@@ -1694,7 +2102,7 @@ function App() {
                               aria-label={'Remove one ' + item.name}
                               onClick={() => updateCart(item, -1)}
                             >
-                              <Minus size={15} />
+                              <Minus size={14} />
                             </button>
                             <b>{cartItem.qty}</b>
                             <button
@@ -1702,17 +2110,18 @@ function App() {
                               aria-label={'Add one ' + item.name}
                               onClick={() => updateCart(item, 1)}
                             >
-                              <Plus size={15} />
+                              <Plus size={14} />
                             </button>
                           </div>
                         ) : (
                           <button
                             type="button"
-                            className="add"
+                            className="add-btn"
                             aria-label={'Add ' + item.name}
                             onClick={() => updateCart(item, 1)}
                           >
-                            <Plus size={18} />
+                            <Plus size={15} />
+                            <span>ADD</span>
                           </button>
                         )}
                       </div>
@@ -1723,15 +2132,29 @@ function App() {
             </div>
           </section>
 
-          {/* Mobile Cart Button */}
+          {/* Floating Order Bar (Always Visible when items in cart) */}
           {count > 0 && (
-            <div className="mobile-cart">
-              <button type="button" onClick={() => setCartOpen(true)}>
-                <ShoppingBag size={18} />
-                <span>View order ({count} items)</span>
-                <b>{formatPrice(total)} →</b>
-              </button>
-            </div>
+            <aside className="floating-cart-bar">
+              <div className="floating-cart-inner" onClick={() => setCartOpen(true)}>
+                <div className="floating-cart-summary">
+                  <div className="floating-cart-count-badge">
+                    <ShoppingBag size={18} />
+                    <span>{count}</span>
+                  </div>
+                  <div className="floating-cart-details">
+                    <span className="floating-cart-items-title">
+                      {count} {count === 1 ? 'item' : 'items'} in your order
+                    </span>
+                    <b className="floating-cart-total-price">{formatPrice(total)}</b>
+                  </div>
+                </div>
+                
+                <button type="button" className="floating-cart-cta">
+                  <span>View Order</span>
+                  <b>→</b>
+                </button>
+              </div>
+            </aside>
           )}
 
           {/* Cart Drawer */}
@@ -1901,6 +2324,17 @@ function App() {
           onClose={() => setShowTracker(false)}
           onNewOrder={() => {
             setShowTracker(false);
+          }}
+          onPrintAndLogout={() => {
+            setGuest(null);
+            setCart([]);
+            setActiveTrackingOrderId(null);
+            setShowTracker(false);
+            setInstruction('');
+            try {
+              localStorage.removeItem('poddars_guest_session');
+            } catch {}
+            setGuestModalOpen(true);
           }}
         />
       )}

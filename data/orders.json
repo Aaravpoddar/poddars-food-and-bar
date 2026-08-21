@@ -1,5 +1,97 @@
 [
   {
+    "id": "TP-437086",
+    "status": "Completed",
+    "createdAt": "2026-08-21T14:35:30.479Z",
+    "guestName": "Aarav",
+    "mode": "Dine in",
+    "table": "Table 1",
+    "items": [
+      {
+        "id": 61,
+        "name": "Paneer Tikka",
+        "price": 199,
+        "qty": 1,
+        "color": "yellow",
+        "mark": "PK"
+      },
+      {
+        "id": 6,
+        "name": "Masala Dosa",
+        "price": 129,
+        "qty": 1,
+        "color": "purple",
+        "mark": "MD"
+      },
+      {
+        "id": 11,
+        "name": "Margherita Pizza",
+        "price": 229,
+        "qty": 1,
+        "color": "yellow",
+        "mark": "MP"
+      },
+      {
+        "id": 17,
+        "name": "Gulab Jamun",
+        "price": 79,
+        "qty": 1,
+        "color": "pink",
+        "mark": "GJ"
+      },
+      {
+        "id": 18,
+        "name": "Brownie with Ice Cream",
+        "price": 119,
+        "qty": 1,
+        "color": "coral",
+        "mark": "BI"
+      }
+    ],
+    "instructions": "Less spicy",
+    "subtotal": 755,
+    "gst": 37.75,
+    "total": 792.75,
+    "estimatedPrepTime": 15,
+    "approvedAt": "2026-08-21T14:35:55.070Z",
+    "readyAt": "2026-08-21T14:35:59.969Z",
+    "completedAt": "2026-08-21T14:36:02.188Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "CHEF AARAV"
+  },
+  {
+    "id": "TP-718239",
+    "status": "Completed",
+    "createdAt": "2026-08-21T14:14:42.766Z",
+    "guestName": "Saumya",
+    "mode": "Dine in",
+    "table": "Table 2",
+    "items": [
+      {
+        "id": 38,
+        "name": "Chicken Tikka",
+        "price": 249,
+        "qty": 1,
+        "color": "orange",
+        "mark": "CT"
+      }
+    ],
+    "instructions": "less spicy",
+    "subtotal": 249,
+    "gst": 12.450000000000001,
+    "total": 261.45,
+    "estimatedPrepTime": 20,
+    "approvedAt": "2026-08-21T14:15:18.089Z",
+    "readyAt": "2026-08-21T14:15:39.784Z",
+    "completedAt": "2026-08-21T14:15:42.921Z",
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "CHEF AARAV"
+  },
+  {
     "id": "TP-554103",
     "status": "Completed",
     "createdAt": "2026-08-20T11:08:10.432Z",

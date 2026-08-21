@@ -41,9 +41,20 @@ import {
   Receipt,
   Printer,
   CreditCard,
-  QrCode
+  QrCode,
+  Smartphone,
+  Copy,
+  Banknote
 } from 'lucide-react';
 import './style.css';
+
+const resolveAsset = (url) => {
+  if (!url) return url;
+  if (url.startsWith('http://') || url.startsWith('https://') || url.startsWith('data:') || url.startsWith('blob:')) return url;
+  const base = import.meta.env.BASE_URL || './';
+  const clean = url.startsWith('/') ? url.slice(1) : url;
+  return base.endsWith('/') ? `${base}${clean}` : `${base}/${clean}`;
+};
 
 const menu = [
   { id: 1, name: 'Butter Chicken', desc: 'Tandoori chicken in creamy tomato gravy', price: 289, category: 'Indian', color: 'coral', mark: 'BC', image: 'https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?w=600&auto=format&fit=crop&q=80' },
@@ -132,12 +143,8 @@ const menu = [
   { id: 72, name: 'Budweiser Magnum', desc: 'Super-premium strong craft lager with rich maltiness', price: 279, category: 'Alcohol', color: 'coral', mark: 'BM', image: '/images/budweiser-magnum.jpg' },
   { id: 73, name: 'Long Island Iced Tea (LIIT)', desc: 'Vodka, gin, rum, tequila, triple sec & cola splash', price: 479, category: 'Alcohol', color: 'coral', mark: 'LI', image: 'https://images.unsplash.com/photo-1514362545857-3bc16c4c7d1b?w=600&auto=format&fit=crop&q=80' },
   { id: 74, name: 'Classic Old Fashioned', desc: 'Bourbon whiskey, aromatic bitters, orange peel & cane sugar', price: 449, category: 'Alcohol', color: 'orange', mark: 'OF', image: '/images/classic-old-fashioned.png' },
-  { id: 75, name: 'Smoked Whiskey Sour', desc: 'Bourbon whiskey, fresh citrus juice & aromatic bitters', price: 429, category: 'Alcohol', color: 'cream', mark: 'WS', image: '/images/smoked-whiskey-sour.jpg' },
   { id: 76, name: 'Botanical Gin & Tonic', desc: 'Artisanal dry gin, elderflower tonic & fresh rosemary', price: 399, category: 'Alcohol', color: 'blue', mark: 'GT', image: '/images/botanical-gin-tonic.png' },
   { id: 77, name: 'Espresso Martini', desc: 'Vodka, fresh espresso shot, Kahlúa coffee liqueur', price: 429, category: 'Alcohol', color: 'purple', mark: 'EM', image: '/images/espresso-martini.png' },
-  { id: 78, name: 'Passionfruit Spiked Mojito', desc: 'White rum, passionfruit pulp, fresh mint & sparkling soda', price: 369, category: 'Alcohol', color: 'green', mark: 'PM', image: '/images/passionfruit-mojito.jpg' },
-  { id: 79, name: 'Cosmopolitan Cocktail', desc: 'Citron vodka, triple sec, cranberry & flamed orange twist', price: 389, category: 'Alcohol', color: 'pink', mark: 'CP', image: '/images/cosmopolitan-cocktail.png' },
-  { id: 80, name: 'Spicy Mango Margarita', desc: 'Tequila, triple sec, sweet mango, lime & tajín chili rim', price: 419, category: 'Alcohol', color: 'yellow', mark: 'MM', image: '/images/spicy-mango-margarita.png' },
   { id: 81, name: 'Glenfiddich 12 Yrs (60ml)', desc: 'Speyside single malt scotch with fresh pear & subtle oak', price: 599, category: 'Alcohol', color: 'amber', mark: 'GF', image: '/images/glenfiddich-12.png' },
   { id: 82, name: 'Johnnie Walker Black (60ml)', desc: 'Iconic 12-year blended scotch with deep smoky notes', price: 499, category: 'Alcohol', color: 'orange', mark: 'JW', image: '/images/johnnie-walker-black.png' },
   { id: 83, name: 'Jameson Irish Whiskey (60ml)', desc: 'Triple-distilled Irish whiskey with smooth vanilla finish', price: 429, category: 'Alcohol', color: 'green', mark: 'JM', image: '/images/jameson-whiskey.png' },
@@ -170,9 +177,14 @@ const categoryMetadata = {
   'Alcohol': { label: 'Bar & Cocktails', icon: '🍸' }
 };
 
-const bestsellerIds = new Set([1, 4, 6, 11, 15, 18, 33, 38, 61, 73, 81]);
-const chefPickIds = new Set([2, 5, 8, 13, 21, 30, 43, 76, 77]);
-const ratingMap = { 1: '4.9', 2: '4.8', 4: '4.9', 6: '4.8', 8: '4.7', 11: '4.9', 15: '4.8', 18: '4.9', 33: '4.9', 38: '4.8', 61: '4.8', 73: '4.9', 81: '5.0' };
+const bestsellerIds = new Set([1, 4, 6, 11, 15, 18, 33, 38, 49, 55, 61, 73, 81]);
+const chefPickIds = new Set([2, 5, 8, 12, 13, 21, 29, 30, 34, 39, 43, 51, 52, 56, 58, 66, 74, 76, 77]);
+const ratingMap = {
+  1: '4.9', 2: '4.8', 4: '4.9', 5: '4.8', 6: '4.8', 8: '4.7', 11: '4.9', 12: '4.9', 13: '4.8', 15: '4.8', 18: '4.9',
+  21: '4.8', 26: '4.8', 29: '4.9', 30: '4.9', 33: '4.9', 34: '4.9', 38: '4.8', 39: '4.8', 43: '4.8', 49: '4.8', 51: '4.8',
+  52: '4.8', 55: '4.9', 56: '4.9', 58: '4.8', 61: '4.8', 66: '4.8', 73: '4.9', 74: '4.9', 76: '4.8', 77: '4.9',
+  81: '5.0'
+};
 
 function getCategoryIcon(cat, id) {
   if (cat === 'Alcohol') {
@@ -320,7 +332,7 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
           </div>
           <div>
             <h2>Table Check-in</h2>
-            <p className="guest-login-sub">The Poddar's Food & Bar</p>
+            <p className="guest-login-sub">THE PODDAR'S COURTYARD</p>
           </div>
         </div>
 
@@ -433,6 +445,16 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
 }
 
 // -------------------------------------------------------------
+// AUTHORIZED KITCHEN CHEFS
+// -------------------------------------------------------------
+const AUTHORIZED_CHEFS = [
+  { name: 'CHEF AARAV', id: 'CHEF 1910', role: 'Executive Chef', idVariations: ['CHEF 1910', 'CHEF1910', '1910', 'CHEF-1910'] },
+  { name: 'CHEF VANISHA', id: 'CHEF 0101', role: 'Head Chef', idVariations: ['CHEF 0101', 'CHEF0101', '0101', 'CHEF-0101'] },
+  { name: 'CHEF EKTA', id: 'CHEF 0804', role: 'Master Pastry Chef', idVariations: ['CHEF 0804', 'CHEF0804', '0804', 'CHEF-0804'] },
+  { name: 'CHEF ANKIT', id: 'CHEF 1602', role: 'Sous Chef', idVariations: ['CHEF 1602', 'CHEF1602', '1602', 'CHEF-1602'] }
+];
+
+// -------------------------------------------------------------
 // CHEF LOGIN SCREEN COMPONENT
 // -------------------------------------------------------------
 function ChefLogin({ onLogin, onBackToMenu }) {
@@ -440,9 +462,11 @@ function ChefLogin({ onLogin, onBackToMenu }) {
   const [chefId, setChefId] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [redirecting, setRedirecting] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (redirecting) return;
     if (!name.trim() || !chefId.trim()) {
       setError('Please enter both your Chef Name and Staff ID.');
       return;
@@ -450,21 +474,25 @@ function ChefLogin({ onLogin, onBackToMenu }) {
     setError('');
     setLoading(true);
 
-    const knownChefs = {
-      'CHEF-001': { name: 'Chef Aarav', role: 'Head Chef' },
-      'CHEF-002': { name: 'Chef Vikram', role: 'Sous Chef' },
-      'CHEF-003': { name: 'Chef Sanjeev', role: 'Line Chef' },
-      '1234': { name: 'Executive Chef', role: 'Master Chef' }
-    };
-    const cleanId = chefId.trim().toUpperCase();
-    const matched = knownChefs[cleanId];
-    const fallbackChef = {
-      id: cleanId,
-      name: matched ? matched.name : name.trim(),
-      role: matched ? matched.role : 'Kitchen Staff',
-      loggedInAt: new Date().toISOString()
-    };
-    const fallbackToken = `kds_token_${Date.now()}_${cleanId}`;
+    const normName = name.trim().toUpperCase().replace(/^CHEF\s*/, '');
+    const normId = chefId.trim().toUpperCase().replace(/[\s-]/g, '');
+
+    const matched = AUTHORIZED_CHEFS.find(c => {
+      const chefCoreName = c.name.toUpperCase().replace(/^CHEF\s*/, '');
+      const nameMatch = normName === chefCoreName || normName === c.name.toUpperCase();
+      const idMatch = c.idVariations.some(v => v.replace(/[\s-]/g, '').toUpperCase() === normId);
+      return nameMatch && idMatch;
+    });
+
+    if (!matched) {
+      setError('Sorry, you are not a chef.');
+      setRedirecting(true);
+      setLoading(false);
+      setTimeout(() => {
+        onBackToMenu();
+      }, 1800);
+      return;
+    }
 
     try {
       const res = await fetch('/api/chef/login', {
@@ -478,25 +506,30 @@ function ChefLogin({ onLogin, onBackToMenu }) {
         return;
       } else {
         const data = await res.json().catch(() => ({}));
-        if (data.error && res.status === 400) {
-          setError(data.error);
+        if (res.status === 401 || data.error) {
+          setError(data.error || 'Sorry, you are not a chef.');
+          setRedirecting(true);
+          setTimeout(() => {
+            onBackToMenu();
+          }, 1800);
           return;
         }
       }
     } catch (err) {
-      console.warn('Backend server offline, logging in with local staff profile:', err);
+      console.warn('Backend server offline, logging in with verified local profile:', err);
     } finally {
       setLoading(false);
     }
 
-    // Seamless offline/local login
+    // Authenticated local login
+    const fallbackChef = {
+      id: matched.id,
+      name: matched.name,
+      role: matched.role,
+      loggedInAt: new Date().toISOString()
+    };
+    const fallbackToken = `kds_token_${Date.now()}_${matched.id.replace(/\s+/g, '')}`;
     onLogin(fallbackChef, fallbackToken);
-  };
-
-  const handleQuickSelect = (quickName, quickId) => {
-    setName(quickName);
-    setChefId(quickId);
-    setError('');
   };
 
   return (
@@ -506,12 +539,15 @@ function ChefLogin({ onLogin, onBackToMenu }) {
           <ChefHat size={32} />
         </div>
         <h2>Kitchen Portal Access</h2>
-        <p className="chef-login-subtitle">The Poddar's Kitchen Display System (KDS)</p>
+        <p className="chef-login-subtitle">THE PODDAR'S COURTYARD Kitchen Display System (KDS)</p>
 
         {error && (
-          <div className="chef-login-error">
+          <div className="chef-login-error" style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#dc2626', padding: '12px 14px', borderRadius: '10px' }}>
             <AlertTriangle size={16} />
-            <span>{error}</span>
+            <div>
+              <b style={{ display: 'block', fontSize: '13px' }}>{error}</b>
+              {redirecting && <span style={{ fontSize: '11px', opacity: 0.85 }}>Returning back to menu page...</span>}
+            </div>
           </div>
         )}
 
@@ -521,9 +557,10 @@ function ChefLogin({ onLogin, onBackToMenu }) {
             <div className="chef-input-box">
               <User size={16} />
               <input
-                placeholder="e.g. Chef Aarav"
+                placeholder="e.g. CHEF AARAV"
                 value={name}
                 onChange={e => setName(e.target.value)}
+                disabled={redirecting}
                 autoFocus
               />
             </div>
@@ -534,47 +571,21 @@ function ChefLogin({ onLogin, onBackToMenu }) {
             <div className="chef-input-box">
               <Lock size={16} />
               <input
-                placeholder="e.g. CHEF-001 or 1234"
+                placeholder="e.g. CHEF 1910"
                 value={chefId}
                 onChange={e => setChefId(e.target.value)}
+                disabled={redirecting}
               />
-            </div>
-          </div>
-
-          <div className="chef-quick-select">
-            <span>Quick Staff Login</span>
-            <div className="chef-chips">
-              <button
-                type="button"
-                className="chef-chip-btn"
-                onClick={() => handleQuickSelect('Chef Aarav', 'CHEF-001')}
-              >
-                👨‍🍳 Chef Aarav (CHEF-001)
-              </button>
-              <button
-                type="button"
-                className="chef-chip-btn"
-                onClick={() => handleQuickSelect('Chef Vikram', 'CHEF-002')}
-              >
-                👨‍🍳 Chef Vikram (CHEF-002)
-              </button>
-              <button
-                type="button"
-                className="chef-chip-btn"
-                onClick={() => handleQuickSelect('Executive Chef', '1234')}
-              >
-                👑 Master Chef (1234)
-              </button>
             </div>
           </div>
 
           <button
             type="submit"
             className="chef-login-btn"
-            disabled={loading}
+            disabled={loading || redirecting}
           >
             <ShieldCheck size={18} />
-            <span>{loading ? 'Authenticating...' : 'Enter Kitchen Display →'}</span>
+            <span>{loading ? 'Authenticating...' : redirecting ? 'Access Denied' : 'Enter Kitchen Display →'}</span>
           </button>
         </form>
 
@@ -1070,6 +1081,36 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
         </div>
       </div>
 
+      {/* Authorized Kitchen Team Roster */}
+      <div className="kds-team-roster-card">
+        <div className="kds-team-header">
+          <div className="kds-team-title">
+            <ShieldCheck size={16} color="var(--brand-primary)" />
+            <span>Authorized Kitchen Chefs (4 Verified Staff)</span>
+          </div>
+          <span className="kds-team-sub">Access Control: Only active registered staff can approve tickets</span>
+        </div>
+        <div className="kds-team-grid">
+          {AUTHORIZED_CHEFS.map(chef => {
+            const isCurrent = chefAuth?.id === chef.id || chefAuth?.name?.toUpperCase() === chef.name.toUpperCase();
+            return (
+              <div key={chef.id} className={`kds-team-member ${isCurrent ? 'active-duty' : ''}`}>
+                <div className="kds-member-avatar">
+                  {chef.name.includes('VANISHA') || chef.name.includes('EKTA') ? '👩‍🍳' : '👨‍🍳'}
+                </div>
+                <div className="kds-member-info">
+                  <div className="kds-member-top">
+                    <b>{chef.name}</b>
+                    {isCurrent && <span className="kds-active-badge">● Active Now</span>}
+                  </div>
+                  <span className="kds-member-role">{chef.role} • <code>{chef.id}</code></span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Filters and Search */}
       <div className="kds-filter-bar">
         <div className="kds-tab-pills">
@@ -1395,9 +1436,21 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
 // FINAL BILL & INVOICE MODAL (SHOWS COMPLETE ITEMIZED BILL)
 // -------------------------------------------------------------
 function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
-  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi' | 'cash_card'
+  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi' | 'card' | 'waiter'
   const [isPaid, setIsPaid] = useState(order?.paymentStatus === 'Paid' || false);
   const [settling, setSettling] = useState(false);
+  const [copiedUpi, setCopiedUpi] = useState(false);
+
+  // Card Payment States
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardHolder, setCardHolder] = useState(order?.guestName || '');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [cardError, setCardError] = useState('');
+  const [waiterRequested, setWaiterRequested] = useState(false);
+
+  const upiId = 'aaravpoddar19@okicici';
+  const payeeName = 'Aarav Poddar';
 
   if (!order) return null;
 
@@ -1418,12 +1471,80 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
   const gst = cgst + sgst;
   const total = subtotal + gst;
 
+  const handleCopyUpi = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2200);
+    }
+  };
+
+  const handleCardNumberChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 16);
+    let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+    setCardNumber(formatted);
+    setCardError('');
+  };
+
+  const handleExpiryChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+    if (val.length >= 3) {
+      setCardExpiry(`${val.substring(0, 2)}/${val.substring(2, 4)}`);
+    } else {
+      setCardExpiry(val);
+    }
+    setCardError('');
+  };
+
+  const handleCvvChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+    setCardCvv(val);
+    setCardError('');
+  };
+
+  const handleProcessCardPayment = (e) => {
+    e.preventDefault();
+    const cleanNum = cardNumber.replace(/\s/g, '');
+    if (cleanNum.length < 15) {
+      setCardError('Please enter a valid 16-digit card number');
+      return;
+    }
+    if (!cardHolder.trim()) {
+      setCardError('Please enter the name printed on your card');
+      return;
+    }
+    if (cardExpiry.length < 5) {
+      setCardError('Please enter a valid expiry date (MM/YY)');
+      return;
+    }
+    if (cardCvv.length < 3) {
+      setCardError('Please enter a valid 3 or 4-digit CVV');
+      return;
+    }
+
+    setSettling(true);
+    setCardError('');
+    setTimeout(() => {
+      setIsPaid(true);
+      setSettling(false);
+    }, 900);
+  };
+
   const handleSettlePayment = () => {
     setSettling(true);
     setTimeout(() => {
       setIsPaid(true);
       setSettling(false);
     }, 600);
+  };
+
+  const handleRequestWaiter = () => {
+    setSettling(true);
+    setTimeout(() => {
+      setWaiterRequested(true);
+      setIsPaid(true);
+      setSettling(false);
+    }, 800);
   };
 
   const handlePrint = () => {
@@ -1452,7 +1573,7 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
               <Sparkles size={15} />
               <span>THE PODDAR'S</span>
             </div>
-            <h2>FOOD & BAR</h2>
+            <h2>COURTYARD</h2>
             <p className="bill-tagline">Fine Dining • Signature Bar • Live Gourmet Kitchen</p>
             <p className="bill-tax-info">GSTIN: 07AABCT2024P1Z4 • FSSAI Lic: 10022011000452</p>
             <div className="bill-invoice-type">FINAL DINING TAX INVOICE</div>
@@ -1541,7 +1662,11 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
                 <CheckCircle2 size={20} />
                 <div>
                   <b>BILL SETTLED & PAID IN FULL</b>
-                  <span>Thank you for dining at The Poddar's! We hope you enjoyed your experience.</span>
+                  <span>
+                    {waiterRequested
+                      ? `Waiter has been requested for ${order.table || 'Table 1'}. Bill marked as in-process settlement.`
+                      : "Thank you for dining at THE PODDAR'S COURTYARD! We hope you enjoyed your experience."}
+                  </span>
                 </div>
               </>
             ) : (
@@ -1549,7 +1674,7 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
                 <Clock3 size={20} />
                 <div>
                   <b>FINAL BILL TO BE PAID: {formatPrice(total)}</b>
-                  <span>Pay instantly via UPI QR code below or settle with your server at table.</span>
+                  <span>Select UPI QR, Online Card, or request a waiter for cash payment at table.</span>
                 </div>
               </>
             )}
@@ -1560,36 +1685,77 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
         {!isPaid && (
           <div className="bill-payment-section">
             <span className="payment-section-title">SELECT PAYMENT METHOD</span>
-            <div className="payment-options-tabs">
+            <div className="payment-options-tabs payment-three-tabs">
               <button
                 type="button"
                 className={`pay-tab ${paymentMethod === 'upi' ? 'active' : ''}`}
                 onClick={() => setPaymentMethod('upi')}
               >
-                <QrCode size={16} /> Pay via UPI / QR Code
+                <QrCode size={15} /> UPI / GPay
               </button>
               <button
                 type="button"
-                className={`pay-tab ${paymentMethod === 'cash_card' ? 'active' : ''}`}
-                onClick={() => setPaymentMethod('cash_card')}
+                className={`pay-tab ${paymentMethod === 'card' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('card')}
               >
-                <CreditCard size={16} /> Pay at Table (Card / Cash)
+                <CreditCard size={15} /> Card Details
+              </button>
+              <button
+                type="button"
+                className={`pay-tab ${paymentMethod === 'waiter' ? 'active' : ''}`}
+                onClick={() => setPaymentMethod('waiter')}
+              >
+                <Banknote size={15} /> Pay Waiter (Cash)
               </button>
             </div>
 
-            {paymentMethod === 'upi' ? (
+            {/* TAB 1: UPI / GPAY */}
+            {paymentMethod === 'upi' && (
               <div className="upi-payment-box">
                 <div className="mock-qr-wrap">
-                  <img
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=140x140&data=upi://pay?pa=thepoddars@icici&pn=The%20Poddars%20Food%20and%20Bar&am=${total}&cu=INR`}
-                    alt="UPI QR Code"
-                    className="upi-qr-image"
-                  />
-                  <small>Scan with GPay, PhonePe, Paytm or BHIM</small>
+                  <div className="upi-qr-card-container">
+                    <img
+                      src={resolveAsset('/payment-qr.jpg')}
+                      alt="Aarav Poddar UPI QR Code"
+                      className="upi-qr-image"
+                    />
+                  </div>
+                  <small className="upi-scan-hint">Scan with GPay, PhonePe, Paytm, BHIM</small>
                 </div>
+
                 <div className="upi-details">
-                  <span>Merchant UPI: <b>thepoddars@icici</b></span>
-                  <p>Amount: <b>{formatPrice(total)}</b></p>
+                  <div className="upi-info-card">
+                    <div className="upi-info-row">
+                      <span className="upi-label">PAYEE:</span>
+                      <b className="upi-val">{payeeName}</b>
+                    </div>
+                    <div className="upi-info-row">
+                      <span className="upi-label">UPI ID:</span>
+                      <div className="upi-id-badge-wrap">
+                        <code className="upi-val-mono">{upiId}</code>
+                        <button
+                          type="button"
+                          className="upi-copy-action-btn"
+                          onClick={handleCopyUpi}
+                          title="Copy UPI ID"
+                        >
+                          <Copy size={12} /> {copiedUpi ? 'Copied!' : 'Copy'}
+                        </button>
+                      </div>
+                    </div>
+                    <div className="upi-info-row">
+                      <span className="upi-label">AMOUNT:</span>
+                      <b className="upi-val-price">{formatPrice(total)}</b>
+                    </div>
+                  </div>
+
+                  <a
+                    href={`upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${total}&cu=INR&tn=The%20Poddars%20Courtyard%20Bill`}
+                    className="pay-direct-app-link"
+                  >
+                    <Smartphone size={15} /> Open UPI App (GPay / PhonePe)
+                  </a>
+
                   <button
                     type="button"
                     className="pay-settle-btn"
@@ -1600,17 +1766,128 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
                   </button>
                 </div>
               </div>
-            ) : (
-              <div className="cash-payment-box">
-                <p>A server will bring the wireless card machine or collect cash at your table ({order.table || 'Table 1'}).</p>
-                <button
-                  type="button"
-                  className="pay-settle-btn"
-                  onClick={handleSettlePayment}
-                  disabled={settling}
-                >
-                  {settling ? 'Updating table status...' : '✓ Settle Bill with Server'}
-                </button>
+            )}
+
+            {/* TAB 2: CREDIT / DEBIT CARD DETAILS */}
+            {paymentMethod === 'card' && (
+              <form className="card-payment-box" onSubmit={handleProcessCardPayment}>
+                <div className="card-header-row">
+                  <div className="card-security-badge">
+                    <ShieldCheck size={14} /> 256-Bit SSL Encrypted
+                  </div>
+                  <div className="card-networks-list">
+                    <span className="card-chip-tag visa">VISA</span>
+                    <span className="card-chip-tag mc">Mastercard</span>
+                    <span className="card-chip-tag rupay">RuPay</span>
+                    <span className="card-chip-tag amex">AMEX</span>
+                  </div>
+                </div>
+
+                {cardError && (
+                  <div className="card-error-banner">
+                    <AlertTriangle size={14} /> {cardError}
+                  </div>
+                )}
+
+                <div className="card-inputs-grid">
+                  <div className="card-input-group full-width">
+                    <label>CARD NUMBER</label>
+                    <div className="card-input-icon-wrap">
+                      <CreditCard size={16} className="card-field-icon" />
+                      <input
+                        type="text"
+                        value={cardNumber}
+                        onChange={handleCardNumberChange}
+                        placeholder="4532 8900 1234 5678"
+                        maxLength={19}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="card-input-group full-width">
+                    <label>CARDHOLDER NAME</label>
+                    <div className="card-input-icon-wrap">
+                      <User size={16} className="card-field-icon" />
+                      <input
+                        type="text"
+                        value={cardHolder}
+                        onChange={e => setCardHolder(e.target.value)}
+                        placeholder="NAME ON CARD"
+                        style={{ textTransform: 'uppercase' }}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="card-input-group">
+                    <label>EXPIRY DATE</label>
+                    <input
+                      type="text"
+                      value={cardExpiry}
+                      onChange={handleExpiryChange}
+                      placeholder="MM/YY"
+                      maxLength={5}
+                      required
+                    />
+                  </div>
+
+                  <div className="card-input-group">
+                    <label>CVV / CVC</label>
+                    <div className="card-input-icon-wrap">
+                      <Lock size={14} className="card-field-icon" />
+                      <input
+                        type="password"
+                        value={cardCvv}
+                        onChange={handleCvvChange}
+                        placeholder="•••"
+                        maxLength={4}
+                        required
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="card-action-row">
+                  <button
+                    type="submit"
+                    className="pay-card-submit-btn"
+                    disabled={settling}
+                  >
+                    <Lock size={14} />
+                    {settling
+                      ? 'Authorizing card...'
+                      : `Pay ${formatPrice(total)} with Card`}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* TAB 3: PAY CASH TO WAITER */}
+            {paymentMethod === 'waiter' && (
+              <div className="waiter-payment-box">
+                <div className="waiter-icon-badge">
+                  <Banknote size={28} />
+                </div>
+                <div className="waiter-details-content">
+                  <h4>Cash Payment at Table</h4>
+                  <p>
+                    A designated restaurant captain will arrive at <b>{order.mode === 'Dine in' ? (order.table || 'Table 1') : 'Pickup Counter'}</b> to collect cash, provide exact change, and hand over your stamped receipt.
+                  </p>
+                  <div className="waiter-summary-row">
+                    <span>Payable in Cash:</span>
+                    <b>{formatPrice(total)}</b>
+                  </div>
+                  <button
+                    type="button"
+                    className="pay-waiter-request-btn"
+                    onClick={handleRequestWaiter}
+                    disabled={settling}
+                  >
+                    <Banknote size={16} />
+                    {settling ? 'Calling waiter...' : '🤵 Request Waiter to Table'}
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -1948,8 +2225,14 @@ function App() {
         const matchesCategory = category === 'All' || item.category === category;
         const matchesDiet =
           diet === 'All' ||
-          (diet === 'Veg' ? !nonVegIds.has(item.id) : nonVegIds.has(item.id));
-        const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase());
+          (diet === 'Veg' && !nonVegIds.has(item.id)) ||
+          (diet === 'Non-veg' && nonVegIds.has(item.id)) ||
+          (diet === 'Bestseller' && bestsellerIds.has(item.id)) ||
+          (diet === "Chef's Choice" && chefPickIds.has(item.id));
+        const matchesSearch =
+          item.name.toLowerCase().includes(search.toLowerCase()) ||
+          item.desc.toLowerCase().includes(search.toLowerCase()) ||
+          item.category.toLowerCase().includes(search.toLowerCase());
         return matchesCategory && matchesDiet && matchesSearch;
       })
       .sort((first, second) => {
@@ -2091,7 +2374,7 @@ function App() {
               <span>
                 THE PODDAR'S
                 <br />
-                <i>food & bar</i>
+                <i>courtyard</i>
               </span>
             </div>
 
@@ -2162,7 +2445,7 @@ function App() {
               </div>
 
               <h1>
-                Welcome to <span className="neon-text-glow">The Poddar's</span>
+                Welcome to <span className="neon-text-glow">THE PODDAR'S COURTYARD</span>
               </h1>
               <p className="subcopy">
                 Gourmet dishes, signature cocktails & sizzling street delicacies crafted fresh for your table.
@@ -2261,18 +2544,23 @@ function App() {
                 )}
               </div>
 
-              {/* Dietary Filter Segmented Switch */}
-              <div className="diet-filter-pill" role="group" aria-label="Diet preference">
-                {['All', 'Veg', 'Non-veg'].map(option => (
+              {/* Dietary & Highlight Filter Segmented Switch */}
+              <div className="diet-filter-pill" role="group" aria-label="Diet and specialty filter">
+                {[
+                  { id: 'All', label: 'All', icon: null, classKey: 'all' },
+                  { id: 'Veg', label: 'Veg', icon: <span className="diet-dot veg-dot"></span>, classKey: 'veg' },
+                  { id: 'Non-veg', label: 'Non-Veg', icon: <span className="diet-dot nonveg-dot"></span>, classKey: 'nonveg' },
+                  { id: 'Bestseller', label: 'Bestseller', icon: <Flame size={13} className="filter-icon-bestseller" />, classKey: 'bestseller' },
+                  { id: "Chef's Choice", label: "Chef's Choice", icon: <ChefHat size={13} className="filter-icon-chef" />, classKey: 'chefschoice' }
+                ].map(option => (
                   <button
                     type="button"
-                    key={option}
-                    className={diet === option ? 'selected' : ''}
-                    onClick={() => setDiet(option)}
+                    key={option.id}
+                    className={`diet-filter-btn ${diet === option.id ? `selected ${option.classKey}` : ''}`}
+                    onClick={() => setDiet(option.id)}
                   >
-                    {option === 'Veg' && <span className="diet-dot veg-dot"></span>}
-                    {option === 'Non-veg' && <span className="diet-dot nonveg-dot"></span>}
-                    <span>{option}</span>
+                    {option.icon}
+                    <span>{option.label}</span>
                   </button>
                 ))}
               </div>
@@ -2284,8 +2572,18 @@ function App() {
                 const meta = categoryMetadata[itemCategory] || { label: itemCategory, icon: '🍽️' };
                 const countInCategory = menu.filter(i => {
                   const matchesCat = itemCategory === 'All' || i.category === itemCategory;
-                  const matchesD = diet === 'All' || (diet === 'Veg' ? !nonVegIds.has(i.id) : nonVegIds.has(i.id));
-                  return matchesCat && matchesD;
+                  const matchesD =
+                    diet === 'All' ||
+                    (diet === 'Veg' && !nonVegIds.has(i.id)) ||
+                    (diet === 'Non-veg' && nonVegIds.has(i.id)) ||
+                    (diet === 'Bestseller' && bestsellerIds.has(i.id)) ||
+                    (diet === "Chef's Choice" && chefPickIds.has(i.id));
+                  const matchesS = search
+                    ? (i.name.toLowerCase().includes(search.toLowerCase()) ||
+                       i.desc.toLowerCase().includes(search.toLowerCase()) ||
+                       i.category.toLowerCase().includes(search.toLowerCase()))
+                    : true;
+                  return matchesCat && matchesD && matchesS;
                 }).length;
                 return (
                   <button
@@ -2303,7 +2601,26 @@ function App() {
             </nav>
 
             {/* Dishes Grid */}
-            <div className="grid">
+            {visibleMenu.length === 0 ? (
+              <div className="menu-empty-state">
+                <ChefHat size={42} />
+                <h3>No dishes found</h3>
+                <p>No dishes match your selected filter ({diet !== 'All' ? diet : ''} {category !== 'All' ? `in ${category}` : ''}).</p>
+                <button
+                  type="button"
+                  className="menu-reset-btn"
+                  onClick={() => {
+                    setCategory('All');
+                    setDiet('All');
+                    setSearch('');
+                  }}
+                >
+                  <RefreshCw size={14} />
+                  <span>Show Full Menu</span>
+                </button>
+              </div>
+            ) : (
+              <div className="grid">
               {visibleMenu.map(item => {
                 const cartItem = cart.find(entry => entry.id === item.id);
                 const isBestseller = bestsellerIds.has(item.id);
@@ -2315,7 +2632,7 @@ function App() {
                     <div className="dish-image">
                       {item.image ? (
                         <img
-                          src={item.image}
+                          src={resolveAsset(item.image)}
                           alt={item.name}
                           className="dish-photo"
                           loading="lazy"
@@ -2405,6 +2722,7 @@ function App() {
                 );
               })}
             </div>
+            )}
           </section>
 
           {/* Floating Order Bar (Always Visible when items in cart) */}
@@ -2459,36 +2777,55 @@ function App() {
 
               <div className="cart-items">
                 {cart.length ? (
-                  cart.map(item => (
-                    <div className="cart-item" key={item.id}>
-                      <div className={'tiny ' + item.color}>
-                        {item.image && (
-                          <img
-                            src={item.image}
-                            alt={item.name}
-                            className="tiny-img"
-                            onError={e => {
-                              e.currentTarget.style.display = 'none';
-                            }}
-                          />
-                        )}
-                        <span>{item.mark}</span>
-                      </div>
-                      <div className="cart-name">
-                        <b>{item.name}</b>
-                        <span>{formatPrice(item.price)}</span>
-                      </div>
-                      <div className="quantity">
-                        <button type="button" onClick={() => updateCart(item, -1)}>
-                          <Minus size={14} />
-                        </button>
-                        <b>{item.qty}</b>
-                        <button type="button" onClick={() => updateCart(item, 1)}>
-                          <Plus size={14} />
-                        </button>
-                      </div>
+                  <>
+                    <div className="cart-items-list">
+                      {cart.map(item => (
+                        <div className="cart-item" key={item.id}>
+                          <div className={'tiny ' + item.color}>
+                            {item.image && (
+                              <img
+                                src={resolveAsset(item.image)}
+                                alt={item.name}
+                                className="tiny-img"
+                                onError={e => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <span>{item.mark}</span>
+                          </div>
+                          <div className="cart-name">
+                            <b>{item.name}</b>
+                            <span>{formatPrice(item.price)}</span>
+                          </div>
+                          <div className="quantity">
+                            <button type="button" onClick={() => updateCart(item, -1)}>
+                              <Minus size={14} />
+                            </button>
+                            <b>{item.qty}</b>
+                            <button type="button" onClick={() => updateCart(item, 1)}>
+                              <Plus size={14} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  ))
+
+                    {/* Cooking Instructions inside Drawer (Scrolls with items, never blocks totals/checkout) */}
+                    <div className="cart-instructions-box">
+                      <div className="cart-instructions-title">
+                        <ChefHat size={14} />
+                        <span>Cooking Instructions for Chef</span>
+                      </div>
+                      <textarea
+                        value={instruction}
+                        onChange={event => setInstruction(event.target.value)}
+                        placeholder="E.g., less spicy, no onion, extra crispy, sauce on side..."
+                        className="cart-instructions-input"
+                        rows={2}
+                      />
+                    </div>
+                  </>
                 ) : (
                   <div className="empty">
                     <ShoppingBag size={30} />
@@ -2521,17 +2858,6 @@ function App() {
           )}
 
           {cartOpen && <div className="backdrop" onClick={() => setCartOpen(false)}></div>}
-
-          {cartOpen && cart.length > 0 && (
-            <label className="instructions-panel">
-              <span>Special cooking instructions for chef</span>
-              <textarea
-                value={instruction}
-                onChange={event => setInstruction(event.target.value)}
-                placeholder="For example: less spicy, no onion, extra crispy..."
-              />
-            </label>
-          )}
 
           {notice && (
             <div className="notification-popover">

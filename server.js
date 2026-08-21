@@ -37,17 +37,27 @@ async function serveStaticFile(response, pathname) {
     const content = await readFile(targetPath);
     const ext = extname(targetPath).toLowerCase();
     const contentType = mimeTypes[ext] || 'application/octet-stream';
-    response.writeHead(200, { 'Content-Type': contentType });
+    response.writeHead(200, {
+      'Content-Type': contentType,
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
+      'Cache-Control': ext === '.html' ? 'no-cache, no-store, must-revalidate' : 'public, max-age=31536000'
+    });
     return response.end(content);
   } catch {
     try {
       const indexContent = await readFile(join(distDirectory, 'index.html'));
-      response.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
+      response.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      });
       return response.end(indexContent);
     } catch {
       response.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
       return response.end(`
-        <h2>The Poddar's - Food & Bar</h2>
+        <h2>THE PODDAR'S COURTYARD</h2>
         <p>Please build the frontend using <code>npm run build</code> or run in development mode with <code>npm run dev</code>.</p>
       `);
     }
@@ -195,25 +205,41 @@ const server = createServer(async (request, response) => {
         return send(response, 400, { error: 'Please provide both Chef Name and Staff ID.' });
       }
 
-      // Default known staff credentials or dynamically accept valid credentials
-      const knownChefs = {
-        'CHEF-001': { name: 'Chef Aarav', role: 'Head Chef' },
-        'CHEF-002': { name: 'Chef Vikram', role: 'Sous Chef' },
-        'CHEF-003': { name: 'Chef Sanjeev', role: 'Line Chef' },
-        '1234': { name: 'Executive Chef', role: 'Master Chef' }
-      };
+      // Strictly Authorized 4 Kitchen Chefs Only
+      const authorizedChefs = [
+        { name: 'CHEF AARAV', id: 'CHEF 1910', role: 'Executive Chef', idVariations: ['CHEF 1910', 'CHEF1910', '1910', 'CHEF-1910'] },
+        { name: 'CHEF VANISHA', id: 'CHEF 0101', role: 'Head Chef', idVariations: ['CHEF 0101', 'CHEF0101', '0101', 'CHEF-0101'] },
+        { name: 'CHEF EKTA', id: 'CHEF 0804', role: 'Master Pastry Chef', idVariations: ['CHEF 0804', 'CHEF0804', '0804', 'CHEF-0804'] },
+        { name: 'CHEF ANKIT', id: 'CHEF 1602', role: 'Sous Chef', idVariations: ['CHEF 1602', 'CHEF1602', '1602', 'CHEF-1602'] }
+      ];
 
-      const matched = knownChefs[chefId];
+      const normName = name.toUpperCase().replace(/^CHEF\s*/, '');
+      const normId = chefId.toUpperCase().replace(/[\s-]/g, '');
+
+      const matched = authorizedChefs.find(c => {
+        const chefCoreName = c.name.toUpperCase().replace(/^CHEF\s*/, '');
+        const nameMatch = normName === chefCoreName || normName === c.name.toUpperCase();
+        const idMatch = c.idVariations.some(v => v.replace(/[\s-]/g, '').toUpperCase() === normId);
+        return nameMatch && idMatch;
+      });
+
+      if (!matched) {
+        return send(response, 401, {
+          error: 'Sorry, you are not a chef.',
+          unauthorized: true
+        });
+      }
+
       const chefProfile = {
-        id: chefId,
-        name: matched ? matched.name : name,
-        role: matched ? matched.role : 'Kitchen Staff',
+        id: matched.id,
+        name: matched.name,
+        role: matched.role,
         loggedInAt: new Date().toISOString()
       };
 
       return send(response, 200, {
         success: true,
-        token: `kds_token_${Date.now()}_${chefId}`,
+        token: `kds_token_${Date.now()}_${matched.id.replace(/\s+/g, '')}`,
         chef: chefProfile
       });
     }
@@ -396,10 +422,10 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(port, '0.0.0.0', () => {
+server.listen(port, () => {
   const ips = getLocalIpAddresses();
-  console.log(`\n==================================================`);
-  console.log(`🍽️  The Poddar's - Food & Bar Server is Running!`);
+  console.log(`==================================================`);
+  console.log(`🍽️  THE PODDAR'S COURTYARD Server is Running!`);
   console.log(`==================================================`);
   console.log(`➜ Local (This PC):   http://localhost:${port}`);
   if (ips.length > 0) {

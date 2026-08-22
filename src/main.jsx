@@ -3614,6 +3614,19 @@ function App() {
                   <span>{submitting ? 'Sending order...' : mode === 'Dine in' ? `Send to kitchen (${guest?.table || 'Table 1'})` : 'Place pickup order'}</span>
                   <span>→</span>
                 </button>
+
+                <button
+                  type="button"
+                  className="cart-drawer-kitchen-btn"
+                  onClick={() => {
+                    setCartOpen(false);
+                    window.location.hash = 'kitchen';
+                    setCurrentView('chef');
+                  }}
+                  title="Open Staff & Kitchen Portal"
+                >
+                  <ChefHat size={14} /> Open Staff & Kitchen Portal
+                </button>
               </div>
             </aside>
           )}

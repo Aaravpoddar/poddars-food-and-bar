@@ -4362,5 +4362,687 @@ header {
   }
 }
 
+/* ─────────────────────────────────────────────────────────────
+   CALL WAITER & TABLE SERVICE NOTIFICATIONS
+   ───────────────────────────────────────────────────────────── */
+
+/* Header Call Waiter Button */
+.call-waiter-header-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--text-main);
+  padding: 8px 14px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.call-waiter-header-btn:hover {
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  background: var(--brand-soft);
+  box-shadow: 0 2px 8px rgba(4, 120, 87, 0.15);
+}
+
+.call-waiter-header-btn.alert-active {
+  background: #fffbeb;
+  border-color: #fde68a;
+  color: #d97706;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.2);
+}
+
+/* Floating Call Waiter Button */
+.floating-waiter-call-wrap {
+  position: fixed;
+  bottom: 24px;
+  left: 24px;
+  z-index: 45;
+}
+
+.floating-waiter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1.5px solid var(--brand-primary);
+  color: var(--brand-primary);
+  padding: 11px 18px;
+  border-radius: 30px;
+  font-size: 13px;
+  font-weight: 800;
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.18), var(--shadow-md);
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.floating-waiter-btn:hover {
+  transform: translateY(-2px) scale(1.02);
+  background: var(--brand-primary);
+  color: #ffffff;
+  box-shadow: 0 12px 28px rgba(4, 120, 87, 0.3);
+}
+
+.floating-waiter-btn.alert-active {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #b45309;
+  box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25);
+  animation: gentle-glow 2s infinite ease-in-out;
+}
+
+@keyframes gentle-glow {
+  0%, 100% { box-shadow: 0 8px 24px rgba(245, 158, 11, 0.25); }
+  50% { box-shadow: 0 8px 28px rgba(245, 158, 11, 0.5); }
+}
+
+.bell-ringing {
+  animation: bell-shake-anim 1.5s infinite ease-in-out;
+  transform-origin: top center;
+  color: #f59e0b;
+}
+
+.kds-bell-shake {
+  animation: bell-shake-anim 1.2s infinite ease-in-out;
+  transform-origin: top center;
+}
+
+@keyframes bell-shake-anim {
+  0% { transform: rotate(0); }
+  10% { transform: rotate(14deg); }
+  20% { transform: rotate(-14deg); }
+  30% { transform: rotate(10deg); }
+  40% { transform: rotate(-10deg); }
+  50% { transform: rotate(6deg); }
+  60% { transform: rotate(0); }
+  100% { transform: rotate(0); }
+}
+
+/* Call Waiter Modal */
+.call-waiter-modal-card {
+  max-width: 480px;
+  width: 92vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.call-waiter-icon-box {
+  background: linear-gradient(135deg, #047857 0%, #0d9488 100%);
+  color: #ffffff;
+}
+
+.modal-close-icon-btn {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+}
+
+.modal-close-icon-btn:hover {
+  color: var(--text-main);
+  background: var(--bg-surface);
+}
+
+.call-waiter-meta-row {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.call-table-chips-scroll {
+  display: flex;
+  gap: 6px;
+  overflow-x: auto;
+  padding: 8px 0 4px;
+  scrollbar-width: none;
+}
+
+.call-table-chips-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.call-reasons-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.call-reason-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-surface);
+  border: 1.5px solid transparent;
+  border-radius: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.call-reason-card:hover {
+  background: #ffffff;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+}
+
+.call-reason-card.selected {
+  background: #ffffff;
+  border-color: var(--brand-primary);
+  box-shadow: 0 4px 12px rgba(4, 120, 87, 0.12);
+}
+
+.call-reason-icon {
+  font-size: 20px;
+  line-height: 1;
+}
+
+.call-reason-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.call-reason-text b {
+  font-size: 12px;
+  color: var(--text-main);
+  line-height: 1.2;
+}
+
+.call-reason-text small {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+  line-height: 1.2;
+}
+
+.call-waiter-submit-wrap {
+  margin-top: 18px;
+}
+
+.call-waiter-submit-btn {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: var(--brand-gradient);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 14px;
+  padding: 13px;
+  border-radius: 12px;
+  box-shadow: var(--shadow-orange);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.call-waiter-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(4, 120, 87, 0.35);
+}
+
+.call-waiter-submit-btn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Active Call Alert Card inside Modal */
+.active-call-alert-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 12px;
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.active-call-pulse-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f59e0b;
+  box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
+  animation: pulse-ring 1.5s infinite ease-in-out;
+  flex-shrink: 0;
+}
+
+.active-call-content {
+  flex: 1;
+}
+
+.active-call-content b {
+  font-size: 12px;
+  color: #92400e;
+  display: block;
+}
+
+.active-call-content p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #b45309;
+}
+
+.active-call-content small {
+  font-size: 10px;
+  color: #d97706;
+}
+
+.cancel-call-mini-btn {
+  background: #ffffff;
+  border: 1px solid #fcd34d;
+  color: #b45309;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.cancel-call-mini-btn:hover {
+  background: #fef3c7;
+}
+
+/* Call Success Panel */
+.call-success-panel {
+  text-align: center;
+  padding: 16px 8px;
+}
+
+.call-success-ring-animation {
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 12px;
+  background: #ecfdf5;
+  border: 2px solid #a7f3d0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 4px 16px rgba(4, 120, 87, 0.15);
+}
+
+.call-success-panel h3 {
+  margin: 0 0 6px;
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.call-success-panel p {
+  margin: 0 0 16px;
+  font-size: 13px;
+  color: var(--text-muted);
+}
+
+.call-success-summary-box {
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 10px 14px;
+  text-align: left;
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+}
+
+.call-success-summary-box span {
+  color: var(--text-muted);
+}
+
+.call-success-summary-box b {
+  color: var(--text-main);
+}
+
+.call-success-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.call-success-done-btn {
+  flex: 1;
+  background: var(--brand-primary);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.call-success-more-btn {
+  flex: 1;
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  color: var(--text-main);
+  font-weight: 700;
+  font-size: 13px;
+  padding: 10px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   KDS URGENT SERVICE BANNER & SERVICE CALLS BOARD
+   ───────────────────────────────────────────────────────────── */
+
+/* Top Flashing Urgent Service Alert Banner in KDS */
+.kds-urgent-service-banner {
+  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+  color: #ffffff;
+  border-radius: 14px;
+  padding: 14px 20px;
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35);
+  animation: urgent-banner-pulse 2s infinite ease-in-out;
+}
+
+@keyframes urgent-banner-pulse {
+  0%, 100% { box-shadow: 0 8px 24px rgba(239, 68, 68, 0.35); }
+  50% { box-shadow: 0 8px 32px rgba(239, 68, 68, 0.6); }
+}
+
+.kds-urgent-service-pulse {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.kds-urgent-service-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  line-height: 1.3;
+}
+
+.kds-urgent-service-text b {
+  font-size: 14px;
+  letter-spacing: 0.5px;
+}
+
+.kds-urgent-service-text span {
+  font-size: 12px;
+  opacity: 0.95;
+  margin-top: 2px;
+}
+
+.kds-urgent-service-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #ffffff;
+  color: #dc2626;
+  font-weight: 800;
+  font-size: 12px;
+  padding: 8px 16px;
+  border-radius: 10px;
+  box-shadow: var(--shadow-sm);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+  white-space: nowrap;
+}
+
+.kds-urgent-service-btn:hover {
+  transform: scale(1.04);
+}
+
+.kds-tab-btn.has-service-alert {
+  border-color: #f87171 !important;
+  color: #dc2626 !important;
+  background: #fef2f2 !important;
+}
+
+/* Service Board */
+.kds-service-board {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.kds-service-board-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.kds-service-filter-group {
+  display: flex;
+  gap: 8px;
+}
+
+.kds-service-subtab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kds-service-subtab.active {
+  background: var(--text-main);
+  border-color: var(--text-main);
+  color: #ffffff;
+}
+
+.kds-service-subtab.active .kds-tab-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+}
+
+/* Service Call Cards Grid */
+.kds-service-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.kds-service-card {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.kds-service-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.kds-service-card.pending {
+  border-left: 5px solid #f59e0b;
+}
+
+.kds-service-card.urgent {
+  border-left: 5px solid #ef4444;
+  background: #fffafa;
+  animation: urgent-border-pulse 2s infinite ease-in-out;
+}
+
+@keyframes urgent-border-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.2); }
+  50% { box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.25); }
+}
+
+.kds-service-card.attended {
+  border-left: 5px solid #10b981;
+  opacity: 0.88;
+}
+
+.kds-service-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.kds-service-table-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--text-main);
+  color: #ffffff;
+  padding: 5px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+}
+
+.kds-service-status-pill {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 4px 8px;
+  border-radius: 6px;
+}
+
+.kds-service-status-pill.pending {
+  background: #fffbeb;
+  color: #b45309;
+}
+
+.kds-service-status-pill.urgent {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.kds-service-status-pill.attended {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.kds-service-reason-box {
+  background: var(--bg-surface);
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+
+.kds-service-reason-title b {
+  font-size: 14px;
+  color: var(--text-main);
+}
+
+.kds-service-note {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+  font-style: italic;
+}
+
+.kds-service-guest-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+}
+
+.kds-service-guest-meta span {
+  color: var(--text-muted);
+}
+
+.kds-service-guest-meta b {
+  color: var(--text-main);
+}
+
+.kds-service-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 8px;
+  border-top: 1px solid var(--line);
+}
+
+.kds-btn-attend-service {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: var(--brand-primary);
+  color: #ffffff;
+  font-weight: 700;
+  font-size: 12px;
+  padding: 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.kds-btn-attend-service:hover {
+  background: var(--brand-primary-hover);
+  box-shadow: 0 4px 12px rgba(4, 120, 87, 0.3);
+}
+
+.kds-btn-dismiss-service {
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  color: var(--text-muted);
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.kds-btn-dismiss-service:hover {
+  background: #fef2f2;
+  color: #ef4444;
+  border-color: #fca5a5;
+}
+
+.kds-service-attended-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.kds-btn-delete-mini {
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+}
+
+.kds-btn-delete-mini:hover {
+  color: #ef4444;
+}
+
 
 

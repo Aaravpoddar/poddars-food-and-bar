@@ -3,8 +3,10 @@ import { createRoot } from 'react-dom/client';
 import {
   AlertTriangle,
   ArrowLeft,
+  ArrowRight,
   Beer,
   Bell,
+  BellRing,
   Cake,
   Check,
   CheckCircle2,
@@ -12,18 +14,22 @@ import {
   Clock,
   Clock3,
   Coffee,
+  Droplets,
   Flame,
   GlassWater,
+  HelpCircle,
   IceCream,
   Lock,
   LogOut,
   MapPin,
   Martini,
+  MessageSquare,
   Minus,
   Pizza,
   Plus,
   RefreshCw,
   Search,
+  Send,
   ShieldCheck,
   ShoppingBag,
   Soup,
@@ -222,6 +228,27 @@ function playKitchenChime() {
   }
 }
 
+function playWaiterCallChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [659.25, 880, 1046.5]; // E5, A5, C6 (Service alert chime)
+    notes.forEach((freq, idx) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + idx * 0.13);
+      gain.gain.setValueAtTime(0.28, ctx.currentTime + idx * 0.13);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + idx * 0.13 + 0.35);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + idx * 0.13);
+      osc.stop(ctx.currentTime + idx * 0.13 + 0.35);
+    });
+  } catch (e) {
+    // AudioContext might be restricted until user interaction
+  }
+}
+
 function timeAgo(dateString) {
   if (!dateString) return '';
   const now = new Date();
@@ -252,6 +279,24 @@ function saveLocalOrders(ordersList) {
   try {
     localStorage.setItem('poddars_orders', JSON.stringify(ordersList));
     window.dispatchEvent(new CustomEvent('poddars_orders_sync', { detail: ordersList }));
+  } catch {}
+}
+
+function getLocalWaiterCalls() {
+  try {
+    const raw = localStorage.getItem('poddars_waiter_calls');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch {}
+  return [];
+}
+
+function saveLocalWaiterCalls(callsList) {
+  try {
+    localStorage.setItem('poddars_waiter_calls', JSON.stringify(callsList));
+    window.dispatchEvent(new CustomEvent('poddars_waiter_sync', { detail: callsList }));
   } catch {}
 }
 
@@ -445,6 +490,300 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
 }
 
 // -------------------------------------------------------------
+// CALL WAITER / TABLE ASSISTANCE MODAL
+// -------------------------------------------------------------
+function CallWaiterModal({
+  isOpen,
+  onClose,
+  guest,
+  onSaveGuest,
+  activeCalls = [],
+  onCallSuccess,
+  onCancelCall
+}) {
+  const [reason, setReason] = useState('General Assistance');
+  const [customNote, setCustomNote] = useState('');
+  const [table, setTable] = useState(guest?.table || 'Table 1');
+  const [guestName, setGuestName] = useState(guest?.name || '');
+  const [submitting, setSubmitting] = useState(false);
+  const [successNotice, setSuccessNotice] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (guest) {
+      setTable(guest.table || 'Table 1');
+      setGuestName(guest.name || '');
+    }
+  }, [guest, isOpen]);
+
+  if (!isOpen) return null;
+
+  const quickReasons = [
+    { label: 'General Assistance', icon: '🛎️', desc: 'Need help or recommendations' },
+    { label: 'Water Refill', icon: '💧', desc: 'Bring fresh chilled/warm water' },
+    { label: 'Cutlery & Napkins', icon: '🍴', desc: 'Extra spoons, forks, plates' },
+    { label: 'Clean Table', icon: '🧹', desc: 'Clear used plates or wipe table' },
+    { label: 'Request Bill / Check', icon: '🧾', desc: 'Ready for bill or payment' },
+    { label: 'Special Request', icon: '💬', desc: 'Custom instructions or question' }
+  ];
+
+  const quickTables = [
+    'Table 1', 'Table 2', 'Table 3', 'Table 4', 'Table 5', 'Table 6',
+    'Table 7', 'Table 8', 'Table 9', 'Table 10', 'Table 11', 'Table 12'
+  ];
+
+  // Check if there is an active pending call for this table
+  const pendingForThisTable = activeCalls.filter(
+    c => c.status === 'Pending' && (c.table === table || (guest?.table && c.table === guest.table))
+  );
+
+  const handleSubmitCall = async (e) => {
+    e.preventDefault();
+    if (!guestName.trim()) {
+      setError('Please enter your name.');
+      return;
+    }
+    if (!table.trim()) {
+      setError('Please select or enter your table number.');
+      return;
+    }
+    setError('');
+    setSubmitting(true);
+
+    const callPayload = {
+      table: table.trim(),
+      guestName: guestName.trim(),
+      reason,
+      customNote: customNote.trim()
+    };
+
+    // Update guest session if changed
+    if (onSaveGuest && (!guest?.name || guest.name !== guestName || guest.table !== table)) {
+      onSaveGuest({
+        name: guestName.trim(),
+        table: table.trim(),
+        mode: 'Dine in'
+      });
+    }
+
+    let createdCall = null;
+    try {
+      const res = await fetch('/api/waiter-calls', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(callPayload)
+      });
+      if (res.ok) {
+        createdCall = await res.json();
+      }
+    } catch (err) {
+      console.warn('Backend offline, saving waiter call locally');
+    }
+
+    if (!createdCall) {
+      createdCall = {
+        id: `CALL-${Math.floor(1000 + Math.random() * 9000)}`,
+        table: callPayload.table,
+        guestName: callPayload.guestName,
+        reason: callPayload.reason,
+        customNote: callPayload.customNote,
+        status: 'Pending',
+        createdAt: new Date().toISOString(),
+        attendedAt: null,
+        attendedBy: null
+      };
+    }
+
+    // Save to local storage
+    const currentList = getLocalWaiterCalls();
+    const updatedList = [createdCall, ...currentList.filter(c => c.id !== createdCall.id)];
+    saveLocalWaiterCalls(updatedList);
+
+    setSubmitting(false);
+    setSuccessNotice(createdCall);
+    if (onCallSuccess) onCallSuccess(createdCall);
+  };
+
+  return (
+    <div className="guest-login-overlay" onClick={onClose}>
+      <div className="guest-login-card call-waiter-modal-card" onClick={e => e.stopPropagation()}>
+        <div className="guest-modal-top">
+          <div className="brand-mark call-waiter-icon-box">
+            <BellRing size={20} />
+          </div>
+          <div style={{ flex: 1 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <h2>Call Waiter</h2>
+              <button type="button" className="modal-close-icon-btn" onClick={onClose}>
+                <X size={18} />
+              </button>
+            </div>
+            <p className="guest-login-sub">Instant staff notification to your table</p>
+          </div>
+        </div>
+
+        {/* Existing Active Calls for this table */}
+        {pendingForThisTable.length > 0 && !successNotice && (
+          <div className="active-call-alert-card">
+            <div className="active-call-pulse-dot"></div>
+            <div className="active-call-content">
+              <b>🛎️ Active Waiter Request for {table}</b>
+              <p>Requested: <i>"{pendingForThisTable[0].reason}"</i></p>
+              <small>{timeAgo(pendingForThisTable[0].createdAt)} • Kitchen & staff alerted</small>
+            </div>
+            {onCancelCall && (
+              <button
+                type="button"
+                className="cancel-call-mini-btn"
+                onClick={() => onCancelCall(pendingForThisTable[0].id)}
+              >
+                Cancel Call
+              </button>
+            )}
+          </div>
+        )}
+
+        {successNotice ? (
+          <div className="call-success-panel">
+            <div className="call-success-ring-animation">
+              <CheckCircle2 size={44} color="var(--brand-primary)" />
+            </div>
+            <h3>Waiter Called Successfully!</h3>
+            <p>
+              The kitchen display system and service staff have been notified for <b>{successNotice.table}</b>.
+            </p>
+            <div className="call-success-summary-box">
+              <div><span>Table:</span> <b>{successNotice.table}</b></div>
+              <div><span>Request:</span> <b>{successNotice.reason}</b></div>
+              {successNotice.customNote && <div><span>Note:</span> <i>"{successNotice.customNote}"</i></div>}
+            </div>
+            <div className="call-success-actions">
+              <button
+                type="button"
+                className="call-success-done-btn"
+                onClick={() => {
+                  setSuccessNotice(null);
+                  onClose();
+                }}
+              >
+                Done
+              </button>
+              <button
+                type="button"
+                className="call-success-more-btn"
+                onClick={() => setSuccessNotice(null)}
+              >
+                + Request Another Item
+              </button>
+            </div>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmitCall} className="call-waiter-form">
+            {error && (
+              <div className="chef-login-error">
+                <AlertTriangle size={14} />
+                <span>{error}</span>
+              </div>
+            )}
+
+            {/* Table & Guest row */}
+            <div className="call-waiter-meta-row">
+              <div className="chef-input-group" style={{ flex: 1 }}>
+                <label><User size={12} /> Your Name</label>
+                <div className="chef-input-box">
+                  <User size={14} />
+                  <input
+                    placeholder="Guest Name"
+                    value={guestName}
+                    onChange={e => setGuestName(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="chef-input-group" style={{ width: '130px' }}>
+                <label><MapPin size={12} /> Table</label>
+                <div className="chef-input-box">
+                  <MapPin size={14} />
+                  <input
+                    placeholder="Table"
+                    value={table}
+                    onChange={e => setTable(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Quick Table Switcher Chips */}
+            <div className="call-table-chips-scroll">
+              {quickTables.map(t => (
+                <button
+                  type="button"
+                  key={t}
+                  className={`guest-table-chip ${table === t ? 'selected' : ''}`}
+                  onClick={() => setTable(t)}
+                >
+                  {t.replace('Table ', 'T')}
+                </button>
+              ))}
+            </div>
+
+            {/* Reason Selection Grid */}
+            <div className="chef-input-group" style={{ marginTop: '14px' }}>
+              <label><Bell size={12} /> What do you need assistance with?</label>
+              <div className="call-reasons-grid">
+                {quickReasons.map(r => {
+                  const isSelected = reason === r.label;
+                  return (
+                    <button
+                      type="button"
+                      key={r.label}
+                      className={`call-reason-card ${isSelected ? 'selected' : ''}`}
+                      onClick={() => setReason(r.label)}
+                    >
+                      <span className="call-reason-icon">{r.icon}</span>
+                      <div className="call-reason-text">
+                        <b>{r.label}</b>
+                        <small>{r.desc}</small>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Optional Note */}
+            <div className="chef-input-group" style={{ marginTop: '12px' }}>
+              <label><MessageSquare size={12} /> Additional Note / Special Request (Optional)</label>
+              <div className="chef-input-box">
+                <input
+                  placeholder="e.g. Please bring warm water, extra napkins..."
+                  value={customNote}
+                  onChange={e => setCustomNote(e.target.value)}
+                  maxLength={150}
+                />
+              </div>
+            </div>
+
+            <div className="call-waiter-submit-wrap">
+              <button
+                type="submit"
+                className="call-waiter-submit-btn"
+                disabled={submitting}
+              >
+                <BellRing size={18} />
+                <span>{submitting ? 'Ringing Kitchen Staff...' : `Ring Waiter for ${table || 'Table'}`}</span>
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
 // AUTHORIZED KITCHEN CHEFS
 // -------------------------------------------------------------
 const AUTHORIZED_CHEFS = [
@@ -607,7 +946,9 @@ function ChefLogin({ onLogin, onBackToMenu }) {
 function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange }) {
   const [orders, setOrders] = useState(() => getLocalOrders());
   const [stats, setStats] = useState(() => calculateStats(getLocalOrders()));
-  const [activeTab, setActiveTab] = useState('New'); // 'New' | 'Preparing' | 'Ready' | 'AllActive' | 'History'
+  const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
+  const [waiterFilter, setWaiterFilter] = useState('Active'); // 'Active' | 'Attended' | 'All'
+  const [activeTab, setActiveTab] = useState('New'); // 'New' | 'Preparing' | 'Ready' | 'AllActive' | 'History' | 'ServiceCalls'
   const [search, setSearch] = useState('');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [rejectingOrder, setRejectingOrder] = useState(null);
@@ -615,6 +956,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
   const [prepTimes, setPrepTimes] = useState({}); // { [orderId]: 15 }
   const [currentTime, setCurrentTime] = useState(new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }));
   const prevPendingCount = useRef(0);
+  const prevPendingCallsCount = useRef(0);
 
   // Clock ticker
   useEffect(() => {
@@ -627,16 +969,21 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
   const fetchOrdersAndStats = async () => {
     let fetchedOrders = null;
     let fetchedStats = null;
+    let fetchedCalls = null;
     try {
-      const [ordersRes, statsRes] = await Promise.all([
+      const [ordersRes, statsRes, callsRes] = await Promise.all([
         fetch('/api/orders').catch(() => null),
-        fetch('/api/stats').catch(() => null)
+        fetch('/api/stats').catch(() => null),
+        fetch('/api/waiter-calls').catch(() => null)
       ]);
       if (ordersRes && ordersRes.ok) {
         fetchedOrders = await ordersRes.json();
       }
       if (statsRes && statsRes.ok) {
         fetchedStats = await statsRes.json();
+      }
+      if (callsRes && callsRes.ok) {
+        fetchedCalls = await callsRes.json();
       }
     } catch (err) {
       console.warn('Backend API offline, syncing with local storage:', err);
@@ -649,6 +996,15 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       const local = getLocalOrders();
       setOrders(local);
       fetchedOrders = local;
+    }
+
+    if (fetchedCalls) {
+      setWaiterCalls(fetchedCalls);
+      saveLocalWaiterCalls(fetchedCalls);
+    } else {
+      const localCalls = getLocalWaiterCalls();
+      setWaiterCalls(localCalls);
+      fetchedCalls = localCalls;
     }
 
     if (fetchedStats) {
@@ -665,6 +1021,12 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       playKitchenChime();
     }
     prevPendingCount.current = currentPending;
+
+    const currentPendingCalls = (fetchedCalls ? fetchedCalls.filter(c => c.status === 'Pending').length : (getLocalWaiterCalls().filter(c => c.status === 'Pending').length));
+    if (currentPendingCalls > prevPendingCallsCount.current && soundEnabled) {
+      playWaiterCallChime();
+    }
+    prevPendingCallsCount.current = currentPendingCalls;
   };
 
   // SSE Stream and Polling fallback + Cross-tab local sync
@@ -679,8 +1041,15 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       if (onOrderStatsChange) onOrderStatsChange(computed);
     };
 
+    const handleWaiterLocalSync = (e) => {
+      const list = e.detail || getLocalWaiterCalls();
+      setWaiterCalls(list);
+    };
+
     window.addEventListener('poddars_orders_sync', handleLocalSync);
+    window.addEventListener('poddars_waiter_sync', handleWaiterLocalSync);
     window.addEventListener('storage', handleLocalSync);
+    window.addEventListener('storage', handleWaiterLocalSync);
 
     let eventSource;
     try {
@@ -713,18 +1082,93 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
         });
         fetchOrdersAndStats();
       });
+
+      // Waiter Call SSE Events
+      eventSource.addEventListener('waiter:called', (e) => {
+        const newCall = JSON.parse(e.data);
+        setWaiterCalls(prev => {
+          const list = [newCall, ...prev.filter(c => c.id !== newCall.id)];
+          saveLocalWaiterCalls(list);
+          return list;
+        });
+        if (soundEnabled) playWaiterCallChime();
+      });
+      eventSource.addEventListener('waiter:updated', (e) => {
+        const updatedCall = JSON.parse(e.data);
+        setWaiterCalls(prev => {
+          const list = prev.map(c => c.id === updatedCall.id ? updatedCall : c);
+          saveLocalWaiterCalls(list);
+          return list;
+        });
+      });
+      eventSource.addEventListener('waiter:deleted', (e) => {
+        const { id } = JSON.parse(e.data);
+        setWaiterCalls(prev => {
+          const list = prev.filter(c => c.id !== id);
+          saveLocalWaiterCalls(list);
+          return list;
+        });
+      });
     } catch (e) {
       console.warn('SSE not available, falling back to polling');
     }
 
-    const interval = setInterval(fetchOrdersAndStats, 4000);
+    const interval = setInterval(fetchOrdersAndStats, 3500);
     return () => {
       clearInterval(interval);
       window.removeEventListener('poddars_orders_sync', handleLocalSync);
+      window.removeEventListener('poddars_waiter_sync', handleWaiterLocalSync);
       window.removeEventListener('storage', handleLocalSync);
+      window.removeEventListener('storage', handleWaiterLocalSync);
       if (eventSource) eventSource.close();
     };
   }, [soundEnabled]);
+
+  const handleAttendWaiterCall = async (callId) => {
+    const now = new Date().toISOString();
+    const staffName = chefAuth?.name || 'Chef';
+    setWaiterCalls(prev => {
+      const list = prev.map(c => c.id === callId ? { ...c, status: 'Attended', attendedAt: now, attendedBy: staffName } : c);
+      saveLocalWaiterCalls(list);
+      return list;
+    });
+    try {
+      await fetch(`/api/waiter-calls/${callId}/attend`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attendedBy: staffName })
+      });
+    } catch (err) {
+      console.warn('Attend call synced locally');
+    }
+  };
+
+  const handleDismissWaiterCall = async (callId) => {
+    const now = new Date().toISOString();
+    setWaiterCalls(prev => {
+      const list = prev.map(c => c.id === callId ? { ...c, status: 'Dismissed', attendedAt: now } : c);
+      saveLocalWaiterCalls(list);
+      return list;
+    });
+    try {
+      await fetch(`/api/waiter-calls/${callId}/dismiss`, { method: 'PATCH' });
+    } catch (err) {
+      console.warn('Dismiss call synced locally');
+    }
+  };
+
+  const handleDeleteWaiterCall = async (callId) => {
+    setWaiterCalls(prev => {
+      const list = prev.filter(c => c.id !== callId);
+      saveLocalWaiterCalls(list);
+      return list;
+    });
+    try {
+      await fetch(`/api/waiter-calls/${callId}`, { method: 'DELETE' });
+    } catch (err) {
+      console.warn('Delete call synced locally');
+    }
+  };
 
   const handleApprove = async (orderId) => {
     const prepTime = prepTimes[orderId] || 15;
@@ -925,6 +1369,29 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
     }
   };
 
+  const pendingCallsCount = waiterCalls.filter(c => c.status === 'Pending').length;
+  const attendedCallsCount = waiterCalls.filter(c => c.status === 'Attended').length;
+
+  const filteredWaiterCalls = useMemo(() => {
+    return waiterCalls.filter(c => {
+      let matchStatus = true;
+      if (waiterFilter === 'Active') matchStatus = c.status === 'Pending';
+      else if (waiterFilter === 'Attended') matchStatus = c.status === 'Attended';
+
+      let matchSearch = true;
+      if (search.trim()) {
+        const q = search.toLowerCase();
+        matchSearch = (
+          (c.table && c.table.toLowerCase().includes(q)) ||
+          (c.guestName && c.guestName.toLowerCase().includes(q)) ||
+          (c.reason && c.reason.toLowerCase().includes(q)) ||
+          (c.customNote && c.customNote.toLowerCase().includes(q))
+        );
+      }
+      return matchStatus && matchSearch;
+    });
+  }, [waiterCalls, waiterFilter, search]);
+
   const filteredOrders = useMemo(() => {
     return orders.filter(o => {
       let matchesTab = true;
@@ -1027,6 +1494,33 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           </button>
         </div>
       </div>
+
+      {/* Urgent Table Waiter Call Alert Banner */}
+      {pendingCallsCount > 0 && (
+        <div className="kds-urgent-service-banner" onClick={() => setActiveTab('ServiceCalls')}>
+          <div className="kds-urgent-service-pulse">
+            <BellRing size={20} className="kds-bell-shake" />
+          </div>
+          <div className="kds-urgent-service-text">
+            <b>🚨 {pendingCallsCount} TABLE SERVICE CALL{pendingCallsCount > 1 ? 'S' : ''} PENDING ASSISTANCE!</b>
+            <span>
+              {waiterCalls.filter(c => c.status === 'Pending').map(c => `${c.table}: ${c.reason}`).slice(0, 3).join(' • ')}
+              {pendingCallsCount > 3 ? ` • and ${pendingCallsCount - 3} more` : ''}
+            </span>
+          </div>
+          <button
+            type="button"
+            className="kds-urgent-service-btn"
+            onClick={(e) => {
+              e.stopPropagation();
+              setActiveTab('ServiceCalls');
+            }}
+          >
+            <span>View Service Calls</span>
+            <ArrowRight size={14} />
+          </button>
+        </div>
+      )}
 
       {/* Stats Bar */}
       <div className="kds-stats-row">
@@ -1153,250 +1647,415 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           >
             <span>History</span>
           </button>
+
+          {/* Waiter Calls Tab */}
+          <button
+            type="button"
+            className={'kds-tab-btn ' + (activeTab === 'ServiceCalls' ? 'active' : '') + (pendingCallsCount > 0 ? ' has-service-alert' : '')}
+            onClick={() => setActiveTab('ServiceCalls')}
+          >
+            <BellRing size={14} className={pendingCallsCount > 0 ? 'kds-bell-shake' : ''} />
+            <span>Waiter Calls</span>
+            {pendingCallsCount > 0 ? (
+              <b className="kds-tab-count alert">{pendingCallsCount}</b>
+            ) : waiterCalls.length > 0 ? (
+              <b className="kds-tab-count">{waiterCalls.length}</b>
+            ) : null}
+          </button>
         </div>
 
         <div className="kds-search">
           <Search size={15} />
           <input
-            placeholder="Search tickets, table #, items..."
+            placeholder="Search tickets, table #, items, service..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
         </div>
       </div>
 
-      {/* Orders Grid */}
-      <div className="kds-orders-grid">
-        {filteredOrders.length > 0 ? (
-          filteredOrders.map(order => {
-            const selectedPrep = prepTimes[order.id] || order.estimatedPrepTime || 15;
-            const createdTime = new Date(order.createdAt || Date.now()).getTime();
-            const elapsedMins = Math.max(0, Math.floor((Date.now() - createdTime) / 60000));
-            const targetPrep = order.estimatedPrepTime || selectedPrep || 15;
-            const remainingMins = Math.max(0, targetPrep - elapsedMins);
-            const isOverdue = order.status === 'Preparing' && elapsedMins > targetPrep;
-
-            return (
-              <div
-                key={order.id}
-                className={`kds-card status-${order.status?.toLowerCase() || 'new'}`}
+      {/* MAIN KDS CONTENT: Service Calls Board OR Orders Grid */}
+      {activeTab === 'ServiceCalls' ? (
+        <div className="kds-service-board">
+          <div className="kds-service-board-header">
+            <div className="kds-service-filter-group">
+              <button
+                type="button"
+                className={`kds-service-subtab ${waiterFilter === 'Active' ? 'active' : ''}`}
+                onClick={() => setWaiterFilter('Active')}
               >
-                {/* Header */}
-                <div className="kds-card-head">
-                  <div>
-                    <div className="kds-order-num">
-                      <span>#{order.id}</span>
-                    </div>
-                    <span className="kds-order-type">
-                      {order.mode === 'Dine in' ? `🍽️ ${order.table || 'Table 1'}` : '🛍️ Self Pickup'}
-                      {order.guestName ? ` • 👤 ${order.guestName}` : ''}
-                    </span>
-                  </div>
-                  <span className={`kds-badge badge-${order.status?.toLowerCase() || 'new'}`}>
-                    {order.status === 'New' ? 'Needs Approval' : order.status}
-                  </span>
-                </div>
+                <span>🚨 Pending Calls</span>
+                <b className="kds-tab-count alert">{pendingCallsCount}</b>
+              </button>
+              <button
+                type="button"
+                className={`kds-service-subtab ${waiterFilter === 'Attended' ? 'active' : ''}`}
+                onClick={() => setWaiterFilter('Attended')}
+              >
+                <span>✅ Attended</span>
+                <b className="kds-tab-count">{attendedCallsCount}</b>
+              </button>
+              <button
+                type="button"
+                className={`kds-service-subtab ${waiterFilter === 'All' ? 'active' : ''}`}
+                onClick={() => setWaiterFilter('All')}
+              >
+                <span>All Calls</span>
+                <b className="kds-tab-count">{waiterCalls.length}</b>
+              </button>
+            </div>
 
-                {/* Metadata with High-Contrast Cooking Time Chip */}
-                <div className="kds-card-meta">
-                  <span className="kds-order-time">
-                    <Clock size={13} />
-                    <span>Ordered {timeAgo(order.createdAt)}</span>
-                  </span>
-                  <span className={`kds-prep-chip status-chip-${order.status?.toLowerCase()}`}>
-                    <Clock3 size={13} />
-                    <b>{targetPrep}m Prep Target</b>
-                  </span>
-                </div>
+            <div className="kds-service-actions-right">
+              {waiterCalls.length > 0 && (
+                <button
+                  type="button"
+                  className="kds-btn-tool"
+                  onClick={() => {
+                    if (confirm('Clear all attended/dismissed service calls?')) {
+                      const remaining = waiterCalls.filter(c => c.status === 'Pending');
+                      setWaiterCalls(remaining);
+                      saveLocalWaiterCalls(remaining);
+                    }
+                  }}
+                >
+                  <Trash2 size={14} /> Clear History
+                </button>
+              )}
+            </div>
+          </div>
 
-                {/* High-Visibility Cooking In Progress Timer Banner */}
-                {order.status === 'Preparing' && (
-                  <div className={`kds-cooking-banner ${isOverdue ? 'overdue' : 'on-track'}`}>
-                    <div className="kds-cooking-pulse"></div>
-                    <Flame size={18} className="kds-flame-icon" />
-                    <div className="kds-cooking-info">
-                      <div className="kds-cooking-timer-row">
-                        <b className="kds-cooking-primary-timer">
-                          {isOverdue ? `⚠️ OVERDUE (+${elapsedMins - targetPrep}m)` : `⏳ ~${remainingMins} mins remaining`}
-                        </b>
-                        <span className="kds-cooking-target-badge">{targetPrep}m Target</span>
+          {filteredWaiterCalls.length > 0 ? (
+            <div className="kds-service-cards-grid">
+              {filteredWaiterCalls.map(call => {
+                const isPending = call.status === 'Pending';
+                const createdTime = new Date(call.createdAt || Date.now()).getTime();
+                const elapsedMins = Math.max(0, Math.floor((Date.now() - createdTime) / 60000));
+                const isUrgent = isPending && elapsedMins >= 3;
+
+                return (
+                  <div
+                    key={call.id}
+                    className={`kds-service-card ${isPending ? (isUrgent ? 'urgent' : 'pending') : 'attended'}`}
+                  >
+                    <div className="kds-service-card-head">
+                      <div className="kds-service-table-badge">
+                        <MapPin size={16} />
+                        <b>{call.table}</b>
                       </div>
-                      <span className="kds-cooking-elapsed-sub">
-                        Elapsed: {elapsedMins} mins • Placed {timeAgo(order.createdAt)}
+                      <span className={`kds-service-status-pill ${isPending ? (isUrgent ? 'urgent' : 'pending') : 'attended'}`}>
+                        {isPending ? (isUrgent ? '⚠️ WAITING > 3m' : '🚨 PENDING') : '✅ ATTENDED'}
                       </span>
                     </div>
-                  </div>
-                )}
 
-                {/* Status: Ready Banner */}
-                {order.status === 'Ready' && (
-                  <div className="kds-ready-banner">
-                    <UtensilsCrossed size={16} />
-                    <div>
-                      <b>FOOD READY & PLATED</b>
-                      <span>Completed in ~{elapsedMins}m • Ready for table delivery</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Items List */}
-                <div className="kds-items-list">
-                  {order.items?.map((item, idx) => (
-                    <div className="kds-item-row" key={idx}>
-                      <div className="kds-item-main">
-                        <span className="kds-qty-badge">{item.qty}×</span>
-                        <span className="kds-item-name">{item.name}</span>
+                    <div className="kds-service-reason-box">
+                      <div className="kds-service-reason-title">
+                        <b>{call.reason}</b>
                       </div>
-                      <span className="kds-item-price">{formatPrice(item.price * item.qty)}</span>
+                      {call.customNote && (
+                        <p className="kds-service-note">
+                          "{call.customNote}"
+                        </p>
+                      )}
                     </div>
-                  ))}
-                </div>
 
-                {/* Cooking Instructions Notice */}
-                {order.instructions ? (
-                  <div className="kds-instructions-alert">
-                    <AlertTriangle size={16} />
-                    <div>
-                      <b>Guest Cooking Request:</b>
-                      <span>"{order.instructions}"</span>
-                    </div>
-                  </div>
-                ) : null}
-
-                {/* Approved By Chef Tag */}
-                {order.approvedBy && (
-                  <div className="kds-chef-note-box">
-                    👨‍🍳 <b>Approved by:</b> {order.approvedBy}
-                  </div>
-                )}
-
-                {/* Rejection Reason Display */}
-                {order.status === 'Cancelled' && order.rejectionReason && (
-                  <div className="kds-instructions-alert" style={{ borderColor: '#ef5350', background: '#301818' }}>
-                    <X size={16} color="#ef5350" />
-                    <div>
-                      <b style={{ color: '#ef5350' }}>Rejection Reason:</b>
-                      <span style={{ color: '#ffcdd2' }}>{order.rejectionReason}</span>
-                    </div>
-                  </div>
-                )}
-
-                {/* Footer and Actions */}
-                <div className="kds-card-footer">
-                  <div className="kds-totals-summary">
-                    <span>{order.items?.reduce((s, i) => s + i.qty, 0)} items total</span>
-                    <b>Total: {formatPrice(order.total)}</b>
-                  </div>
-
-                  {/* Status: NEW (Needs Approval & Prep Time Selection) */}
-                  {order.status === 'New' && (
-                    <>
-                      <div className="kds-prep-selector">
-                        <span className="kds-prep-label">⏱️ COOK TIME:</span>
-                        <div className="kds-prep-btns-wrap">
-                          {[10, 15, 20, 30].map(mins => (
-                            <button
-                              key={mins}
-                              type="button"
-                              className={`kds-prep-btn ${selectedPrep === mins ? 'selected' : ''}`}
-                              onClick={() => setPrepTimes(prev => ({ ...prev, [order.id]: mins }))}
-                            >
-                              {mins}m
-                            </button>
-                          ))}
+                    <div className="kds-service-guest-meta">
+                      <div>
+                        <span>Guest:</span> <b>{call.guestName || 'Guest'}</b>
+                      </div>
+                      <div>
+                        <span>Time:</span> <b>{timeAgo(call.createdAt)}</b>
+                      </div>
+                      {call.attendedBy && (
+                        <div style={{ color: '#047857', fontSize: '11px', marginTop: '2px', fontWeight: '600' }}>
+                          ✓ Attended by: <b>{call.attendedBy}</b>
                         </div>
-                      </div>
+                      )}
+                    </div>
 
+                    <div className="kds-service-card-actions">
+                      {isPending ? (
+                        <>
+                          <button
+                            type="button"
+                            className="kds-btn-attend-service"
+                            onClick={() => handleAttendWaiterCall(call.id)}
+                          >
+                            <CheckCircle2 size={16} />
+                            <span>Mark Attended ({chefAuth?.name || 'Chef'})</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="kds-btn-dismiss-service"
+                            onClick={() => handleDismissWaiterCall(call.id)}
+                            title="Dismiss call"
+                          >
+                            <X size={15} />
+                          </button>
+                        </>
+                      ) : (
+                        <div className="kds-service-attended-footer">
+                          <span>Attended {timeAgo(call.attendedAt)}</span>
+                          <button
+                            type="button"
+                            className="kds-btn-delete-mini"
+                            onClick={() => handleDeleteWaiterCall(call.id)}
+                            title="Delete call ticket"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="kds-empty-state" style={{ padding: '60px 20px' }}>
+              <BellRing size={44} color="var(--brand-primary)" />
+              <h3>No Waiter Service Calls</h3>
+              <p>
+                {waiterFilter === 'Active'
+                  ? 'All table service calls have been attended! No guests are currently waiting for assistance.'
+                  : 'No table calls match the selected filter.'}
+              </p>
+            </div>
+          )}
+        </div>
+      ) : (
+        /* Orders Grid */
+        <div className="kds-orders-grid">
+          {filteredOrders.length > 0 ? (
+            filteredOrders.map(order => {
+              const selectedPrep = prepTimes[order.id] || order.estimatedPrepTime || 15;
+              const createdTime = new Date(order.createdAt || Date.now()).getTime();
+              const elapsedMins = Math.max(0, Math.floor((Date.now() - createdTime) / 60000));
+              const targetPrep = order.estimatedPrepTime || selectedPrep || 15;
+              const remainingMins = Math.max(0, targetPrep - elapsedMins);
+              const isOverdue = order.status === 'Preparing' && elapsedMins > targetPrep;
+
+              return (
+                <div
+                  key={order.id}
+                  className={`kds-card status-${order.status?.toLowerCase() || 'new'}`}
+                >
+                  {/* Header */}
+                  <div className="kds-card-head">
+                    <div>
+                      <div className="kds-order-num">
+                        <span>#{order.id}</span>
+                      </div>
+                      <span className="kds-order-type">
+                        {order.mode === 'Dine in' ? `🍽️ ${order.table || 'Table 1'}` : '🛍️ Self Pickup'}
+                        {order.guestName ? ` • 👤 ${order.guestName}` : ''}
+                      </span>
+                    </div>
+                    <span className={`kds-badge badge-${order.status?.toLowerCase() || 'new'}`}>
+                      {order.status === 'New' ? 'Needs Approval' : order.status}
+                    </span>
+                  </div>
+
+                  {/* Metadata with High-Contrast Cooking Time Chip */}
+                  <div className="kds-card-meta">
+                    <span className="kds-order-time">
+                      <Clock size={13} />
+                      <span>Ordered {timeAgo(order.createdAt)}</span>
+                    </span>
+                    <span className={`kds-prep-chip status-chip-${order.status?.toLowerCase()}`}>
+                      <Clock3 size={13} />
+                      <b>{targetPrep}m Prep Target</b>
+                    </span>
+                  </div>
+
+                  {/* High-Visibility Cooking In Progress Timer Banner */}
+                  {order.status === 'Preparing' && (
+                    <div className={`kds-cooking-banner ${isOverdue ? 'overdue' : 'on-track'}`}>
+                      <div className="kds-cooking-pulse"></div>
+                      <Flame size={18} className="kds-flame-icon" />
+                      <div className="kds-cooking-info">
+                        <div className="kds-cooking-timer-row">
+                          <b className="kds-cooking-primary-timer">
+                            {isOverdue ? `⚠️ OVERDUE (+${elapsedMins - targetPrep}m)` : `⏳ ~${remainingMins} mins remaining`}
+                          </b>
+                          <span className="kds-cooking-target-badge">{targetPrep}m Target</span>
+                        </div>
+                        <span className="kds-cooking-elapsed-sub">
+                          Elapsed: {elapsedMins} mins • Placed {timeAgo(order.createdAt)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Status: Ready Banner */}
+                  {order.status === 'Ready' && (
+                    <div className="kds-ready-banner">
+                      <UtensilsCrossed size={16} />
+                      <div>
+                        <b>FOOD READY & PLATED</b>
+                        <span>Completed in ~{elapsedMins}m • Ready for table delivery</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Items List */}
+                  <div className="kds-items-list">
+                    {order.items?.map((item, idx) => (
+                      <div className="kds-item-row" key={idx}>
+                        <div className="kds-item-main">
+                          <span className="kds-qty-badge">{item.qty}×</span>
+                          <span className="kds-item-name">{item.name}</span>
+                        </div>
+                        <span className="kds-item-price">{formatPrice(item.price * item.qty)}</span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Cooking Instructions Notice */}
+                  {order.instructions ? (
+                    <div className="kds-instructions-alert">
+                      <AlertTriangle size={16} />
+                      <div>
+                        <b>Guest Cooking Request:</b>
+                        <span>"{order.instructions}"</span>
+                      </div>
+                    </div>
+                  ) : null}
+
+                  {/* Approved By Chef Tag */}
+                  {order.approvedBy && (
+                    <div className="kds-chef-note-box">
+                      👨‍🍳 <b>Approved by:</b> {order.approvedBy}
+                    </div>
+                  )}
+
+                  {/* Rejection Reason Display */}
+                  {order.status === 'Cancelled' && order.rejectionReason && (
+                    <div className="kds-instructions-alert" style={{ borderColor: '#ef5350', background: '#301818' }}>
+                      <X size={16} color="#ef5350" />
+                      <div>
+                        <b style={{ color: '#ef5350' }}>Rejection Reason:</b>
+                        <span style={{ color: '#ffcdd2' }}>{order.rejectionReason}</span>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer and Actions */}
+                  <div className="kds-card-footer">
+                    <div className="kds-totals-summary">
+                      <span>{order.items?.reduce((s, i) => s + i.qty, 0)} items total</span>
+                      <b>Total: {formatPrice(order.total)}</b>
+                    </div>
+
+                    {/* Status: NEW (Needs Approval & Prep Time Selection) */}
+                    {order.status === 'New' && (
+                      <>
+                        <div className="kds-prep-selector">
+                          <span className="kds-prep-label">⏱️ COOK TIME:</span>
+                          <div className="kds-prep-btns-wrap">
+                            {[10, 15, 20, 30].map(mins => (
+                              <button
+                                key={mins}
+                                type="button"
+                                className={`kds-prep-btn ${selectedPrep === mins ? 'selected' : ''}`}
+                                onClick={() => setPrepTimes(prev => ({ ...prev, [order.id]: mins }))}
+                              >
+                                {mins}m
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="kds-action-buttons">
+                          <button
+                            type="button"
+                            className="kds-btn-approve"
+                            onClick={() => handleApprove(order.id)}
+                          >
+                            <Check size={16} />
+                            <span>Approve & Start ({selectedPrep}m)</span>
+                          </button>
+                          <button
+                            type="button"
+                            className="kds-btn-reject"
+                            onClick={() => setRejectingOrder(order)}
+                            title="Reject Order"
+                          >
+                            <X size={15} />
+                            <span>Reject</span>
+                          </button>
+                        </div>
+                      </>
+                    )}
+
+                    {/* Status: PREPARING (Cooking) */}
+                    {order.status === 'Preparing' && (
                       <div className="kds-action-buttons">
                         <button
                           type="button"
-                          className="kds-btn-approve"
-                          onClick={() => handleApprove(order.id)}
+                          className="kds-btn-ready"
+                          onClick={() => handleStatusChange(order.id, 'Ready')}
                         >
-                          <Check size={16} />
-                          <span>Approve & Start ({selectedPrep}m)</span>
-                        </button>
-                        <button
-                          type="button"
-                          className="kds-btn-reject"
-                          onClick={() => setRejectingOrder(order)}
-                          title="Reject Order"
-                        >
-                          <X size={15} />
-                          <span>Reject</span>
+                          <UtensilsCrossed size={16} />
+                          <span>✓ Mark Cooking Complete & Food Ready</span>
                         </button>
                       </div>
-                    </>
-                  )}
+                    )}
 
-                  {/* Status: PREPARING (Cooking) */}
-                  {order.status === 'Preparing' && (
-                    <div className="kds-action-buttons">
-                      <button
-                        type="button"
-                        className="kds-btn-ready"
-                        onClick={() => handleStatusChange(order.id, 'Ready')}
-                      >
-                        <UtensilsCrossed size={16} />
-                        <span>✓ Mark Cooking Complete & Food Ready</span>
-                      </button>
-                    </div>
-                  )}
+                    {/* Status: READY (Food Ready for serving) */}
+                    {order.status === 'Ready' && (
+                      <div className="kds-action-buttons">
+                        <button
+                          type="button"
+                          className="kds-btn-complete"
+                          onClick={() => handleStatusChange(order.id, 'Completed')}
+                        >
+                          <CheckCircle2 size={16} />
+                          <span>Mark Served / Complete</span>
+                        </button>
+                      </div>
+                    )}
 
-                  {/* Status: READY (Food Ready for serving) */}
-                  {order.status === 'Ready' && (
-                    <div className="kds-action-buttons">
-                      <button
-                        type="button"
-                        className="kds-btn-complete"
-                        onClick={() => handleStatusChange(order.id, 'Completed')}
-                      >
-                        <CheckCircle2 size={16} />
-                        <span>Mark Served / Complete</span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Status: COMPLETED or CANCELLED */}
-                  {(order.status === 'Completed' || order.status === 'Cancelled') && (
-                    <div className="kds-action-buttons">
-                      <span style={{ fontSize: '12px', color: 'var(--text-muted)', alignSelf: 'center', fontWeight: '600' }}>
-                        {order.status === 'Completed' ? '✓ Served & Done' : '✕ Cancelled Ticket'}
-                      </span>
-                      <button
-                        type="button"
-                        className="kds-btn-delete"
-                        onClick={() => handleDelete(order.id)}
-                        title="Delete ticket"
-                      >
-                        <Trash2 size={14} />
-                      </button>
-                    </div>
-                  )}
+                    {/* Status: COMPLETED or CANCELLED */}
+                    {(order.status === 'Completed' || order.status === 'Cancelled') && (
+                      <div className="kds-action-buttons">
+                        <span style={{ fontSize: '12px', color: 'var(--text-muted)', alignSelf: 'center', fontWeight: '600' }}>
+                          {order.status === 'Completed' ? '✓ Served & Done' : '✕ Cancelled Ticket'}
+                        </span>
+                        <button
+                          type="button"
+                          className="kds-btn-delete"
+                          onClick={() => handleDelete(order.id)}
+                          title="Delete ticket"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
-            );
-          })
-        ) : (
-          <div className="kds-empty-state">
-            <ChefHat size={44} />
-            <h3>No orders in this view</h3>
-            <p>
-              {activeTab === 'New'
-                ? 'All incoming orders have been reviewed and approved.'
-                : 'No order tickets match the selected filter.'}
-            </p>
-            <button
-              type="button"
-              className="kds-btn-tool"
-              onClick={handleSeedDemoOrder}
-              style={{ display: 'inline-flex', margin: '0 auto' }}
-            >
-              <Plus size={15} /> Create a Test Order
-            </button>
-          </div>
-        )}
-      </div>
+              );
+            })
+          ) : (
+            <div className="kds-empty-state">
+              <ChefHat size={44} />
+              <h3>No orders in this view</h3>
+              <p>
+                {activeTab === 'New'
+                  ? 'All incoming orders have been reviewed and approved.'
+                  : 'No order tickets match the selected filter.'}
+              </p>
+              <button
+                type="button"
+                className="kds-btn-tool"
+                onClick={handleSeedDemoOrder}
+                style={{ display: 'inline-flex', margin: '0 auto' }}
+              >
+                <Plus size={15} /> Create a Test Order
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Reject Modal */}
       {rejectingOrder && (
@@ -2183,6 +2842,54 @@ function App() {
   const [orderError, setOrderError] = useState('');
   const [activeTrackingOrderId, setActiveTrackingOrderId] = useState(null);
   const [showTracker, setShowTracker] = useState(false);
+  const [callWaiterModalOpen, setCallWaiterModalOpen] = useState(false);
+  const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
+
+  // Real-time synchronization for Waiter Calls in Customer View
+  useEffect(() => {
+    const fetchCalls = async () => {
+      try {
+        const res = await fetch('/api/waiter-calls');
+        if (res.ok) {
+          const data = await res.json();
+          setWaiterCalls(data);
+          saveLocalWaiterCalls(data);
+        }
+      } catch {}
+    };
+    fetchCalls();
+
+    const handleSync = (e) => {
+      setWaiterCalls(e.detail || getLocalWaiterCalls());
+    };
+    window.addEventListener('poddars_waiter_sync', handleSync);
+    window.addEventListener('storage', handleSync);
+
+    let es;
+    try {
+      es = new EventSource('/api/events');
+      es.addEventListener('waiter:called', (e) => {
+        const newCall = JSON.parse(e.data);
+        setWaiterCalls(prev => [newCall, ...prev.filter(c => c.id !== newCall.id)]);
+      });
+      es.addEventListener('waiter:updated', (e) => {
+        const updated = JSON.parse(e.data);
+        setWaiterCalls(prev => prev.map(c => c.id === updated.id ? updated : c));
+      });
+      es.addEventListener('waiter:deleted', (e) => {
+        const { id } = JSON.parse(e.data);
+        setWaiterCalls(prev => prev.filter(c => c.id !== id));
+      });
+    } catch {}
+
+    const interval = setInterval(fetchCalls, 4000);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('poddars_waiter_sync', handleSync);
+      window.removeEventListener('storage', handleSync);
+      if (es) es.close();
+    };
+  }, []);
 
   // URL Hash / Path detection for direct kitchen access
   useEffect(() => {
@@ -2240,6 +2947,8 @@ function App() {
         return categoryOrder || Number(nonVegIds.has(first.id)) - Number(nonVegIds.has(second.id));
       });
   }, [category, diet, search]);
+
+  const activeTableCall = waiterCalls.find(c => c.status === 'Pending' && (guest?.table ? c.table === guest.table : c.table === 'Table 1'));
 
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
@@ -2396,6 +3105,17 @@ function App() {
             </button>
 
             <div className="header-actions">
+              {/* Call Waiter Header Button */}
+              <button
+                type="button"
+                className={'call-waiter-header-btn ' + (activeTableCall ? 'alert-active' : '')}
+                onClick={() => setCallWaiterModalOpen(true)}
+                title="Call waiter to your table"
+              >
+                <BellRing size={15} className={activeTableCall ? 'bell-ringing' : ''} />
+                <span>{activeTableCall ? `Alerted (${activeTableCall.table})` : 'Call Waiter'}</span>
+              </button>
+
               {activeTrackingOrderId && (
                 <button
                   type="button"
@@ -2896,6 +3616,21 @@ function App() {
         </>
       )}
 
+      {/* Floating Call Waiter Button for Quick Access */}
+      {currentView === 'customer' && (
+        <div className="floating-waiter-call-wrap">
+          <button
+            type="button"
+            className={`floating-waiter-btn ${activeTableCall ? 'alert-active' : ''}`}
+            onClick={() => setCallWaiterModalOpen(true)}
+            title="Call waiter to your table"
+          >
+            <BellRing size={18} className={activeTableCall ? 'bell-ringing' : ''} />
+            <span>{activeTableCall ? `Staff Alerted (${activeTableCall.table})` : 'Call Waiter'}</span>
+          </button>
+        </div>
+      )}
+
       {/* Guest Login / Table Check-in Modal */}
       <GuestLoginModal
         guest={guest}
@@ -2914,6 +3649,32 @@ function App() {
           setGuestModalOpen(false);
           try {
             localStorage.setItem('poddars_guest_session', JSON.stringify(savedGuest));
+          } catch {}
+        }}
+      />
+
+      {/* Call Waiter Modal */}
+      <CallWaiterModal
+        isOpen={callWaiterModalOpen}
+        onClose={() => setCallWaiterModalOpen(false)}
+        guest={guest}
+        onSaveGuest={savedGuest => {
+          setGuest(savedGuest);
+          setMode(savedGuest.mode || 'Dine in');
+          try {
+            localStorage.setItem('poddars_guest_session', JSON.stringify(savedGuest));
+          } catch {}
+        }}
+        activeCalls={waiterCalls}
+        onCallSuccess={newCall => {
+          setWaiterCalls(prev => [newCall, ...prev.filter(c => c.id !== newCall.id)]);
+          saveLocalWaiterCalls([newCall, ...waiterCalls.filter(c => c.id !== newCall.id)]);
+        }}
+        onCancelCall={async (callId) => {
+          setWaiterCalls(prev => prev.map(c => c.id === callId ? { ...c, status: 'Dismissed' } : c));
+          saveLocalWaiterCalls(waiterCalls.map(c => c.id === callId ? { ...c, status: 'Dismissed' } : c));
+          try {
+            await fetch(`/api/waiter-calls/${callId}/dismiss`, { method: 'PATCH' });
           } catch {}
         }}
       />

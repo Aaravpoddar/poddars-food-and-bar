@@ -7,6 +7,7 @@ import { networkInterfaces } from 'node:os';
 const rootDirectory = dirname(fileURLToPath(import.meta.url));
 const distDirectory = join(rootDirectory, 'dist');
 const ordersFile = join(rootDirectory, 'data', 'orders.json');
+const waiterCallsFile = join(rootDirectory, 'data', 'waiter_calls.json');
 const port = 3002;
 
 const mimeTypes = {
@@ -104,6 +105,21 @@ async function getOrders() {
 async function saveOrders(orders) {
   await mkdir(dirname(ordersFile), { recursive: true });
   await writeFile(ordersFile, JSON.stringify(orders, null, 2), 'utf8');
+}
+
+async function getWaiterCalls() {
+  try {
+    const content = await readFile(waiterCallsFile, 'utf8');
+    return JSON.parse(content);
+  } catch (error) {
+    if (error.code === 'ENOENT') return [];
+    throw error;
+  }
+}
+
+async function saveWaiterCalls(calls) {
+  await mkdir(dirname(waiterCallsFile), { recursive: true });
+  await writeFile(waiterCallsFile, JSON.stringify(calls, null, 2), 'utf8');
 }
 
 function send(response, statusCode, payload) {
@@ -408,6 +424,95 @@ const server = createServer(async (request, response) => {
       await saveOrders(orders);
       broadcastEvent('order:deleted', { id: orderId });
       return send(response, 200, { success: true, message: 'Order removed' });
+    }
+
+    // ==========================================
+    // WAITER CALL NOTIFICATIONS (KITCHEN PORTAL)
+    // ==========================================
+
+    // GET /api/waiter-calls
+    if (request.method === 'GET' && pathname === '/api/waiter-calls') {
+      const calls = await getWaiterCalls();
+      return send(response, 200, calls);
+    }
+
+    // POST /api/waiter-calls (Customer calls waiter)
+    if (request.method === 'POST' && pathname === '/api/waiter-calls') {
+      const payload = await readBody(request);
+      const calls = await getWaiterCalls();
+      
+      const newCall = {
+        id: `CALL-${Math.floor(1000 + Math.random() * 9000)}`,
+        table: String(payload.table || 'Table 1').trim(),
+        guestName: String(payload.guestName || 'Guest').trim(),
+        reason: String(payload.reason || 'General Assistance').trim(),
+        customNote: String(payload.customNote || '').trim(),
+        status: 'Pending', // 'Pending' | 'Attended' | 'Dismissed'
+        createdAt: new Date().toISOString(),
+        attendedAt: null,
+        attendedBy: null
+      };
+
+      calls.unshift(newCall);
+      await saveWaiterCalls(calls);
+      broadcastEvent('waiter:called', newCall);
+
+      return send(response, 201, newCall);
+    }
+
+    // PATCH /api/waiter-calls/:id/attend (Chef/Staff attends waiter call)
+    const attendMatch = pathname.match(/^\/api\/waiter-calls\/([^/]+)\/attend$/);
+    if (request.method === 'PATCH' && attendMatch) {
+      const callId = attendMatch[1];
+      const payload = await readBody(request);
+      const calls = await getWaiterCalls();
+      const call = calls.find(c => c.id === callId);
+
+      if (!call) return send(response, 404, { error: 'Waiter call not found.' });
+
+      call.status = 'Attended';
+      call.attendedAt = new Date().toISOString();
+      call.attendedBy = payload.attendedBy ? String(payload.attendedBy).trim() : 'Kitchen Staff';
+
+      await saveWaiterCalls(calls);
+      broadcastEvent('waiter:updated', call);
+
+      return send(response, 200, call);
+    }
+
+    // PATCH /api/waiter-calls/:id/dismiss (Dismiss or cancel call)
+    const dismissMatch = pathname.match(/^\/api\/waiter-calls\/([^/]+)\/dismiss$/);
+    if (request.method === 'PATCH' && dismissMatch) {
+      const callId = dismissMatch[1];
+      const calls = await getWaiterCalls();
+      const call = calls.find(c => c.id === callId);
+
+      if (!call) return send(response, 404, { error: 'Waiter call not found.' });
+
+      call.status = 'Dismissed';
+      call.attendedAt = new Date().toISOString();
+
+      await saveWaiterCalls(calls);
+      broadcastEvent('waiter:updated', call);
+
+      return send(response, 200, call);
+    }
+
+    // DELETE /api/waiter-calls/:id
+    const deleteCallMatch = pathname.match(/^\/api\/waiter-calls\/([^/]+)$/);
+    if (request.method === 'DELETE' && deleteCallMatch) {
+      const callId = deleteCallMatch[1];
+      let calls = await getWaiterCalls();
+      const initialLength = calls.length;
+      calls = calls.filter(c => c.id !== callId);
+
+      if (calls.length === initialLength) {
+        return send(response, 404, { error: 'Call not found.' });
+      }
+
+      await saveWaiterCalls(calls);
+      broadcastEvent('waiter:deleted', { id: callId });
+      return send(response, 200, { success: true, message: 'Waiter call removed' });
     }
 
     // Serve Frontend Static Web App for all other routes

@@ -3139,7 +3139,7 @@ function App() {
                 title="Open Staff & Kitchen Portal"
               >
                 <ChefHat size={16} />
-                <span>Kitchen</span>
+                <span className="header-btn-label">Kitchen</span>
               </button>
 
               {/* Call Waiter Header Button */}
@@ -3150,18 +3150,19 @@ function App() {
                 title="Call waiter to your table"
               >
                 <BellRing size={15} className={activeTableCall ? 'bell-ringing' : ''} />
-                <span>{activeTableCall ? `Alerted (${activeTableCall.table})` : 'Call Waiter'}</span>
+                <span className="header-btn-label">{activeTableCall ? `Alerted (${activeTableCall.table})` : 'Call Waiter'}</span>
               </button>
 
               {activeTrackingOrderId && (
                 <button
                   type="button"
-                  className="kds-btn-tool active"
+                  className="kds-btn-tool active header-track-btn"
                   onClick={() => setShowTracker(true)}
-                  style={{ fontSize: '11px', padding: '6px 12px' }}
+                  style={{ fontSize: '11px', padding: '6px 10px' }}
+                  title="Track Active Order"
                 >
                   <Flame size={14} color="var(--lime)" />
-                  <span>Track Order</span>
+                  <span className="header-btn-label">Track</span>
                 </button>
               )}
 
@@ -3171,7 +3172,7 @@ function App() {
                 onClick={() => setNotice(!notice)}
                 aria-label="Toggle order updates"
               >
-                <Bell size={19} />
+                <Bell size={18} />
               </button>
 
               <button

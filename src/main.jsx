@@ -3150,7 +3150,7 @@ function App() {
                 title="Call waiter to your table"
               >
                 <BellRing size={15} className={activeTableCall ? 'bell-ringing' : ''} />
-                <span className="header-btn-label">{activeTableCall ? `Alerted (${activeTableCall.table})` : 'Call Waiter'}</span>
+                <span className="header-btn-label">{activeTableCall ? `Alerted (${activeTableCall.table.replace('Table ', 'T')})` : 'Call Waiter'}</span>
               </button>
 
               {activeTrackingOrderId && (

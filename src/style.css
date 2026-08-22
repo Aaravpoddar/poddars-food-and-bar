@@ -1,14 +1,17 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-  color-scheme: light;
-  supported-color-schemes: light;
-  /* Clean Luxury Gourmet Palette - Imperial Emerald & Royal Sapphire */
-  --bg-page: #f8fafc;
+  color-scheme: only light !important;
+  supported-color-schemes: only light light !important;
+  forced-color-adjust: none !important;
+  -webkit-forced-color-adjust: none !important;
+
+  /* Clean Pure White & Luxury Gourmet Palette */
+  --bg-page: #ffffff;
   --bg-card: #ffffff;
   --bg-card-hover: #ffffff;
-  --bg-surface: #f1f5f9;
-  --bg-subtle: #f8fafc;
+  --bg-surface: #f8fafc;
+  --bg-subtle: #ffffff;
   
   --line: #e2e8f0;
   --line-strong: #cbd5e1;
@@ -44,32 +47,51 @@
 
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 html {
-  color-scheme: light;
-  background-color: #ffffff;
-  background: var(--bg-page);
+  color-scheme: only light !important;
+  forced-color-adjust: none !important;
+  -webkit-forced-color-adjust: none !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
   min-height: 100%;
   -webkit-text-size-adjust: 100%;
+  overflow-x: hidden;
 }
 
 body {
   margin: 0;
-  color-scheme: light;
-  background-color: #ffffff;
-  background: var(--bg-page);
-  color: var(--text-main);
+  color-scheme: only light !important;
+  forced-color-adjust: none !important;
+  -webkit-forced-color-adjust: none !important;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color: #0f172a !important;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+  overflow-x: hidden;
+  width: 100%;
 }
 
 #root {
   min-height: 100vh;
-  background-color: #ffffff;
-  background: var(--bg-page);
-  color-scheme: light;
+  background-color: #ffffff !important;
+  background: #ffffff !important;
+  color-scheme: only light !important;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+/* Force light theme on all elements even with system Dark Mode / Samsung Internet force-dark */
+@media (prefers-color-scheme: dark) {
+  :root, html, body, #root, main, header, section, article, div, aside {
+    color-scheme: only light !important;
+    forced-color-adjust: none !important;
+    -webkit-forced-color-adjust: none !important;
+  }
 }
 
 button, input, textarea {
@@ -3026,9 +3048,12 @@ header {
 
 @media (max-width: 768px) {
   header {
-    height: 60px;
+    height: 58px;
     padding: 0 10px;
     gap: 6px;
+    max-width: 100vw;
+    box-sizing: border-box;
+    overflow-x: hidden;
   }
 
   .service-status {
@@ -3036,7 +3061,7 @@ header {
   }
 
   .brand {
-    font-size: 13px;
+    font-size: 12px;
     gap: 6px;
   }
 
@@ -3047,18 +3072,19 @@ header {
   }
 
   .brand i {
-    font-size: 8px;
+    font-size: 7.5px;
   }
 
   .header-guest-pill {
     padding: 4px 8px;
-    gap: 6px;
-    border-radius: 14px;
+    gap: 5px;
+    border-radius: 12px;
+    max-width: 110px;
   }
 
   .header-guest-pill b {
     font-size: 11px;
-    max-width: 60px;
+    max-width: 55px;
   }
 
   .header-guest-pill small {
@@ -3067,18 +3093,27 @@ header {
 
   .header-actions {
     gap: 5px;
+    flex-wrap: nowrap;
+  }
+
+  .header-btn-label {
+    display: none !important; /* Use icons on mobile so buttons never overflow */
   }
 
   .header-kitchen-btn, .call-waiter-header-btn {
-    padding: 6px 10px;
-    font-size: 11px;
+    padding: 6px 8px;
     height: 36px;
-    border-radius: 10px;
+    min-width: 36px;
+    justify-content: center;
+    border-radius: 8px;
+    gap: 0;
   }
 
   .header-track-btn {
     height: 36px;
     padding: 6px 8px;
+    min-width: 36px;
+    justify-content: center;
   }
 
   .icon-btn {
@@ -3089,10 +3124,10 @@ header {
 
   .cart-trigger {
     height: 36px;
-    padding: 0 10px;
+    padding: 0 8px;
     font-size: 12px;
     border-radius: 8px;
-    gap: 5px;
+    gap: 4px;
     flex-shrink: 0;
   }
 
@@ -3102,30 +3137,19 @@ header {
   }
 }
 
-@media (max-width: 540px) {
+@media (max-width: 440px) {
   header {
     padding: 0 6px;
+    gap: 4px;
   }
 
   .brand span {
-    display: none; /* Show icon badge only on small mobile */
-  }
-
-  .header-btn-label {
-    display: none; /* Show icon only for compact header fit */
-  }
-
-  .header-kitchen-btn, .call-waiter-header-btn {
-    padding: 6px;
-    width: 36px;
-    height: 36px;
-    justify-content: center;
-    border-radius: 8px;
+    display: none; /* Show icon badge only on extra compact mobile */
   }
 
   .header-guest-pill {
     padding: 4px 6px;
-    max-width: 90px;
+    max-width: 85px;
   }
 }
 

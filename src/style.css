@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
+  color-scheme: light;
+  supported-color-schemes: light;
   /* Clean Luxury Gourmet Palette - Imperial Emerald & Royal Sapphire */
   --bg-page: #f8fafc;
   --bg-card: #ffffff;
@@ -44,13 +46,30 @@
   box-sizing: border-box;
 }
 
+html {
+  color-scheme: light;
+  background-color: #ffffff;
+  background: var(--bg-page);
+  min-height: 100%;
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
   margin: 0;
+  color-scheme: light;
+  background-color: #ffffff;
   background: var(--bg-page);
   color: var(--text-main);
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   min-height: 100vh;
+}
+
+#root {
+  min-height: 100vh;
+  background-color: #ffffff;
+  background: var(--bg-page);
+  color-scheme: light;
 }
 
 button, input, textarea {

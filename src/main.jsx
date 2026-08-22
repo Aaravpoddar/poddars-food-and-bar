@@ -916,7 +916,7 @@ function ChefLogin({ onLogin, onBackToMenu }) {
 
         <form onSubmit={handleSubmit} className="chef-login-form">
           <div className="chef-input-group">
-            <label><User size={13} /> Official / Staff Name</label>
+            <label><User size={13} /> Staff Name</label>
             <div className="chef-input-box">
               <User size={16} />
               <input
@@ -930,7 +930,7 @@ function ChefLogin({ onLogin, onBackToMenu }) {
           </div>
 
           <div className="chef-input-group">
-            <label><Lock size={13} /> Access Passcode / Staff ID</label>
+            <label><Lock size={13} /> Staff ID / Passcode</label>
             <div className="chef-input-box">
               <Lock size={16} />
               <input

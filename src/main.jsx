@@ -901,8 +901,8 @@ function ChefLogin({ onLogin, onBackToMenu }) {
         <div className="chef-login-badge">
           <ChefHat size={32} />
         </div>
-        <h2>Kitchen Portal Access</h2>
-        <p className="chef-login-subtitle">THE PODDAR'S COURTYARD Kitchen Display System (KDS)</p>
+        <h2>Staff & Management Portal Access</h2>
+        <p className="chef-login-subtitle">THE PODDAR'S COURTYARD Operations & Order Management</p>
 
         {error && (
           <div className="chef-login-error" style={{ background: '#fef2f2', borderColor: '#fca5a5', color: '#dc2626', padding: '12px 14px', borderRadius: '10px' }}>
@@ -916,7 +916,7 @@ function ChefLogin({ onLogin, onBackToMenu }) {
 
         <form onSubmit={handleSubmit} className="chef-login-form">
           <div className="chef-input-group">
-            <label><User size={13} /> Member Name</label>
+            <label><User size={13} /> Official / Staff Name</label>
             <div className="chef-input-box">
               <User size={16} />
               <input
@@ -930,7 +930,7 @@ function ChefLogin({ onLogin, onBackToMenu }) {
           </div>
 
           <div className="chef-input-group">
-            <label><Lock size={13} /> Staff ID / Passcode</label>
+            <label><Lock size={13} /> Access Passcode / Staff ID</label>
             <div className="chef-input-box">
               <Lock size={16} />
               <input
@@ -948,7 +948,7 @@ function ChefLogin({ onLogin, onBackToMenu }) {
             disabled={loading || redirecting}
           >
             <ShieldCheck size={18} />
-            <span>{loading ? 'Authenticating...' : redirecting ? 'Access Denied' : 'Enter Kitchen Display →'}</span>
+            <span>{loading ? 'Authenticating...' : redirecting ? 'Access Denied' : 'Enter Management Portal →'}</span>
           </button>
         </form>
 
@@ -1463,8 +1463,8 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
               {chefAuth?.name?.charAt(0) || 'C'}
             </div>
             <div className="chef-user-details">
-              <span className="chef-user-name">{chefAuth?.name || 'Chef'}</span>
-              <span className="chef-user-id">{chefAuth?.role || 'Staff'} • {chefAuth?.id || ''}</span>
+              <span className="chef-user-name">{chefAuth?.name || 'Staff Member'}</span>
+              <span className="chef-user-id">{chefAuth?.designation || chefAuth?.role || 'Management'} • ID {chefAuth?.id || ''}</span>
             </div>
             <button
               type="button"

@@ -53,6 +53,261 @@ import {
   Banknote
 } from 'lucide-react';
 import './style.css';
+// -------------------------------------------------------------
+// REAL-TIME MULTI-DEVICE CLOUD SYNCHRONIZATION ENGINE
+// Synchronizes orders, status updates, and waiter calls across all staff phones and customer devices in real-time.
+// -------------------------------------------------------------
+const CLOUD_BROKERS = [
+  'wss://broker.emqx.io:8084/mqtt',
+  'wss://broker.hivemq.com:8884/mqtt'
+];
+const TOPIC_PREFIX = 'poddars_food_and_bar_v1';
+const TOPIC_ORDERS_NEW = `${TOPIC_PREFIX}/orders/new`;
+const TOPIC_ORDERS_UPDATE = `${TOPIC_PREFIX}/orders/update`;
+const TOPIC_WAITER_CALL = `${TOPIC_PREFIX}/waiter/call`;
+const TOPIC_WAITER_UPDATE = `${TOPIC_PREFIX}/waiter/update`;
+const TOPIC_SYNC_REQ = `${TOPIC_PREFIX}/sync/req`;
+const TOPIC_SYNC_RES = `${TOPIC_PREFIX}/sync/res`;
+
+const CLOUD_CLIENT_ID = 'poddar_' + Math.random().toString(36).substring(2, 11);
+let cloudWs = null;
+let cloudBrokerIdx = 0;
+let cloudConnected = false;
+const orderListeners = new Set();
+const waiterListeners = new Set();
+const syncListeners = new Set();
+let cloudPingInterval = null;
+
+function encodeUTF8(str) {
+  const codePoints = [];
+  for (let i = 0; i < str.length; i++) {
+    let c = str.charCodeAt(i);
+    if (c < 0x80) {
+      codePoints.push(c);
+    } else if (c < 0x800) {
+      codePoints.push(0xc0 | (c >> 6), 0x80 | (c & 0x3f));
+    } else if (c < 0xd800 || c >= 0xe000) {
+      codePoints.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+    } else {
+      i++;
+      c = 0x10000 + (((c & 0x3ff) << 10) | (str.charCodeAt(i) & 0x3ff));
+      codePoints.push(0xf0 | (c >> 18), 0x80 | ((c >> 12) & 0x3f), 0x80 | ((c >> 6) & 0x3f), 0x80 | (c & 0x3f));
+    }
+  }
+  return codePoints;
+}
+
+function decodeUTF8(bytes, start, end) {
+  let str = '';
+  for (let i = start; i < end; i++) {
+    const b = bytes[i];
+    if (b < 0x80) {
+      str += String.fromCharCode(b);
+    } else if ((b & 0xe0) === 0xc0) {
+      str += String.fromCharCode(((b & 0x1f) << 6) | (bytes[++i] & 0x3f));
+    } else if ((b & 0xf0) === 0xe0) {
+      str += String.fromCharCode(((b & 0x0f) << 12) | ((bytes[++i] & 0x3f) << 6) | (bytes[++i] & 0x3f));
+    }
+  }
+  return str;
+}
+
+function encodeMqttLength(len) {
+  const bytes = [];
+  do {
+    let digit = len % 128;
+    len = Math.floor(len / 128);
+    if (len > 0) digit |= 0x80;
+    bytes.push(digit);
+  } while (len > 0);
+  return bytes;
+}
+
+function encodeConnectPacket(clientId) {
+  const proto = [0x00, 0x04, 0x4d, 0x51, 0x54, 0x54, 0x04, 0x02, 0x00, 0x3c];
+  const idBytes = encodeUTF8(clientId);
+  const lenBytes = [(idBytes.length >> 8) & 0xff, idBytes.length & 0xff];
+  const payload = [...proto, ...lenBytes, ...idBytes];
+  return new Uint8Array([0x10, ...encodeMqttLength(payload.length), ...payload]);
+}
+
+function encodeSubscribePacket(topic, msgId = 1) {
+  const topBytes = encodeUTF8(topic);
+  const payload = [
+    (msgId >> 8) & 0xff, msgId & 0xff,
+    (topBytes.length >> 8) & 0xff, topBytes.length & 0xff,
+    ...topBytes,
+    0x00
+  ];
+  return new Uint8Array([0x82, ...encodeMqttLength(payload.length), ...payload]);
+}
+
+function encodePublishPacket(topic, message) {
+  const topBytes = encodeUTF8(topic);
+  const msgBytes = encodeUTF8(message);
+  const payload = [
+    (topBytes.length >> 8) & 0xff, topBytes.length & 0xff,
+    ...topBytes,
+    ...msgBytes
+  ];
+  return new Uint8Array([0x30, ...encodeMqttLength(payload.length), ...payload]);
+}
+
+function initCloudSync() {
+  if (cloudWs && (cloudWs.readyState === 0 || cloudWs.readyState === 1)) return;
+
+  const brokerUrl = CLOUD_BROKERS[cloudBrokerIdx];
+  try {
+    cloudWs = new WebSocket(brokerUrl, ['mqtt']);
+    cloudWs.binaryType = 'arraybuffer';
+
+    cloudWs.onopen = () => {
+      cloudWs.send(encodeConnectPacket(CLOUD_CLIENT_ID));
+    };
+
+    cloudWs.onmessage = (event) => {
+      try {
+        const buf = new Uint8Array(event.data);
+        const packetType = buf[0] >> 4;
+
+        if (packetType === 2) {
+          cloudConnected = true;
+          [
+            TOPIC_ORDERS_NEW,
+            TOPIC_ORDERS_UPDATE,
+            TOPIC_WAITER_CALL,
+            TOPIC_WAITER_UPDATE,
+            TOPIC_SYNC_REQ,
+            TOPIC_SYNC_RES
+          ].forEach(top => {
+            if (cloudWs && cloudWs.readyState === 1) cloudWs.send(encodeSubscribePacket(top));
+          });
+
+          publishCloudMessage(TOPIC_SYNC_REQ, { senderId: CLOUD_CLIENT_ID, timestamp: Date.now() });
+
+          if (cloudPingInterval) clearInterval(cloudPingInterval);
+          cloudPingInterval = setInterval(() => {
+            if (cloudWs && cloudWs.readyState === 1) {
+              cloudWs.send(new Uint8Array([0xc0, 0x00]));
+            }
+          }, 25000);
+        } else if (packetType === 3) {
+          let idx = 1;
+          let multiplier = 1, remLen = 0;
+          while (idx < buf.length) {
+            const b = buf[idx++];
+            remLen += (b & 127) * multiplier;
+            multiplier *= 128;
+            if ((b & 128) === 0) break;
+          }
+
+          const topLen = (buf[idx] << 8) | buf[idx + 1];
+          idx += 2;
+          const topic = decodeUTF8(buf, idx, idx + topLen);
+          idx += topLen;
+          const rawMessage = decodeUTF8(buf, idx, buf.length);
+
+          if (rawMessage) {
+            const payload = JSON.parse(rawMessage);
+            if (topic === TOPIC_ORDERS_NEW && payload.order) {
+              orderListeners.forEach(fn => fn('ORDER_NEW', payload.order));
+            } else if (topic === TOPIC_ORDERS_UPDATE && payload.order) {
+              orderListeners.forEach(fn => fn('ORDER_UPDATE', payload.order));
+            } else if (topic === TOPIC_WAITER_CALL && payload.call) {
+              waiterListeners.forEach(fn => fn('WAITER_CALL', payload.call));
+            } else if (topic === TOPIC_WAITER_UPDATE && payload.call) {
+              waiterListeners.forEach(fn => fn('WAITER_UPDATE', payload.call));
+            } else if (topic === TOPIC_SYNC_REQ) {
+              if (payload.senderId && payload.senderId !== CLOUD_CLIENT_ID) {
+                syncListeners.forEach(fn => fn(payload.senderId));
+              }
+            } else if (topic === TOPIC_SYNC_RES && payload.targetId === CLOUD_CLIENT_ID) {
+              if (Array.isArray(payload.orders) && payload.orders.length > 0) {
+                orderListeners.forEach(fn => fn('SYNC_ALL', payload.orders));
+              }
+              if (Array.isArray(payload.waiterCalls) && payload.waiterCalls.length > 0) {
+                waiterListeners.forEach(fn => fn('SYNC_ALL_WAITER', payload.waiterCalls));
+              }
+            }
+          }
+        }
+      } catch (e) {}
+    };
+
+    cloudWs.onerror = () => reconnectCloud();
+    cloudWs.onclose = () => {
+      cloudConnected = false;
+      if (cloudPingInterval) clearInterval(cloudPingInterval);
+      setTimeout(reconnectCloud, 3000);
+    };
+  } catch (err) {
+    reconnectCloud();
+  }
+}
+
+function reconnectCloud() {
+  if (cloudWs) {
+    try { cloudWs.close(); } catch {}
+    cloudWs = null;
+  }
+  cloudConnected = false;
+  cloudBrokerIdx = (cloudBrokerIdx + 1) % CLOUD_BROKERS.length;
+  setTimeout(initCloudSync, 2000);
+}
+
+function publishCloudMessage(topic, data) {
+  if (!cloudWs || cloudWs.readyState !== 1 || !cloudConnected) {
+    initCloudSync();
+    setTimeout(() => publishCloudMessage(topic, data), 600);
+    return;
+  }
+  try {
+    cloudWs.send(encodePublishPacket(topic, JSON.stringify(data)));
+  } catch (e) {}
+}
+
+function broadcastNewOrder(order) {
+  publishCloudMessage(TOPIC_ORDERS_NEW, { order, senderId: CLOUD_CLIENT_ID });
+}
+
+function broadcastOrderUpdate(order) {
+  publishCloudMessage(TOPIC_ORDERS_UPDATE, { order, senderId: CLOUD_CLIENT_ID });
+}
+
+function broadcastWaiterCall(call) {
+  publishCloudMessage(TOPIC_WAITER_CALL, { call, senderId: CLOUD_CLIENT_ID });
+}
+
+function broadcastWaiterUpdate(call) {
+  publishCloudMessage(TOPIC_WAITER_UPDATE, { call, senderId: CLOUD_CLIENT_ID });
+}
+
+function sendSyncResponse(targetId, orders, waiterCalls) {
+  publishCloudMessage(TOPIC_SYNC_RES, {
+    targetId,
+    orders,
+    waiterCalls,
+    senderId: CLOUD_CLIENT_ID
+  });
+}
+
+function onCloudOrderEvent(listener) {
+  orderListeners.add(listener);
+  initCloudSync();
+  return () => orderListeners.delete(listener);
+}
+
+function onCloudWaiterEvent(listener) {
+  waiterListeners.add(listener);
+  initCloudSync();
+  return () => waiterListeners.delete(listener);
+}
+
+function onSyncRequestReceived(listener) {
+  syncListeners.add(listener);
+  initCloudSync();
+  return () => syncListeners.delete(listener);
+}
 
 const resolveAsset = (url) => {
   if (!url) return url;
@@ -1053,7 +1308,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
     prevPendingCallsCount.current = currentPendingCalls;
   };
 
-  // SSE Stream and Polling fallback + Cross-tab local sync
+  // SSE Stream, Real-Time Cloud Sync and Polling fallback + Cross-tab local sync
   useEffect(() => {
     fetchOrdersAndStats();
 
@@ -1074,6 +1329,74 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
     window.addEventListener('poddars_waiter_sync', handleWaiterLocalSync);
     window.addEventListener('storage', handleLocalSync);
     window.addEventListener('storage', handleWaiterLocalSync);
+
+    // Multi-device Cloud Sync Listeners (Real-time sync across all staff phones)
+    const unsubCloudOrders = onCloudOrderEvent((eventType, payload) => {
+      if (eventType === 'ORDER_NEW') {
+        setOrders(prev => {
+          if (prev.some(o => o.id === payload.id)) return prev;
+          const list = [payload, ...prev];
+          saveLocalOrders(list);
+          const st = calculateStats(list);
+          setStats(st);
+          if (onOrderStatsChange) onOrderStatsChange(st);
+          return list;
+        });
+        if (soundEnabled) playKitchenChime();
+      } else if (eventType === 'ORDER_UPDATE') {
+        setOrders(prev => {
+          const list = prev.map(o => o.id === payload.id ? { ...o, ...payload } : o);
+          saveLocalOrders(list);
+          const st = calculateStats(list);
+          setStats(st);
+          if (onOrderStatsChange) onOrderStatsChange(st);
+          return list;
+        });
+      } else if (eventType === 'SYNC_ALL') {
+        setOrders(prev => {
+          const map = new Map();
+          (payload || []).forEach(o => map.set(o.id, o));
+          prev.forEach(o => map.set(o.id, o));
+          const merged = Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          saveLocalOrders(merged);
+          const st = calculateStats(merged);
+          setStats(st);
+          if (onOrderStatsChange) onOrderStatsChange(st);
+          return merged;
+        });
+      }
+    });
+
+    const unsubCloudWaiter = onCloudWaiterEvent((eventType, payload) => {
+      if (eventType === 'WAITER_CALL') {
+        setWaiterCalls(prev => {
+          if (prev.some(c => c.id === payload.id)) return prev;
+          const list = [payload, ...prev];
+          saveLocalWaiterCalls(list);
+          return list;
+        });
+        if (soundEnabled) playWaiterCallChime();
+      } else if (eventType === 'WAITER_UPDATE') {
+        setWaiterCalls(prev => {
+          const list = prev.map(c => c.id === payload.id ? { ...c, ...payload } : c);
+          saveLocalWaiterCalls(list);
+          return list;
+        });
+      } else if (eventType === 'SYNC_ALL_WAITER') {
+        setWaiterCalls(prev => {
+          const map = new Map();
+          (payload || []).forEach(c => map.set(c.id, c));
+          prev.forEach(c => map.set(c.id, c));
+          const merged = Array.from(map.values()).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          saveLocalWaiterCalls(merged);
+          return merged;
+        });
+      }
+    });
+
+    const unsubSyncReq = onSyncRequestReceived((senderId) => {
+      sendSyncResponse(senderId, getLocalOrders(), getLocalWaiterCalls());
+    });
 
     let eventSource;
     try {
@@ -1144,18 +1467,23 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       window.removeEventListener('poddars_waiter_sync', handleWaiterLocalSync);
       window.removeEventListener('storage', handleLocalSync);
       window.removeEventListener('storage', handleWaiterLocalSync);
+      unsubCloudOrders();
+      unsubCloudWaiter();
+      unsubSyncReq();
       if (eventSource) eventSource.close();
     };
   }, [soundEnabled]);
 
   const handleAttendWaiterCall = async (callId) => {
     const now = new Date().toISOString();
-    const staffName = chefAuth?.name || 'Chef';
+    const staffName = chefAuth?.name || 'Staff';
+    const updatedCall = { id: callId, status: 'Attended', attendedAt: now, attendedBy: staffName };
     setWaiterCalls(prev => {
-      const list = prev.map(c => c.id === callId ? { ...c, status: 'Attended', attendedAt: now, attendedBy: staffName } : c);
+      const list = prev.map(c => c.id === callId ? { ...c, ...updatedCall } : c);
       saveLocalWaiterCalls(list);
       return list;
     });
+    broadcastWaiterUpdate(updatedCall);
     try {
       await fetch(`/api/waiter-calls/${callId}/attend`, {
         method: 'PATCH',
@@ -1169,11 +1497,13 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
 
   const handleDismissWaiterCall = async (callId) => {
     const now = new Date().toISOString();
+    const updatedCall = { id: callId, status: 'Dismissed', attendedAt: now };
     setWaiterCalls(prev => {
-      const list = prev.map(c => c.id === callId ? { ...c, status: 'Dismissed', attendedAt: now } : c);
+      const list = prev.map(c => c.id === callId ? { ...c, ...updatedCall } : c);
       saveLocalWaiterCalls(list);
       return list;
     });
+    broadcastWaiterUpdate(updatedCall);
     try {
       await fetch(`/api/waiter-calls/${callId}/dismiss`, { method: 'PATCH' });
     } catch (err) {
@@ -1187,6 +1517,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       saveLocalWaiterCalls(list);
       return list;
     });
+    broadcastWaiterUpdate({ id: callId, status: 'Deleted' });
     try {
       await fetch(`/api/waiter-calls/${callId}`, { method: 'DELETE' });
     } catch (err) {
@@ -1196,17 +1527,19 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
 
   const handleApprove = async (orderId) => {
     const prepTime = prepTimes[orderId] || 15;
+    let targetOrder = null;
     // Update local state immediately
     setOrders(prev => {
       const updated = prev.map(o => {
         if (o.id === orderId) {
-          return {
+          targetOrder = {
             ...o,
             status: 'Preparing',
             approvedAt: new Date().toISOString(),
             estimatedPrepTime: prepTime,
-            approvedBy: chefAuth?.name || 'Chef'
+            approvedBy: chefAuth?.name || 'Staff'
           };
+          return targetOrder;
         }
         return o;
       });
@@ -1215,13 +1548,15 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       return updated;
     });
 
+    if (targetOrder) broadcastOrderUpdate(targetOrder);
+
     try {
       const res = await fetch(`/api/orders/${orderId}/approve`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           prepTime,
-          approvedBy: chefAuth?.name || 'Chef'
+          approvedBy: chefAuth?.name || 'Staff'
         })
       });
       if (res.ok) {
@@ -1232,6 +1567,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           setStats(calculateStats(list));
           return list;
         });
+        broadcastOrderUpdate(updated);
       }
     } catch (err) {
       console.warn('Approve synced to local storage');
@@ -1240,6 +1576,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
 
   const handleStatusChange = async (orderId, newStatus) => {
     const now = new Date().toISOString();
+    let targetOrder = null;
     setOrders(prev => {
       const updated = prev.map(o => {
         if (o.id === orderId) {
@@ -1248,6 +1585,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           if (newStatus === 'Ready') mod.readyAt = now;
           if (newStatus === 'Completed') mod.completedAt = now;
           if (newStatus === 'Cancelled') mod.cancelledAt = now;
+          targetOrder = mod;
           return mod;
         }
         return o;
@@ -1256,6 +1594,8 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       setStats(calculateStats(updated));
       return updated;
     });
+
+    if (targetOrder) broadcastOrderUpdate(targetOrder);
 
     try {
       const res = await fetch(`/api/orders/${orderId}/status`, {
@@ -1271,6 +1611,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           setStats(calculateStats(list));
           return list;
         });
+        broadcastOrderUpdate(updated);
       }
     } catch (err) {
       console.warn('Status change synced to local storage');
@@ -1281,15 +1622,17 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
     if (!rejectingOrder) return;
     const orderId = rejectingOrder.id;
     const now = new Date().toISOString();
+    let targetOrder = null;
     setOrders(prev => {
       const updated = prev.map(o => {
         if (o.id === orderId) {
-          return {
+          targetOrder = {
             ...o,
             status: 'Cancelled',
             cancelledAt: now,
             rejectionReason: rejectReason
           };
+          return targetOrder;
         }
         return o;
       });
@@ -1298,6 +1641,8 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       return updated;
     });
     setRejectingOrder(null);
+
+    if (targetOrder) broadcastOrderUpdate(targetOrder);
 
     try {
       const res = await fetch(`/api/orders/${orderId}/reject`, {
@@ -1313,6 +1658,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           setStats(calculateStats(list));
           return list;
         });
+        broadcastOrderUpdate(updated);
       }
     } catch (err) {
       console.warn('Rejection synced to local storage');
@@ -1327,6 +1673,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       setStats(calculateStats(updated));
       return updated;
     });
+    broadcastOrderUpdate({ id: orderId, status: 'Deleted' });
 
     try {
       await fetch(`/api/orders/${orderId}`, { method: 'DELETE' });
@@ -2629,6 +2976,14 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
     window.addEventListener('poddars_orders_sync', handleLocalSync);
     window.addEventListener('storage', handleLocalSync);
 
+    const unsubCloud = onCloudOrderEvent((eventType, payload) => {
+      if ((eventType === 'ORDER_UPDATE' || eventType === 'ORDER_NEW') && payload.id === orderId) {
+        setOrder(payload);
+        const list = getLocalOrders().map(o => o.id === payload.id ? payload : o);
+        saveLocalOrders(list);
+      }
+    });
+
     let eventSource;
     try {
       eventSource = new EventSource('/api/events');
@@ -2647,6 +3002,7 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
       clearInterval(interval);
       window.removeEventListener('poddars_orders_sync', handleLocalSync);
       window.removeEventListener('storage', handleLocalSync);
+      unsubCloud();
       if (eventSource) eventSource.close();
     };
   }, [orderId]);
@@ -2814,7 +3170,18 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
 // MAIN APPLICATION
 // -------------------------------------------------------------
 function App() {
-  const [currentView, setCurrentView] = useState('customer'); // 'customer' | 'chef'
+  const [currentView, setCurrentView] = useState(() => {
+    try {
+      const path = window.location.pathname.toLowerCase();
+      const hash = window.location.hash.toLowerCase();
+      const query = window.location.search.toLowerCase();
+      if (path === '/chef' || path === '/kitchen' || hash === '#chef' || hash === '#kitchen' || query.includes('view=chef') || query.includes('view=kitchen')) {
+        return 'chef';
+      }
+    } catch {}
+    return 'customer';
+  });
+
   const [chefAuth, setChefAuth] = useState(() => {
     try {
       const saved = localStorage.getItem('poddars_chef_auth');
@@ -2845,15 +3212,7 @@ function App() {
     }
   });
 
-  const [guestModalOpen, setGuestModalOpen] = useState(() => {
-    try {
-      const saved = localStorage.getItem('poddars_guest_session');
-      const parsed = saved ? JSON.parse(saved) : null;
-      return !parsed || !parsed.name;
-    } catch {
-      return true;
-    }
-  });
+  const [guestModalOpen, setGuestModalOpen] = useState(false);
 
   const [mode, setMode] = useState(() => guest?.mode || 'Dine in');
   const [category, setCategory] = useState('All');
@@ -2871,7 +3230,7 @@ function App() {
   const [callWaiterModalOpen, setCallWaiterModalOpen] = useState(false);
   const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
 
-  // Real-time synchronization for Waiter Calls in Customer View
+  // Real-time synchronization for Waiter Calls and Cloud Sync in Customer View
   useEffect(() => {
     const fetchCalls = async () => {
       try {
@@ -2890,6 +3249,21 @@ function App() {
     };
     window.addEventListener('poddars_waiter_sync', handleSync);
     window.addEventListener('storage', handleSync);
+
+    const unsubCloudWaiter = onCloudWaiterEvent((eventType, payload) => {
+      if (eventType === 'WAITER_CALL') {
+        setWaiterCalls(prev => [payload, ...prev.filter(c => c.id !== payload.id)]);
+      } else if (eventType === 'WAITER_UPDATE') {
+        setWaiterCalls(prev => prev.map(c => c.id === payload.id ? { ...c, ...payload } : c));
+      } else if (eventType === 'SYNC_ALL_WAITER') {
+        setWaiterCalls(prev => {
+          const map = new Map();
+          (payload || []).forEach(c => map.set(c.id, c));
+          prev.forEach(c => map.set(c.id, c));
+          return Array.from(map.values());
+        });
+      }
+    });
 
     let es;
     try {
@@ -2913,6 +3287,7 @@ function App() {
       clearInterval(interval);
       window.removeEventListener('poddars_waiter_sync', handleSync);
       window.removeEventListener('storage', handleSync);
+      unsubCloudWaiter();
       if (es) es.close();
     };
   }, []);
@@ -3066,6 +3441,9 @@ function App() {
     const existingOrders = getLocalOrders();
     const updatedOrders = [finalOrder, ...existingOrders.filter(o => o.id !== finalOrder.id)];
     saveLocalOrders(updatedOrders);
+
+    // Broadcast across all staff devices and chef tablets in real-time
+    broadcastNewOrder(finalOrder);
 
     // Open live tracker
     setActiveTrackingOrderId(finalOrder.id);
@@ -3723,10 +4101,13 @@ function App() {
         onCallSuccess={newCall => {
           setWaiterCalls(prev => [newCall, ...prev.filter(c => c.id !== newCall.id)]);
           saveLocalWaiterCalls([newCall, ...waiterCalls.filter(c => c.id !== newCall.id)]);
+          broadcastWaiterCall(newCall);
         }}
         onCancelCall={async (callId) => {
-          setWaiterCalls(prev => prev.map(c => c.id === callId ? { ...c, status: 'Dismissed' } : c));
-          saveLocalWaiterCalls(waiterCalls.map(c => c.id === callId ? { ...c, status: 'Dismissed' } : c));
+          const updatedCall = { id: callId, status: 'Dismissed' };
+          setWaiterCalls(prev => prev.map(c => c.id === callId ? { ...c, ...updatedCall } : c));
+          saveLocalWaiterCalls(waiterCalls.map(c => c.id === callId ? { ...c, ...updatedCall } : c));
+          broadcastWaiterUpdate(updatedCall);
           try {
             await fetch(`/api/waiter-calls/${callId}/dismiss`, { method: 'PATCH' });
           } catch {}

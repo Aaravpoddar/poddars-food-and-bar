@@ -225,7 +225,7 @@ const server = createServer(async (request, response) => {
       const authorizedChefs = [
         { name: 'CHEF AARAV', id: 'CHEF 1910', role: 'Founder & Executive Chef', idVariations: ['CHEF 1910', 'CHEF1910', '1910', 'CHEF-1910', 'AARAV'] },
         { name: 'ANKIT PODDAR', id: 'MD 1602', role: 'Managing Director (MD)', idVariations: ['MD 1602', 'MD1602', 'CHEF 1602', 'CHEF1602', '1602', 'CHEF-1602', 'ANKIT', 'ANKIT PODDAR'] },
-        { name: 'CHEF EKTA', id: 'COO 0804', role: 'Executive Director & COO', idVariations: ['COO 0804', 'COO0804', 'CHEF 0804', 'CHEF0804', '0804', 'CHEF-0804', 'ED 0804', 'EKTA'] },
+        { name: 'EKTA PODDAR', id: 'COO 0804', role: 'Executive Director & COO', idVariations: ['COO 0804', 'COO0804', 'CHEF 0804', 'CHEF0804', '0804', 'CHEF-0804', 'ED 0804', 'EKTA', 'EKTA PODDAR'] },
         { name: 'CHEF VANISHA', id: 'CHEF 0101', role: 'Head Chef & Kitchen Director', idVariations: ['CHEF 0101', 'CHEF0101', '0101', 'CHEF-0101', 'VANISHA'] }
       ];
 

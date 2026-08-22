@@ -807,17 +807,17 @@ function CallWaiterModal({
 }
 
 // -------------------------------------------------------------
-// AUTHORIZED KITCHEN & LEADERSHIP TEAM
+// AUTHORIZED LEADERSHIP & STAFF TEAM
 // -------------------------------------------------------------
 const AUTHORIZED_CHEFS = [
-  { name: 'CHEF AARAV', id: 'CHEF 1910', role: 'Founder & Executive Chef', idVariations: ['CHEF 1910', 'CHEF1910', '1910', 'CHEF-1910', 'AARAV'] },
-  { name: 'ANKIT PODDAR', id: 'MD 1602', role: 'Managing Director (MD)', idVariations: ['MD 1602', 'MD1602', 'CHEF 1602', 'CHEF1602', '1602', 'CHEF-1602', 'ANKIT', 'ANKIT PODDAR'] },
-  { name: 'EKTA PODDAR', id: 'COO 0804', role: 'Executive Director & COO', idVariations: ['COO 0804', 'COO0804', 'CHEF 0804', 'CHEF0804', '0804', 'CHEF-0804', 'ED 0804', 'EKTA', 'EKTA PODDAR'] },
-  { name: 'CHEF VANISHA', id: 'CHEF 0101', role: 'Head Chef & Kitchen Director', idVariations: ['CHEF 0101', 'CHEF0101', '0101', 'CHEF-0101', 'VANISHA'] }
+  { name: 'AARAV PODDAR', id: '1910', designation: 'Founder & Executive Chef', role: 'Founder & Executive Chef', idVariations: ['1910', 'CHEF 1910', 'CHEF1910', 'CHEF-1910', 'AARAV', 'AARAV PODDAR'] },
+  { name: 'ANKIT PODDAR', id: '1602', designation: 'Managing Director (MD)', role: 'Managing Director (MD)', idVariations: ['1602', 'MD 1602', 'MD1602', 'CHEF 1602', 'CHEF1602', 'CHEF-1602', 'ANKIT', 'ANKIT PODDAR'] },
+  { name: 'EKTA PODDAR', id: '0804', designation: 'Executive Director & COO', role: 'Executive Director & COO', idVariations: ['0804', 'COO 0804', 'COO0804', 'CHEF 0804', 'CHEF0804', 'CHEF-0804', 'ED 0804', 'EKTA', 'EKTA PODDAR'] },
+  { name: 'VANISHA PODDAR', id: '0101', designation: 'Head Chef & Kitchen Director', role: 'Head Chef & Kitchen Director', idVariations: ['0101', 'CHEF 0101', 'CHEF0101', 'CHEF-0101', 'VANISHA', 'VANISHA PODDAR'] }
 ];
 
 // -------------------------------------------------------------
-// CHEF LOGIN SCREEN COMPONENT
+// CHEF / STAFF LOGIN SCREEN COMPONENT
 // -------------------------------------------------------------
 function ChefLogin({ onLogin, onBackToMenu }) {
   const [name, setName] = useState('');
@@ -830,24 +830,25 @@ function ChefLogin({ onLogin, onBackToMenu }) {
     e.preventDefault();
     if (redirecting) return;
     if (!name.trim() || !chefId.trim()) {
-      setError('Please enter both your Chef Name and Staff ID.');
+      setError('Please enter both your Name and Staff ID.');
       return;
     }
     setError('');
     setLoading(true);
 
     const normName = name.trim().toUpperCase().replace(/^CHEF\s*/, '');
-    const normId = chefId.trim().toUpperCase().replace(/[\s-]/g, '');
+    const normId = chefId.trim().toUpperCase().replace(/[\s-]/g, '').replace(/^(CHEF|MD|COO|ED)/, '');
 
     const matched = AUTHORIZED_CHEFS.find(c => {
-      const chefCoreName = c.name.toUpperCase().replace(/^CHEF\s*/, '');
-      const nameMatch = normName === chefCoreName || normName === c.name.toUpperCase();
-      const idMatch = c.idVariations.some(v => v.replace(/[\s-]/g, '').toUpperCase() === normId);
+      const coreName = c.name.toUpperCase().replace(/^CHEF\s*/, '');
+      const firstName = coreName.split(' ')[0];
+      const nameMatch = normName === coreName || normName === firstName || normName === c.name.toUpperCase();
+      const idMatch = c.idVariations.some(v => v.replace(/[\s-]/g, '').toUpperCase().replace(/^(CHEF|MD|COO|ED)/, '') === normId || v.replace(/[\s-]/g, '').toUpperCase() === chefId.trim().toUpperCase().replace(/[\s-]/g, ''));
       return nameMatch && idMatch;
     });
 
     if (!matched) {
-      setError('Sorry, you are not a chef.');
+      setError('Sorry, member profile not found in authorized roster.');
       setRedirecting(true);
       setLoading(false);
       setTimeout(() => {
@@ -915,11 +916,11 @@ function ChefLogin({ onLogin, onBackToMenu }) {
 
         <form onSubmit={handleSubmit} className="chef-login-form">
           <div className="chef-input-group">
-            <label><User size={13} /> Chef Name</label>
+            <label><User size={13} /> Member Name</label>
             <div className="chef-input-box">
               <User size={16} />
               <input
-                placeholder="e.g. CHEF AARAV"
+                placeholder="e.g. AARAV, ANKIT, EKTA or VANISHA"
                 value={name}
                 onChange={e => setName(e.target.value)}
                 disabled={redirecting}
@@ -933,7 +934,7 @@ function ChefLogin({ onLogin, onBackToMenu }) {
             <div className="chef-input-box">
               <Lock size={16} />
               <input
-                placeholder="e.g. CHEF 1910"
+                placeholder="e.g. 1910, 1602, 0804, or 0101"
                 value={chefId}
                 onChange={e => setChefId(e.target.value)}
                 disabled={redirecting}
@@ -1598,14 +1599,14 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
         </div>
       </div>
 
-      {/* Authorized Kitchen Team Roster */}
+      {/* Authorized Leadership & Staff Team Roster */}
       <div className="kds-team-roster-card">
         <div className="kds-team-header">
           <div className="kds-team-title">
             <ShieldCheck size={16} color="var(--brand-primary)" />
-            <span>Authorized Kitchen Chefs (4 Verified Staff)</span>
+            <span>Authorized Leadership & Staff Roster (4 Verified Members)</span>
           </div>
-          <span className="kds-team-sub">Access Control: Only active registered staff can approve tickets</span>
+          <span className="kds-team-sub">Access Control: Verified Leadership & Kitchen Staff</span>
         </div>
         <div className="kds-team-grid">
           {AUTHORIZED_CHEFS.map(chef => {
@@ -1620,7 +1621,9 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
                     <b>{chef.name}</b>
                     {isCurrent && <span className="kds-active-badge">● Active Now</span>}
                   </div>
-                  <span className="kds-member-role">{chef.role} • <code>{chef.id}</code></span>
+                  <span className="kds-member-role">
+                    <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Designation:</span> {chef.designation || chef.role} • <code>ID {chef.id}</code>
+                  </span>
                 </div>
               </div>
             );

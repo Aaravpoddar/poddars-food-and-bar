@@ -221,27 +221,28 @@ const server = createServer(async (request, response) => {
         return send(response, 400, { error: 'Please provide both Chef Name and Staff ID.' });
       }
 
-      // Strictly Authorized Kitchen & Leadership Team
+      // Strictly Authorized Leadership & Staff Team
       const authorizedChefs = [
-        { name: 'CHEF AARAV', id: 'CHEF 1910', role: 'Founder & Executive Chef', idVariations: ['CHEF 1910', 'CHEF1910', '1910', 'CHEF-1910', 'AARAV'] },
-        { name: 'ANKIT PODDAR', id: 'MD 1602', role: 'Managing Director (MD)', idVariations: ['MD 1602', 'MD1602', 'CHEF 1602', 'CHEF1602', '1602', 'CHEF-1602', 'ANKIT', 'ANKIT PODDAR'] },
-        { name: 'EKTA PODDAR', id: 'COO 0804', role: 'Executive Director & COO', idVariations: ['COO 0804', 'COO0804', 'CHEF 0804', 'CHEF0804', '0804', 'CHEF-0804', 'ED 0804', 'EKTA', 'EKTA PODDAR'] },
-        { name: 'CHEF VANISHA', id: 'CHEF 0101', role: 'Head Chef & Kitchen Director', idVariations: ['CHEF 0101', 'CHEF0101', '0101', 'CHEF-0101', 'VANISHA'] }
+        { name: 'AARAV PODDAR', id: '1910', designation: 'Founder & Executive Chef', role: 'Founder & Executive Chef', idVariations: ['1910', 'CHEF 1910', 'CHEF1910', 'CHEF-1910', 'AARAV', 'AARAV PODDAR'] },
+        { name: 'ANKIT PODDAR', id: '1602', designation: 'Managing Director (MD)', role: 'Managing Director (MD)', idVariations: ['1602', 'MD 1602', 'MD1602', 'CHEF 1602', 'CHEF1602', 'CHEF-1602', 'ANKIT', 'ANKIT PODDAR'] },
+        { name: 'EKTA PODDAR', id: '0804', designation: 'Executive Director & COO', role: 'Executive Director & COO', idVariations: ['0804', 'COO 0804', 'COO0804', 'CHEF 0804', 'CHEF0804', 'CHEF-0804', 'ED 0804', 'EKTA', 'EKTA PODDAR'] },
+        { name: 'VANISHA PODDAR', id: '0101', designation: 'Head Chef & Kitchen Director', role: 'Head Chef & Kitchen Director', idVariations: ['0101', 'CHEF 0101', 'CHEF0101', '0101', 'CHEF-0101', 'VANISHA', 'VANISHA PODDAR'] }
       ];
 
       const normName = name.toUpperCase().replace(/^CHEF\s*/, '');
-      const normId = chefId.toUpperCase().replace(/[\s-]/g, '');
+      const normId = chefId.toUpperCase().replace(/[\s-]/g, '').replace(/^(CHEF|MD|COO|ED)/, '');
 
       const matched = authorizedChefs.find(c => {
-        const chefCoreName = c.name.toUpperCase().replace(/^CHEF\s*/, '');
-        const nameMatch = normName === chefCoreName || normName === c.name.toUpperCase();
-        const idMatch = c.idVariations.some(v => v.replace(/[\s-]/g, '').toUpperCase() === normId);
+        const coreName = c.name.toUpperCase().replace(/^CHEF\s*/, '');
+        const firstName = coreName.split(' ')[0];
+        const nameMatch = normName === coreName || normName === firstName || normName === c.name.toUpperCase();
+        const idMatch = c.idVariations.some(v => v.replace(/[\s-]/g, '').toUpperCase().replace(/^(CHEF|MD|COO|ED)/, '') === normId || v.replace(/[\s-]/g, '').toUpperCase() === chefId.toUpperCase().replace(/[\s-]/g, ''));
         return nameMatch && idMatch;
       });
 
       if (!matched) {
         return send(response, 401, {
-          error: 'Sorry, you are not a chef.',
+          error: 'Sorry, member profile not found in authorized roster.',
           unauthorized: true
         });
       }
@@ -249,7 +250,8 @@ const server = createServer(async (request, response) => {
       const chefProfile = {
         id: matched.id,
         name: matched.name,
-        role: matched.role,
+        role: matched.designation || matched.role,
+        designation: matched.designation || matched.role,
         loggedInAt: new Date().toISOString()
       };
 

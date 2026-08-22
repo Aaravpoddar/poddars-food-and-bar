@@ -810,10 +810,10 @@ function CallWaiterModal({
 // AUTHORIZED LEADERSHIP & STAFF TEAM
 // -------------------------------------------------------------
 const AUTHORIZED_CHEFS = [
-  { name: 'AARAV PODDAR', id: '1910', designation: 'Founder & Executive Chef', role: 'Founder & Executive Chef', idVariations: ['1910', 'CHEF 1910', 'CHEF1910', 'CHEF-1910', 'AARAV', 'AARAV PODDAR'] },
-  { name: 'ANKIT PODDAR', id: '1602', designation: 'Managing Director (MD)', role: 'Managing Director (MD)', idVariations: ['1602', 'MD 1602', 'MD1602', 'CHEF 1602', 'CHEF1602', 'CHEF-1602', 'ANKIT', 'ANKIT PODDAR'] },
-  { name: 'EKTA PODDAR', id: '0804', designation: 'Executive Director & COO', role: 'Executive Director & COO', idVariations: ['0804', 'COO 0804', 'COO0804', 'CHEF 0804', 'CHEF0804', 'CHEF-0804', 'ED 0804', 'EKTA', 'EKTA PODDAR'] },
-  { name: 'VANISHA PODDAR', id: '0101', designation: 'Head Chef & Kitchen Director', role: 'Head Chef & Kitchen Director', idVariations: ['0101', 'CHEF 0101', 'CHEF0101', 'CHEF-0101', 'VANISHA', 'VANISHA PODDAR'] }
+  { name: 'AARAV', id: '1910', designation: 'Founder & Executive Chef', role: 'Founder & Executive Chef', idVariations: ['1910', 'CHEF 1910', 'CHEF1910', 'CHEF-1910', 'AARAV', 'AARAV PODDAR'] },
+  { name: 'ANKIT', id: '1602', designation: 'Managing Director (MD)', role: 'Managing Director (MD)', idVariations: ['1602', 'MD 1602', 'MD1602', 'CHEF 1602', 'CHEF1602', 'CHEF-1602', 'ANKIT', 'ANKIT PODDAR'] },
+  { name: 'EKTA', id: '0804', designation: 'Executive Director & COO', role: 'Executive Director & COO', idVariations: ['0804', 'COO 0804', 'COO0804', 'CHEF 0804', 'CHEF0804', 'CHEF-0804', 'ED 0804', 'EKTA', 'EKTA PODDAR'] },
+  { name: 'VANISHA', id: '0101', designation: 'Head Chef & Kitchen Director', role: 'Head Chef & Kitchen Director', idVariations: ['0101', 'CHEF 0101', 'CHEF0101', 'CHEF-0101', 'VANISHA', 'VANISHA PODDAR'] }
 ];
 
 // -------------------------------------------------------------

@@ -499,7 +499,8 @@ function CallWaiterModal({
   onSaveGuest,
   activeCalls = [],
   onCallSuccess,
-  onCancelCall
+  onCancelCall,
+  onOpenKitchen
 }) {
   const [reason, setReason] = useState('General Assistance');
   const [customNote, setCustomNote] = useState('');
@@ -668,13 +669,20 @@ function CallWaiterModal({
               >
                 Done
               </button>
-              <button
-                type="button"
-                className="call-success-more-btn"
-                onClick={() => setSuccessNotice(null)}
-              >
-                + Request Another Item
-              </button>
+              {onOpenKitchen && (
+                <button
+                  type="button"
+                  className="call-success-kitchen-btn"
+                  onClick={() => {
+                    setSuccessNotice(null);
+                    onClose();
+                    onOpenKitchen();
+                  }}
+                  title="Switch to Kitchen / KDS Display"
+                >
+                  <ChefHat size={14} /> Open Kitchen Display
+                </button>
+              )}
             </div>
           </div>
         ) : (
@@ -776,6 +784,21 @@ function CallWaiterModal({
                 <span>{submitting ? 'Ringing Kitchen Staff...' : `Ring Waiter for ${table || 'Table'}`}</span>
               </button>
             </div>
+
+            {onOpenKitchen && (
+              <div className="call-waiter-modal-footer">
+                <button
+                  type="button"
+                  className="modal-staff-link"
+                  onClick={() => {
+                    onClose();
+                    onOpenKitchen();
+                  }}
+                >
+                  <ChefHat size={13} /> Staff & Kitchen Display
+                </button>
+              </div>
+            )}
           </form>
         )}
       </div>
@@ -3105,6 +3128,20 @@ function App() {
             </button>
 
             <div className="header-actions">
+              {/* Kitchen & Staff Portal Switch Button */}
+              <button
+                type="button"
+                className="header-kitchen-btn"
+                onClick={() => {
+                  window.location.hash = 'kitchen';
+                  setCurrentView('chef');
+                }}
+                title="Open Staff & Kitchen Portal"
+              >
+                <ChefHat size={16} />
+                <span>Kitchen</span>
+              </button>
+
               {/* Call Waiter Header Button */}
               <button
                 type="button"
@@ -3676,6 +3713,10 @@ function App() {
           try {
             await fetch(`/api/waiter-calls/${callId}/dismiss`, { method: 'PATCH' });
           } catch {}
+        }}
+        onOpenKitchen={() => {
+          window.location.hash = 'kitchen';
+          setCurrentView('chef');
         }}
       />
 

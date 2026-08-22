@@ -4366,6 +4366,31 @@ header {
    CALL WAITER & TABLE SERVICE NOTIFICATIONS
    ───────────────────────────────────────────────────────────── */
 
+/* Header Kitchen Portal Button */
+.header-kitchen-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  color: var(--text-main);
+  padding: 8px 13px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--shadow-sm);
+}
+
+.header-kitchen-btn:hover {
+  background: #ffffff;
+  border-color: var(--brand-primary);
+  color: var(--brand-primary);
+  box-shadow: 0 2px 8px rgba(4, 120, 87, 0.15);
+  transform: translateY(-1px);
+}
+
 /* Header Call Waiter Button */
 .call-waiter-header-btn {
   display: inline-flex;
@@ -4720,18 +4745,60 @@ header {
   padding: 10px;
   border-radius: 10px;
   cursor: pointer;
+  transition: all 0.2s ease;
 }
 
-.call-success-more-btn {
-  flex: 1;
-  background: var(--bg-surface);
-  border: 1px solid var(--line);
+.call-success-done-btn:hover {
+  background: var(--brand-primary-hover);
+}
+
+.call-success-kitchen-btn {
+  flex: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: #ffffff;
+  border: 1.5px solid var(--text-main);
   color: var(--text-main);
-  font-weight: 700;
+  font-weight: 800;
   font-size: 13px;
-  padding: 10px;
+  padding: 10px 14px;
   border-radius: 10px;
   cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.call-success-kitchen-btn:hover {
+  background: var(--text-main);
+  color: #ffffff;
+}
+
+.call-waiter-modal-footer {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--line);
+  text-align: center;
+}
+
+.modal-staff-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.modal-staff-link:hover {
+  color: var(--brand-primary);
+  background: var(--bg-surface);
 }
 
 /* ─────────────────────────────────────────────────────────────

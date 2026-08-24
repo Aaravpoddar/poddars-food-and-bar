@@ -359,6 +359,22 @@ const server = createServer(async (request, response) => {
       return send(response, 400, { error: 'Table is required' });
     }
 
+    // POST /api/tables/reset (Vacate / Log out / Free ALL tables)
+    if (request.method === 'POST' && pathname === '/api/tables/reset') {
+      activeTableCheckins.clear();
+      const orders = await getOrders();
+      orders.forEach(o => {
+        if (o.mode === 'Dine in' && o.paymentStatus !== 'Paid') {
+          o.paymentStatus = 'Paid';
+          o.paidAt = new Date().toISOString();
+        }
+      });
+      await saveOrders(orders);
+      const occ = {};
+      broadcastEvent('table:status', occ);
+      return send(response, 200, { success: true, message: 'All tables logged out and available', occupiedTables: occ });
+    }
+
     // GET /api/staff/active (Get list of active staff members logged in across all devices)
     if (request.method === 'GET' && pathname === '/api/staff/active') {
       return send(response, 200, getActiveStaffList());

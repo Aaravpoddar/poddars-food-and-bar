@@ -26,7 +26,9 @@
     "completedAt": null,
     "cancelledAt": "2026-08-24T13:37:24.498Z",
     "chefNote": "",
-    "rejectionReason": "Ingredient out of stock for tonight"
+    "rejectionReason": "Ingredient out of stock for tonight",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-24T13:37:24.078Z"
   },
   {
     "id": "TP-493749",
@@ -56,7 +58,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "Executive Chef Vikas"
+    "approvedBy": "Executive Chef Vikas",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-24T13:37:23.242Z"
   },
   {
     "id": "TP-344610",
@@ -182,7 +186,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "CHEF AARAV"
+    "approvedBy": "CHEF AARAV",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-21T14:36:02.188Z"
   },
   {
     "id": "TP-718239",
@@ -212,7 +218,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "CHEF AARAV"
+    "approvedBy": "CHEF AARAV",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-21T14:15:42.921Z"
   },
   {
     "id": "TP-554103",
@@ -266,7 +274,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "Chef Aarav"
+    "approvedBy": "Chef Aarav",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T11:09:18.512Z"
   },
   {
     "id": "TP-562413",
@@ -304,7 +314,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "Chef Aarav"
+    "approvedBy": "Chef Aarav",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T10:54:41.839Z"
   },
   {
     "id": "TP-403439",
@@ -349,7 +361,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "Chef Aarav"
+    "approvedBy": "Chef Aarav",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T10:54:42.904Z"
   },
   {
     "id": "TP-475074",
@@ -394,7 +408,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "Chef Aarav"
+    "approvedBy": "Chef Aarav",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T07:26:28.336Z"
   },
   {
     "id": "TP-115333",
@@ -479,7 +495,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "Chef Aarav"
+    "approvedBy": "Chef Aarav",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T05:56:59.588Z"
   },
   {
     "id": "TP-538736",
@@ -516,7 +534,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "Chef Aarav"
+    "approvedBy": "Chef Aarav",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T04:35:02.174Z"
   },
   {
     "id": "TP-239429",
@@ -553,7 +573,9 @@
     "cancelledAt": null,
     "chefNote": "",
     "rejectionReason": null,
-    "approvedBy": "Chef Aarav"
+    "approvedBy": "Chef Aarav",
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T04:24:51.517Z"
   },
   {
     "id": "TP-775898",
@@ -589,7 +611,9 @@
     "completedAt": "2026-08-20T04:09:29.307Z",
     "cancelledAt": null,
     "chefNote": "",
-    "rejectionReason": null
+    "rejectionReason": null,
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T04:09:29.307Z"
   },
   {
     "id": "TP-387279",
@@ -617,6 +641,8 @@
     "completedAt": "2026-08-20T04:06:14.785Z",
     "cancelledAt": null,
     "chefNote": "Fresh gravy brewing",
-    "rejectionReason": null
+    "rejectionReason": null,
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-20T04:06:14.785Z"
   }
 ]

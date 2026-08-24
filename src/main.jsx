@@ -1903,6 +1903,21 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
     }
   };
 
+  const handleResetAllTables = async () => {
+    if (!confirm('Log out / Free all tables now? All dine-in tables will be marked available across the restaurant.')) return;
+    try {
+      await fetch('/api/tables/reset', { method: 'POST' });
+    } catch {}
+    broadcastTableStatus({});
+    setOrders(prev => {
+      const updated = prev.map(o => o.mode === 'Dine in' ? { ...o, paymentStatus: 'Paid' } : o);
+      saveLocalOrders(updated);
+      return updated;
+    });
+    fetchOrdersAndStats();
+    alert('All restaurant tables have been logged out and set to Free / Available!');
+  };
+
   const handleSeedDemoOrder = async () => {
     const demoItems = [
       { id: 1, name: 'Butter Chicken', price: 289, qty: 1, color: 'coral', mark: 'BC' },
@@ -2073,6 +2088,17 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           >
             <Plus size={15} />
             <span>+ Simulate Order</span>
+          </button>
+
+          <button
+            type="button"
+            className="kds-btn-tool"
+            onClick={handleResetAllTables}
+            title="Log out and vacate all tables across the restaurant"
+            style={{ background: '#fff1f2', borderColor: '#fecdd3', color: '#e11d48' }}
+          >
+            <LogOut size={15} />
+            <span>Vacate All Tables</span>
           </button>
 
           <button

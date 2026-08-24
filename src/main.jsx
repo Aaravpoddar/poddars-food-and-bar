@@ -225,8 +225,8 @@ function initCloudSync() {
               waiterListeners.forEach(fn => fn('WAITER_UPDATE', payload.call));
             } else if (topic === TOPIC_STAFF_PRESENCE && payload.staff) {
               staffListeners.forEach(fn => fn(payload.action || 'heartbeat', payload.staff, payload.deviceId));
-            } else if (topic === TOPIC_TABLE_STATUS && payload.occupiedTables) {
-              tableListeners.forEach(fn => fn(payload.occupiedTables));
+            } else if (topic === TOPIC_TABLE_STATUS && payload.occupiedTables !== undefined) {
+              tableListeners.forEach(fn => fn(payload.occupiedTables || {}));
             } else if (topic === TOPIC_SYNC_REQ) {
               if (payload.senderId && payload.senderId !== CLOUD_CLIENT_ID) {
                 syncListeners.forEach(fn => fn(payload.senderId));
@@ -237,6 +237,9 @@ function initCloudSync() {
               }
               if (Array.isArray(payload.waiterCalls) && payload.waiterCalls.length > 0) {
                 waiterListeners.forEach(fn => fn('SYNC_ALL_WAITER', payload.waiterCalls));
+              }
+              if (payload.occupiedTables !== undefined && typeof payload.occupiedTables === 'object') {
+                tableListeners.forEach(fn => fn(payload.occupiedTables || {}));
               }
             }
           }
@@ -304,18 +307,19 @@ function broadcastStaffPresence(staff, action = 'heartbeat') {
 
 function broadcastTableStatus(occupiedTables) {
   publishCloudMessage(TOPIC_TABLE_STATUS, {
-    occupiedTables,
+    occupiedTables: occupiedTables || {},
     deviceId: CLOUD_CLIENT_ID,
     timestamp: Date.now(),
     senderId: CLOUD_CLIENT_ID
   });
 }
 
-function sendSyncResponse(targetId, orders, waiterCalls) {
+function sendSyncResponse(targetId, orders, waiterCalls, occupiedTables = {}) {
   publishCloudMessage(TOPIC_SYNC_RES, {
     targetId,
     orders,
     waiterCalls,
+    occupiedTables: occupiedTables || {},
     senderId: CLOUD_CLIENT_ID
   });
 }
@@ -587,7 +591,23 @@ function getLocalOrders() {
     const raw = localStorage.getItem('poddars_orders');
     if (raw) {
       const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
+      if (Array.isArray(parsed)) {
+        const now = Date.now();
+        // Sanitize orders: past completed orders or orders older than 2 hours without payment must be marked paid
+        let needsResave = false;
+        const sanitized = parsed.map(o => {
+          const isOld = !o.createdAt || (now - new Date(o.createdAt).getTime() > 2 * 60 * 60 * 1000);
+          if ((isOld || o.status === 'Completed' || o.status === 'Cancelled') && o.paymentStatus !== 'Paid') {
+            needsResave = true;
+            return { ...o, paymentStatus: 'Paid' };
+          }
+          return o;
+        });
+        if (needsResave) {
+          try { localStorage.setItem('poddars_orders', JSON.stringify(sanitized)); } catch {}
+        }
+        return sanitized;
+      }
     }
   } catch {}
   return [];
@@ -697,6 +717,18 @@ function GuestLoginModal({ guest, occupiedTables = {}, onSaveGuest, onLogoutGues
           body: JSON.stringify({ table: selTable, guestName: name.trim(), deviceId: CLOUD_CLIENT_ID })
         }).catch(() => {});
       } catch {}
+      const nextOcc = {
+        ...occupiedTables,
+        [selTable]: {
+          table: selTable,
+          guestName: name.trim(),
+          orderId: null,
+          status: 'Checked-in',
+          paymentStatus: 'Unpaid',
+          checkinAt: Date.now()
+        }
+      };
+      broadcastTableStatus(nextOcc);
     }
 
     setError('');
@@ -1725,6 +1757,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       });
       saveLocalOrders(updated);
       setStats(calculateStats(updated));
+      broadcastTableStatus(calculateOccupiedTables(updated));
       return updated;
     });
 
@@ -1772,6 +1805,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       });
       saveLocalOrders(updated);
       setStats(calculateStats(updated));
+      broadcastTableStatus(calculateOccupiedTables(updated));
       return updated;
     });
 
@@ -1818,6 +1852,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       });
       saveLocalOrders(updated);
       setStats(calculateStats(updated));
+      broadcastTableStatus(calculateOccupiedTables(updated));
       return updated;
     });
     setRejectingOrder(null);
@@ -1863,6 +1898,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       });
       saveLocalOrders(updated);
       setStats(calculateStats(updated));
+      broadcastTableStatus(calculateOccupiedTables(updated));
       return updated;
     });
 
@@ -1895,6 +1931,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       const updated = prev.filter(o => o.id !== orderId);
       saveLocalOrders(updated);
       setStats(calculateStats(updated));
+      broadcastTableStatus(calculateOccupiedTables(updated));
       return updated;
     });
     broadcastOrderUpdate({ id: orderId, status: 'Deleted' });
@@ -2855,6 +2892,7 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
     const nextOrders = local.map(o => o.id === order.id ? { ...o, ...updated } : o);
     saveLocalOrders(nextOrders);
     broadcastOrderUpdate(updated);
+    broadcastTableStatus(calculateOccupiedTables(nextOrders));
 
     try {
       await fetch(`/api/orders/${order.id}/pay`, {
@@ -3820,6 +3858,7 @@ function App() {
 
     // Broadcast across all staff devices and chef tablets in real-time
     broadcastNewOrder(finalOrder);
+    broadcastTableStatus(calculateOccupiedTables(updatedOrders));
 
     // Open live tracker
     setActiveTrackingOrderId(finalOrder.id);
@@ -4447,11 +4486,17 @@ function App() {
         onClose={() => setGuestModalOpen(false)}
         onLogoutGuest={() => {
           if (guest?.table) {
-            fetch('/api/tables/checkout', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ table: guest.table })
-            }).catch(() => {});
+            try {
+              fetch('/api/tables/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ table: guest.table })
+              }).catch(() => {});
+            } catch {}
+            const nextOcc = { ...occupiedTables };
+            delete nextOcc[guest.table];
+            setOccupiedTables(nextOcc);
+            broadcastTableStatus(nextOcc);
           }
           setGuest(null);
           try {
@@ -4513,11 +4558,17 @@ function App() {
           }}
           onPrintAndLogout={() => {
             if (guest?.table) {
-              fetch('/api/tables/checkout', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ table: guest.table })
-              }).catch(() => {});
+              try {
+                fetch('/api/tables/checkout', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ table: guest.table })
+                }).catch(() => {});
+              } catch {}
+              const nextOcc = { ...occupiedTables };
+              delete nextOcc[guest.table];
+              setOccupiedTables(nextOcc);
+              broadcastTableStatus(nextOcc);
             }
             setGuest(null);
             setCart([]);

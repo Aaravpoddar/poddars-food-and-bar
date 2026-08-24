@@ -163,10 +163,13 @@ const activeTableCheckins = new Map(); // key: table, value: { table, guestName,
 async function getTablesOccupancy() {
   const orders = await getOrders();
   const occupied = {};
+  const now = Date.now();
 
-  // 1. Mark tables with active unpaid dine-in orders as OCCUPIED
+  // 1. Mark tables with active in-progress unpaid dine-in orders as OCCUPIED (within last 12 hours)
   for (const o of orders) {
-    if (o.mode === 'Dine in' && o.table && o.status !== 'Cancelled' && o.paymentStatus !== 'Paid') {
+    const isRecent = o.createdAt ? (now - new Date(o.createdAt).getTime() < 12 * 60 * 60 * 1000) : false;
+    const isActiveSession = ['New', 'Preparing', 'Ready'].includes(o.status);
+    if (o.mode === 'Dine in' && o.table && isActiveSession && isRecent && o.paymentStatus !== 'Paid') {
       const t = o.table.trim();
       occupied[t] = {
         table: t,
@@ -180,10 +183,9 @@ async function getTablesOccupancy() {
     }
   }
 
-  // 2. Mark active check-ins (within last 45 mins)
-  const now = Date.now();
+  // 2. Mark active check-ins (within last 30 mins)
   for (const [t, checkin] of activeTableCheckins.entries()) {
-    if (now - checkin.checkinAt < 45 * 60 * 1000) {
+    if (now - checkin.checkinAt < 30 * 60 * 1000) {
       if (!occupied[t]) {
         occupied[t] = {
           table: t,

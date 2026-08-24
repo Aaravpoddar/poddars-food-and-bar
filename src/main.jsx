@@ -352,8 +352,11 @@ function onSyncRequestReceived(listener) {
 
 function calculateOccupiedTables(ordersList, extraOccupied = {}) {
   const map = { ...extraOccupied };
+  const now = Date.now();
   (ordersList || []).forEach(o => {
-    if (o.mode === 'Dine in' && o.table && o.status !== 'Cancelled' && o.paymentStatus !== 'Paid') {
+    const isRecent = o.createdAt ? (now - new Date(o.createdAt).getTime() < 12 * 60 * 60 * 1000) : false;
+    const isActiveSession = ['New', 'Preparing', 'Ready'].includes(o.status);
+    if (o.mode === 'Dine in' && o.table && isActiveSession && isRecent && o.paymentStatus !== 'Paid') {
       const t = o.table.trim();
       map[t] = {
         table: t,

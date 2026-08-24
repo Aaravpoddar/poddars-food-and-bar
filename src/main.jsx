@@ -638,6 +638,34 @@ function saveLocalWaiterCalls(callsList) {
   } catch {}
 }
 
+function getLocalOccupiedTables() {
+  try {
+    const raw = localStorage.getItem('poddars_occupied_tables');
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object') {
+        const now = Date.now();
+        const valid = {};
+        for (const [t, info] of Object.entries(parsed)) {
+          const time = info.checkinAt || (info.createdAt ? new Date(info.createdAt).getTime() : 0);
+          if (time && (now - time < 45 * 60 * 1000) && info.paymentStatus !== 'Paid' && info.status !== 'Cancelled') {
+            valid[t] = info;
+          }
+        }
+        return valid;
+      }
+    }
+  } catch {}
+  return {};
+}
+
+function saveLocalOccupiedTables(occ) {
+  try {
+    localStorage.setItem('poddars_occupied_tables', JSON.stringify(occ || {}));
+    window.dispatchEvent(new CustomEvent('poddars_table_sync', { detail: occ || {} }));
+  } catch {}
+}
+
 function calculateStats(ordersList) {
   const list = Array.isArray(ordersList) ? ordersList : [];
   const now = new Date();
@@ -3578,7 +3606,14 @@ function App() {
   const [showTracker, setShowTracker] = useState(false);
   const [callWaiterModalOpen, setCallWaiterModalOpen] = useState(false);
   const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
-  const [occupiedTables, setOccupiedTables] = useState(() => calculateOccupiedTables(getLocalOrders()));
+  const [occupiedTables, setOccupiedTables] = useState(() => {
+    const local = getLocalOccupiedTables();
+    if (Object.keys(local).length > 0) return local;
+    return calculateOccupiedTables(getLocalOrders());
+  });
+
+  const occupiedTablesRef = useRef(occupiedTables);
+  occupiedTablesRef.current = occupiedTables;
 
   // Real-time synchronization for Waiter Calls, Table Occupancy, and Cloud Sync in Customer View
   useEffect(() => {
@@ -3597,6 +3632,7 @@ function App() {
           const tableData = await tablesRes.json();
           if (tableData && typeof tableData === 'object') {
             setOccupiedTables(tableData);
+            saveLocalOccupiedTables(tableData);
           }
         }
       } catch {}
@@ -3606,15 +3642,14 @@ function App() {
     const handleSync = (e) => {
       setWaiterCalls(e.detail || getLocalWaiterCalls());
     };
-    const handleOrderSync = (e) => {
-      const orders = e.detail || getLocalOrders();
-      setOccupiedTables(calculateOccupiedTables(orders));
+    const handleTableSync = (e) => {
+      setOccupiedTables(e.detail || getLocalOccupiedTables());
     };
 
     window.addEventListener('poddars_waiter_sync', handleSync);
-    window.addEventListener('poddars_orders_sync', handleOrderSync);
+    window.addEventListener('poddars_table_sync', handleTableSync);
     window.addEventListener('storage', handleSync);
-    window.addEventListener('storage', handleOrderSync);
+    window.addEventListener('storage', handleTableSync);
 
     const unsubCloudWaiter = onCloudWaiterEvent((eventType, payload) => {
       if (eventType === 'WAITER_CALL') {
@@ -3634,11 +3669,58 @@ function App() {
     const unsubCloudTable = onCloudTableEvent((occ) => {
       if (occ && typeof occ === 'object') {
         setOccupiedTables(occ);
+        saveLocalOccupiedTables(occ);
       }
     });
 
-    const unsubCloudOrder = onCloudOrderEvent(() => {
-      setOccupiedTables(calculateOccupiedTables(getLocalOrders()));
+    const unsubCloudOrder = onCloudOrderEvent((eventType, order) => {
+      if (order) {
+        if (eventType === 'ORDER_NEW') {
+          if (order.mode === 'Dine in' && order.table) {
+            setOccupiedTables(prev => {
+              const next = {
+                ...prev,
+                [order.table]: {
+                  table: order.table,
+                  guestName: order.guestName || 'Guest',
+                  orderId: order.id,
+                  status: order.status,
+                  paymentStatus: order.paymentStatus || 'Unpaid',
+                  total: order.total || 0,
+                  createdAt: order.createdAt
+                }
+              };
+              saveLocalOccupiedTables(next);
+              return next;
+            });
+          }
+        } else if (eventType === 'ORDER_UPDATE') {
+          if (order.table) {
+            setOccupiedTables(prev => {
+              const next = { ...prev };
+              if (order.paymentStatus === 'Paid' || order.status === 'Cancelled') {
+                delete next[order.table];
+              } else {
+                next[order.table] = {
+                  table: order.table,
+                  guestName: order.guestName || 'Guest',
+                  orderId: order.id,
+                  status: order.status,
+                  paymentStatus: order.paymentStatus || 'Unpaid',
+                  total: order.total || 0,
+                  createdAt: order.createdAt
+                };
+              }
+              saveLocalOccupiedTables(next);
+              return next;
+            });
+          }
+        }
+      }
+    });
+
+    const unsubSyncReq = onSyncRequestReceived((senderId) => {
+      sendSyncResponse(senderId, getLocalOrders(), getLocalWaiterCalls(), occupiedTablesRef.current);
     });
 
     let es;
@@ -3661,14 +3743,9 @@ function App() {
           const occ = JSON.parse(e.data);
           if (occ && typeof occ === 'object') {
             setOccupiedTables(occ);
+            saveLocalOccupiedTables(occ);
           }
         } catch {}
-      });
-      es.addEventListener('order:created', () => {
-        setOccupiedTables(calculateOccupiedTables(getLocalOrders()));
-      });
-      es.addEventListener('order:updated', () => {
-        setOccupiedTables(calculateOccupiedTables(getLocalOrders()));
       });
     } catch {}
 
@@ -3676,12 +3753,13 @@ function App() {
     return () => {
       clearInterval(interval);
       window.removeEventListener('poddars_waiter_sync', handleSync);
-      window.removeEventListener('poddars_orders_sync', handleOrderSync);
+      window.removeEventListener('poddars_table_sync', handleTableSync);
       window.removeEventListener('storage', handleSync);
-      window.removeEventListener('storage', handleOrderSync);
+      window.removeEventListener('storage', handleTableSync);
       unsubCloudWaiter();
       unsubCloudTable();
       unsubCloudOrder();
+      unsubSyncReq();
       if (es) es.close();
     };
   }, []);

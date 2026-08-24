@@ -66,6 +66,8 @@ const TOPIC_ORDERS_NEW = `${TOPIC_PREFIX}/orders/new`;
 const TOPIC_ORDERS_UPDATE = `${TOPIC_PREFIX}/orders/update`;
 const TOPIC_WAITER_CALL = `${TOPIC_PREFIX}/waiter/call`;
 const TOPIC_WAITER_UPDATE = `${TOPIC_PREFIX}/waiter/update`;
+const TOPIC_STAFF_PRESENCE = `${TOPIC_PREFIX}/staff/presence`;
+const TOPIC_TABLE_STATUS = `${TOPIC_PREFIX}/table/status`;
 const TOPIC_SYNC_REQ = `${TOPIC_PREFIX}/sync/req`;
 const TOPIC_SYNC_RES = `${TOPIC_PREFIX}/sync/res`;
 
@@ -75,6 +77,8 @@ let cloudBrokerIdx = 0;
 let cloudConnected = false;
 const orderListeners = new Set();
 const waiterListeners = new Set();
+const staffListeners = new Set();
+const tableListeners = new Set();
 const syncListeners = new Set();
 let cloudPingInterval = null;
 
@@ -177,6 +181,8 @@ function initCloudSync() {
             TOPIC_ORDERS_UPDATE,
             TOPIC_WAITER_CALL,
             TOPIC_WAITER_UPDATE,
+            TOPIC_STAFF_PRESENCE,
+            TOPIC_TABLE_STATUS,
             TOPIC_SYNC_REQ,
             TOPIC_SYNC_RES
           ].forEach(top => {
@@ -217,6 +223,10 @@ function initCloudSync() {
               waiterListeners.forEach(fn => fn('WAITER_CALL', payload.call));
             } else if (topic === TOPIC_WAITER_UPDATE && payload.call) {
               waiterListeners.forEach(fn => fn('WAITER_UPDATE', payload.call));
+            } else if (topic === TOPIC_STAFF_PRESENCE && payload.staff) {
+              staffListeners.forEach(fn => fn(payload.action || 'heartbeat', payload.staff, payload.deviceId));
+            } else if (topic === TOPIC_TABLE_STATUS && payload.occupiedTables) {
+              tableListeners.forEach(fn => fn(payload.occupiedTables));
             } else if (topic === TOPIC_SYNC_REQ) {
               if (payload.senderId && payload.senderId !== CLOUD_CLIENT_ID) {
                 syncListeners.forEach(fn => fn(payload.senderId));
@@ -282,6 +292,25 @@ function broadcastWaiterUpdate(call) {
   publishCloudMessage(TOPIC_WAITER_UPDATE, { call, senderId: CLOUD_CLIENT_ID });
 }
 
+function broadcastStaffPresence(staff, action = 'heartbeat') {
+  publishCloudMessage(TOPIC_STAFF_PRESENCE, {
+    staff,
+    action,
+    deviceId: CLOUD_CLIENT_ID,
+    timestamp: Date.now(),
+    senderId: CLOUD_CLIENT_ID
+  });
+}
+
+function broadcastTableStatus(occupiedTables) {
+  publishCloudMessage(TOPIC_TABLE_STATUS, {
+    occupiedTables,
+    deviceId: CLOUD_CLIENT_ID,
+    timestamp: Date.now(),
+    senderId: CLOUD_CLIENT_ID
+  });
+}
+
 function sendSyncResponse(targetId, orders, waiterCalls) {
   publishCloudMessage(TOPIC_SYNC_RES, {
     targetId,
@@ -303,10 +332,41 @@ function onCloudWaiterEvent(listener) {
   return () => waiterListeners.delete(listener);
 }
 
+function onCloudStaffEvent(listener) {
+  staffListeners.add(listener);
+  initCloudSync();
+  return () => staffListeners.delete(listener);
+}
+
+function onCloudTableEvent(listener) {
+  tableListeners.add(listener);
+  initCloudSync();
+  return () => tableListeners.delete(listener);
+}
+
 function onSyncRequestReceived(listener) {
   syncListeners.add(listener);
   initCloudSync();
   return () => syncListeners.delete(listener);
+}
+
+function calculateOccupiedTables(ordersList, extraOccupied = {}) {
+  const map = { ...extraOccupied };
+  (ordersList || []).forEach(o => {
+    if (o.mode === 'Dine in' && o.table && o.status !== 'Cancelled' && o.paymentStatus !== 'Paid') {
+      const t = o.table.trim();
+      map[t] = {
+        table: t,
+        guestName: o.guestName || 'Guest',
+        orderId: o.id,
+        status: o.status,
+        paymentStatus: o.paymentStatus || 'Unpaid',
+        total: o.total || 0,
+        createdAt: o.createdAt
+      };
+    }
+  });
+  return map;
 }
 
 const resolveAsset = (url) => {
@@ -584,7 +644,7 @@ function calculateStats(ordersList) {
 // -------------------------------------------------------------
 // GUEST LOGIN / TABLE CHECK-IN MODAL
 // -------------------------------------------------------------
-function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose }) {
+function GuestLoginModal({ guest, occupiedTables = {}, onSaveGuest, onLogoutGuest, isOpen, onClose }) {
   const [name, setName] = useState(guest?.name || '');
   const [table, setTable] = useState(guest?.table || 'Table 1');
   const [diningMode, setDiningMode] = useState(guest?.mode || 'Dine in');
@@ -602,16 +662,44 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
     }
   }, [guest, isOpen]);
 
+  const handleSelectTable = (t) => {
+    const occ = occupiedTables && occupiedTables[t];
+    const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== guest?.name?.toLowerCase());
+    if (isOccupiedByOther) {
+      setError(`⚠️ ${t} is currently occupied by ${occ.guestName || 'another guest'}. It remains occupied until final bill is paid.`);
+      return;
+    }
+    setTable(t);
+    setError('');
+  };
+
   const handleSave = (e) => {
     e.preventDefault();
     if (!name.trim()) {
       setError('Please enter your name to continue.');
       return;
     }
+    const selTable = diningMode === 'Dine in' ? (table.trim() || 'Table 1') : null;
+    if (diningMode === 'Dine in' && selTable) {
+      const occ = occupiedTables && occupiedTables[selTable];
+      const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== name.trim().toLowerCase());
+      if (isOccupiedByOther) {
+        setError(`⚠️ ${selTable} is currently occupied by ${occ.guestName || 'another guest'}. Please pick an available table.`);
+        return;
+      }
+      try {
+        fetch('/api/tables/checkin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: selTable, guestName: name.trim(), deviceId: CLOUD_CLIENT_ID })
+        }).catch(() => {});
+      } catch {}
+    }
+
     setError('');
     onSaveGuest({
       name: name.trim(),
-      table: diningMode === 'Dine in' ? (table.trim() || 'Table 1') : null,
+      table: selTable,
       mode: diningMode
     });
   };
@@ -681,25 +769,41 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
 
           {diningMode === 'Dine in' && (
             <div className="chef-input-group" style={{ marginTop: '10px' }}>
-              <label><MapPin size={12} /> Select Table Number</label>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label><MapPin size={12} /> Select Table Number</label>
+              </div>
               <div className="guest-table-grid compact-grid">
-                {quickTables.map(t => (
-                  <button
-                    type="button"
-                    key={t}
-                    className={`guest-table-chip ${table === t ? 'selected' : ''}`}
-                    onClick={() => setTable(t)}
-                  >
-                    {t.replace('Table ', 'T')}
-                  </button>
-                ))}
+                {quickTables.map(t => {
+                  const occ = occupiedTables && occupiedTables[t];
+                  const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== guest?.name?.toLowerCase());
+                  const isSelfOccupied = !!occ && !isOccupiedByOther;
+                  const isSelected = table === t;
+                  return (
+                    <button
+                      type="button"
+                      key={t}
+                      className={`guest-table-chip ${isSelected ? 'selected' : ''} ${isOccupiedByOther ? 'occupied' : ''} ${isSelfOccupied ? 'self-occupied' : ''}`}
+                      onClick={() => handleSelectTable(t)}
+                      title={isOccupiedByOther ? `${t}: Occupied by ${occ.guestName} (Pending Bill Payment)` : isSelfOccupied ? `${t}: Occupied by You` : `${t}: Available`}
+                    >
+                      {t.replace('Table ', 'T')}{isOccupiedByOther ? ' 🔴' : isSelfOccupied ? ' 🔵' : ''}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="table-legend-row">
+                <span className="table-legend-item"><span className="table-dot-free"></span> Free</span>
+                <span className="table-legend-item"><span className="table-dot-occupied"></span> Occupied until bill paid</span>
               </div>
               <div className="chef-input-box" style={{ marginTop: '6px' }}>
                 <MapPin size={14} />
                 <input
                   placeholder="Or enter custom table (e.g. Table 15, VIP)"
                   value={table}
-                  onChange={e => setTable(e.target.value)}
+                  onChange={e => {
+                    setTable(e.target.value);
+                    setError('');
+                  }}
                   style={{ padding: '8px 12px 8px 36px', fontSize: '13px' }}
                 />
               </div>
@@ -722,17 +826,9 @@ function GuestLoginModal({ guest, onSaveGuest, onLogoutGuest, isOpen, onClose })
               </button>
               <button
                 type="button"
+                className="chef-back-link"
                 onClick={onLogoutGuest}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid #fca5a5',
-                  color: '#ef4444',
-                  borderRadius: '8px',
-                  padding: '6px 12px',
-                  fontSize: '12px',
-                  fontWeight: '600',
-                  cursor: 'pointer'
-                }}
+                style={{ flex: 1, justifyContent: 'center', margin: 0, padding: '6px 12px', fontSize: '12px', color: '#ef4444' }}
               >
                 Log Out
               </button>
@@ -1116,10 +1212,11 @@ function ChefLogin({ onLogin, onBackToMenu }) {
       const res = await fetch('/api/chef/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: name.trim(), chefId: chefId.trim() })
+        body: JSON.stringify({ name: name.trim(), chefId: chefId.trim(), deviceId: CLOUD_CLIENT_ID })
       });
       if (res.ok) {
         const data = await res.json();
+        broadcastStaffPresence(data.chef, 'heartbeat');
         onLogin(data.chef, data.token);
         return;
       } else {
@@ -1143,10 +1240,12 @@ function ChefLogin({ onLogin, onBackToMenu }) {
     const fallbackChef = {
       id: matched.id,
       name: matched.name,
-      role: matched.role,
+      role: matched.designation || matched.role,
+      designation: matched.designation || matched.role,
       loggedInAt: new Date().toISOString()
     };
     const fallbackToken = `kds_token_${Date.now()}_${matched.id.replace(/\s+/g, '')}`;
+    broadcastStaffPresence(fallbackChef, 'heartbeat');
     onLogin(fallbackChef, fallbackToken);
   };
 
@@ -1226,6 +1325,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
   const [orders, setOrders] = useState(() => getLocalOrders());
   const [stats, setStats] = useState(() => calculateStats(getLocalOrders()));
   const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
+  const [activeStaffList, setActiveStaffList] = useState([]);
   const [waiterFilter, setWaiterFilter] = useState('Active'); // 'Active' | 'Attended' | 'All'
   const [activeTab, setActiveTab] = useState('New'); // 'New' | 'Preparing' | 'Ready' | 'AllActive' | 'History' | 'ServiceCalls'
   const [search, setSearch] = useState('');
@@ -1250,10 +1350,11 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
     let fetchedStats = null;
     let fetchedCalls = null;
     try {
-      const [ordersRes, statsRes, callsRes] = await Promise.all([
+      const [ordersRes, statsRes, callsRes, staffRes] = await Promise.all([
         fetch('/api/orders').catch(() => null),
         fetch('/api/stats').catch(() => null),
-        fetch('/api/waiter-calls').catch(() => null)
+        fetch('/api/waiter-calls').catch(() => null),
+        fetch('/api/staff/active').catch(() => null)
       ]);
       if (ordersRes && ordersRes.ok) {
         fetchedOrders = await ordersRes.json();
@@ -1263,6 +1364,12 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       }
       if (callsRes && callsRes.ok) {
         fetchedCalls = await callsRes.json();
+      }
+      if (staffRes && staffRes.ok) {
+        const staffData = await staffRes.json();
+        if (Array.isArray(staffData)) {
+          setActiveStaffList(staffData);
+        }
       }
     } catch (err) {
       console.warn('Backend API offline, syncing with local storage:', err);
@@ -1311,6 +1418,24 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
   // SSE Stream, Real-Time Cloud Sync and Polling fallback + Cross-tab local sync
   useEffect(() => {
     fetchOrdersAndStats();
+
+    // Send initial heartbeat and start periodic heartbeat to announce presence to all devices
+    const sendPresencePing = () => {
+      if (!chefAuth) return;
+      fetch('/api/staff/heartbeat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ staff: chefAuth, deviceId: CLOUD_CLIENT_ID })
+      }).then(res => res.json()).then(data => {
+        if (data && Array.isArray(data.activeStaff)) {
+          setActiveStaffList(data.activeStaff);
+        }
+      }).catch(() => {});
+      broadcastStaffPresence(chefAuth, 'heartbeat');
+    };
+
+    sendPresencePing();
+    const heartbeatInterval = setInterval(sendPresencePing, 15000);
 
     const handleLocalSync = (e) => {
       const list = e.detail || getLocalOrders();
@@ -1394,6 +1519,24 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       }
     });
 
+    const unsubCloudStaff = onCloudStaffEvent((action, staff, deviceId) => {
+      if (!staff) return;
+      setActiveStaffList(prev => {
+        const normKey = String(staff.id || staff.name).toUpperCase();
+        if (action === 'logout') {
+          return prev.filter(s => String(s.id || s.name).toUpperCase() !== normKey);
+        }
+        const existing = prev.filter(s => String(s.id || s.name).toUpperCase() !== normKey);
+        return [...existing, {
+          id: staff.id,
+          name: staff.name,
+          role: staff.role || staff.designation,
+          designation: staff.designation || staff.role,
+          lastSeen: Date.now()
+        }];
+      });
+    });
+
     const unsubSyncReq = onSyncRequestReceived((senderId) => {
       sendSyncResponse(senderId, getLocalOrders(), getLocalWaiterCalls());
     });
@@ -1406,28 +1549,34 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
         setOrders(prev => {
           const list = [newOrder, ...prev.filter(o => o.id !== newOrder.id)];
           saveLocalOrders(list);
+          const st = calculateStats(list);
+          setStats(st);
+          if (onOrderStatsChange) onOrderStatsChange(st);
           return list;
         });
-        fetchOrdersAndStats();
         if (soundEnabled) playKitchenChime();
       });
       eventSource.addEventListener('order:updated', (e) => {
         const updatedOrder = JSON.parse(e.data);
         setOrders(prev => {
-          const list = prev.map(o => o.id === updatedOrder.id ? updatedOrder : o);
+          const list = prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o);
           saveLocalOrders(list);
+          const st = calculateStats(list);
+          setStats(st);
+          if (onOrderStatsChange) onOrderStatsChange(st);
           return list;
         });
-        fetchOrdersAndStats();
       });
       eventSource.addEventListener('order:deleted', (e) => {
         const { id } = JSON.parse(e.data);
         setOrders(prev => {
           const list = prev.filter(o => o.id !== id);
           saveLocalOrders(list);
+          const st = calculateStats(list);
+          setStats(st);
+          if (onOrderStatsChange) onOrderStatsChange(st);
           return list;
         });
-        fetchOrdersAndStats();
       });
 
       // Waiter Call SSE Events
@@ -1456,23 +1605,51 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           return list;
         });
       });
+
+      // Active Staff SSE Event
+      eventSource.addEventListener('staff:active', (e) => {
+        try {
+          const staffList = JSON.parse(e.data);
+          if (Array.isArray(staffList)) {
+            setActiveStaffList(staffList);
+          }
+        } catch {}
+      });
     } catch (e) {
       console.warn('SSE not available, falling back to polling');
     }
 
+    const handleBeforeUnload = () => {
+      if (chefAuth) {
+        try {
+          fetch('/api/staff/logout', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ staffId: chefAuth.id, deviceId: CLOUD_CLIENT_ID }),
+            keepalive: true
+          }).catch(() => {});
+          broadcastStaffPresence(chefAuth, 'logout');
+        } catch {}
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     const interval = setInterval(fetchOrdersAndStats, 3500);
     return () => {
       clearInterval(interval);
+      clearInterval(heartbeatInterval);
       window.removeEventListener('poddars_orders_sync', handleLocalSync);
       window.removeEventListener('poddars_waiter_sync', handleWaiterLocalSync);
       window.removeEventListener('storage', handleLocalSync);
       window.removeEventListener('storage', handleWaiterLocalSync);
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       unsubCloudOrders();
       unsubCloudWaiter();
+      unsubCloudStaff();
       unsubSyncReq();
       if (eventSource) eventSource.close();
     };
-  }, [soundEnabled]);
+  }, [soundEnabled, chefAuth]);
 
   const handleAttendWaiterCall = async (callId) => {
     const now = new Date().toISOString();
@@ -1662,6 +1839,50 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       }
     } catch (err) {
       console.warn('Rejection synced to local storage');
+    }
+  };
+
+  const handleSettleOrder = async (orderId) => {
+    const now = new Date().toISOString();
+    let targetOrder = null;
+    setOrders(prev => {
+      const updated = prev.map(o => {
+        if (o.id === orderId) {
+          targetOrder = {
+            ...o,
+            paymentStatus: 'Paid',
+            paidAt: now,
+            status: o.status === 'New' || o.status === 'Preparing' ? o.status : 'Completed'
+          };
+          return targetOrder;
+        }
+        return o;
+      });
+      saveLocalOrders(updated);
+      setStats(calculateStats(updated));
+      return updated;
+    });
+
+    if (targetOrder) broadcastOrderUpdate(targetOrder);
+
+    try {
+      const res = await fetch(`/api/orders/${orderId}/pay`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: 'Paid', paymentMethod: 'Cash (Staff Settle)' })
+      });
+      if (res.ok) {
+        const updated = await res.json();
+        setOrders(prev => {
+          const list = prev.map(o => o.id === updated.id ? updated : o);
+          saveLocalOrders(list);
+          setStats(calculateStats(list));
+          return list;
+        });
+        broadcastOrderUpdate(updated);
+      }
+    } catch (err) {
+      console.warn('Settle order synced to local storage');
     }
   };
 
@@ -1951,22 +2172,28 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
         <div className="kds-team-header">
           <div className="kds-team-title">
             <ShieldCheck size={16} color="var(--brand-primary)" />
-            <span>Authorized Leadership & Staff Roster (4 Verified Members)</span>
+            <span>Authorized Leadership & Staff Roster ({AUTHORIZED_CHEFS.filter(chef => chefAuth?.id === chef.id || chefAuth?.name?.toUpperCase() === chef.name.toUpperCase() || activeStaffList.some(s => s.id === chef.id || s.name?.toUpperCase() === chef.name.toUpperCase())).length} of 4 Active on Duty)</span>
           </div>
-          <span className="kds-team-sub">Access Control: Verified Leadership & Kitchen Staff</span>
+          <span className="kds-team-sub">Real-Time Multi-Device Sync: Active On-Duty Status Across All Devices</span>
         </div>
         <div className="kds-team-grid">
           {AUTHORIZED_CHEFS.map(chef => {
-            const isCurrent = chefAuth?.id === chef.id || chefAuth?.name?.toUpperCase() === chef.name.toUpperCase();
+            const isSelf = chefAuth?.id === chef.id || chefAuth?.name?.toUpperCase() === chef.name.toUpperCase();
+            const isOnline = activeStaffList.some(s => s.id === chef.id || s.name?.toUpperCase() === chef.name.toUpperCase());
+            const isActive = isSelf || isOnline;
             return (
-              <div key={chef.id} className={`kds-team-member ${isCurrent ? 'active-duty' : ''}`}>
+              <div key={chef.id} className={`kds-team-member ${isActive ? 'active-duty' : ''}`}>
                 <div className="kds-member-avatar">
                   {chef.name.includes('VANISHA') ? '👩‍🍳' : chef.name.includes('EKTA') ? '👩‍💼' : chef.name.includes('ANKIT') ? '👨‍💼' : '👨‍🍳'}
                 </div>
                 <div className="kds-member-info">
                   <div className="kds-member-top">
                     <b>{chef.name}</b>
-                    {isCurrent && <span className="kds-active-badge">● Active Now</span>}
+                    {isActive && (
+                      <span className="kds-active-badge">
+                        ● Active Now {isSelf ? '(You)' : ''}
+                      </span>
+                    )}
                   </div>
                   <span className="kds-member-role">
                     <span style={{ color: 'var(--text-muted)', fontWeight: 600 }}>Designation:</span> {chef.designation || chef.role} • <code>ID {chef.id}</code>
@@ -2388,6 +2615,31 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
                       </div>
                     )}
 
+                    {/* Table Occupancy & Payment Settlement Bar */}
+                    {order.mode === 'Dine in' && (
+                      <div style={{ margin: '10px 0 6px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '6px', padding: '6px 10px', background: 'var(--bg-surface)', borderRadius: '8px', border: '1px solid var(--line)' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                          <MapPin size={13} color="var(--brand-primary)" />
+                          <b style={{ fontSize: '11.5px' }}>{order.table || 'Table 1'}</b>
+                        </div>
+                        {order.paymentStatus === 'Paid' ? (
+                          <span className="kds-paid-pill">✓ Bill Paid • Table Free</span>
+                        ) : (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span className="kds-unpaid-pill">🔴 Unpaid • Table Occupied</span>
+                            <button
+                              type="button"
+                              className="kds-btn-settle-table"
+                              onClick={() => handleSettleOrder(order.id)}
+                              title="Mark this order bill as settled/paid to free the table"
+                            >
+                              <Banknote size={13} /> Settle Bill & Free Table
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
                     {/* Status: COMPLETED or CANCELLED */}
                     {(order.status === 'Completed' || order.status === 'Cancelled') && (
                       <div className="kds-action-buttons">
@@ -2557,16 +2809,44 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
     setSettling(true);
     setCardError('');
     setTimeout(() => {
-      setIsPaid(true);
-      setSettling(false);
+      executePayment('Card');
     }, 900);
+  };
+
+  const executePayment = async (method = 'UPI') => {
+    setIsPaid(true);
+    setSettling(false);
+    const updated = {
+      ...order,
+      paymentStatus: 'Paid',
+      paymentMethod: method,
+      paidAt: new Date().toISOString()
+    };
+    const local = getLocalOrders();
+    const nextOrders = local.map(o => o.id === order.id ? { ...o, ...updated } : o);
+    saveLocalOrders(nextOrders);
+    broadcastOrderUpdate(updated);
+
+    try {
+      await fetch(`/api/orders/${order.id}/pay`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: 'Paid', paymentMethod: method })
+      });
+      if (order.table) {
+        await fetch('/api/tables/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: order.table })
+        });
+      }
+    } catch {}
   };
 
   const handleSettlePayment = () => {
     setSettling(true);
     setTimeout(() => {
-      setIsPaid(true);
-      setSettling(false);
+      executePayment('UPI');
     }, 600);
   };
 
@@ -2574,13 +2854,15 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
     setSettling(true);
     setTimeout(() => {
       setWaiterRequested(true);
-      setIsPaid(true);
-      setSettling(false);
+      executePayment('Cash at Table');
     }, 800);
   };
 
   const handlePrint = () => {
     window.print();
+    if (!isPaid) {
+      executePayment('Printed & Settled');
+    }
     // After printing the bill, log out the customer and open the main menu login dialog
     if (onPrintAndLogout) {
       setTimeout(() => {
@@ -3229,26 +3511,43 @@ function App() {
   const [showTracker, setShowTracker] = useState(false);
   const [callWaiterModalOpen, setCallWaiterModalOpen] = useState(false);
   const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
+  const [occupiedTables, setOccupiedTables] = useState(() => calculateOccupiedTables(getLocalOrders()));
 
-  // Real-time synchronization for Waiter Calls and Cloud Sync in Customer View
+  // Real-time synchronization for Waiter Calls, Table Occupancy, and Cloud Sync in Customer View
   useEffect(() => {
-    const fetchCalls = async () => {
+    const fetchCallsAndTables = async () => {
       try {
-        const res = await fetch('/api/waiter-calls');
-        if (res.ok) {
-          const data = await res.json();
+        const [callsRes, tablesRes] = await Promise.all([
+          fetch('/api/waiter-calls').catch(() => null),
+          fetch('/api/tables/status').catch(() => null)
+        ]);
+        if (callsRes && callsRes.ok) {
+          const data = await callsRes.json();
           setWaiterCalls(data);
           saveLocalWaiterCalls(data);
         }
+        if (tablesRes && tablesRes.ok) {
+          const tableData = await tablesRes.json();
+          if (tableData && typeof tableData === 'object') {
+            setOccupiedTables(tableData);
+          }
+        }
       } catch {}
     };
-    fetchCalls();
+    fetchCallsAndTables();
 
     const handleSync = (e) => {
       setWaiterCalls(e.detail || getLocalWaiterCalls());
     };
+    const handleOrderSync = (e) => {
+      const orders = e.detail || getLocalOrders();
+      setOccupiedTables(calculateOccupiedTables(orders));
+    };
+
     window.addEventListener('poddars_waiter_sync', handleSync);
+    window.addEventListener('poddars_orders_sync', handleOrderSync);
     window.addEventListener('storage', handleSync);
+    window.addEventListener('storage', handleOrderSync);
 
     const unsubCloudWaiter = onCloudWaiterEvent((eventType, payload) => {
       if (eventType === 'WAITER_CALL') {
@@ -3263,6 +3562,16 @@ function App() {
           return Array.from(map.values());
         });
       }
+    });
+
+    const unsubCloudTable = onCloudTableEvent((occ) => {
+      if (occ && typeof occ === 'object') {
+        setOccupiedTables(occ);
+      }
+    });
+
+    const unsubCloudOrder = onCloudOrderEvent(() => {
+      setOccupiedTables(calculateOccupiedTables(getLocalOrders()));
     });
 
     let es;
@@ -3280,14 +3589,32 @@ function App() {
         const { id } = JSON.parse(e.data);
         setWaiterCalls(prev => prev.filter(c => c.id !== id));
       });
+      es.addEventListener('table:status', (e) => {
+        try {
+          const occ = JSON.parse(e.data);
+          if (occ && typeof occ === 'object') {
+            setOccupiedTables(occ);
+          }
+        } catch {}
+      });
+      es.addEventListener('order:created', () => {
+        setOccupiedTables(calculateOccupiedTables(getLocalOrders()));
+      });
+      es.addEventListener('order:updated', () => {
+        setOccupiedTables(calculateOccupiedTables(getLocalOrders()));
+      });
     } catch {}
 
-    const interval = setInterval(fetchCalls, 4000);
+    const interval = setInterval(fetchCallsAndTables, 3500);
     return () => {
       clearInterval(interval);
       window.removeEventListener('poddars_waiter_sync', handleSync);
+      window.removeEventListener('poddars_orders_sync', handleOrderSync);
       window.removeEventListener('storage', handleSync);
+      window.removeEventListener('storage', handleOrderSync);
       unsubCloudWaiter();
+      unsubCloudTable();
+      unsubCloudOrder();
       if (es) es.close();
     };
   }, []);
@@ -3320,6 +3647,17 @@ function App() {
   };
 
   const handleChefLogout = () => {
+    if (chefAuth) {
+      try {
+        fetch('/api/staff/logout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ staffId: chefAuth.id, deviceId: CLOUD_CLIENT_ID }),
+          keepalive: true
+        }).catch(() => {});
+        broadcastStaffPresence(chefAuth, 'logout');
+      } catch {}
+    }
     setChefAuth(null);
     try {
       localStorage.removeItem('poddars_chef_auth');
@@ -3372,6 +3710,15 @@ function App() {
     if (!guest?.name) {
       setGuestModalOpen(true);
       return;
+    }
+    if (mode === 'Dine in') {
+      const chosenTable = (guest.table || 'Table 1').trim();
+      const occ = occupiedTables && occupiedTables[chosenTable];
+      if (occ && occ.guestName?.toLowerCase() !== guest.name.toLowerCase() && occ.orderId !== activeTrackingOrderId) {
+        alert(`⚠️ ${chosenTable} is currently occupied by ${occ.guestName}. Tables remain reserved until the final bill is paid. Please choose an available table.`);
+        setGuestModalOpen(true);
+        return;
+      }
     }
     setSubmitting(true);
     setOrderError('');
@@ -4066,9 +4413,17 @@ function App() {
       {/* Guest Login / Table Check-in Modal */}
       <GuestLoginModal
         guest={guest}
+        occupiedTables={occupiedTables}
         isOpen={guestModalOpen}
         onClose={() => setGuestModalOpen(false)}
         onLogoutGuest={() => {
+          if (guest?.table) {
+            fetch('/api/tables/checkout', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ table: guest.table })
+            }).catch(() => {});
+          }
           setGuest(null);
           try {
             localStorage.removeItem('poddars_guest_session');
@@ -4090,6 +4445,7 @@ function App() {
         isOpen={callWaiterModalOpen}
         onClose={() => setCallWaiterModalOpen(false)}
         guest={guest}
+        occupiedTables={occupiedTables}
         onSaveGuest={savedGuest => {
           setGuest(savedGuest);
           setMode(savedGuest.mode || 'Dine in');
@@ -4127,6 +4483,13 @@ function App() {
             setShowTracker(false);
           }}
           onPrintAndLogout={() => {
+            if (guest?.table) {
+              fetch('/api/tables/checkout', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ table: guest.table })
+              }).catch(() => {});
+            }
             setGuest(null);
             setCart([]);
             setActiveTrackingOrderId(null);

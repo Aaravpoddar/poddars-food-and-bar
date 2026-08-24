@@ -92,6 +92,116 @@ function broadcastEvent(eventType, data) {
   }
 }
 
+// Active Staff Tracking System (Tracks multi-device active chefs/staff in real-time)
+const activeStaffSessions = new Map(); // key: `${id}_${deviceId}`, val: { id, name, role, designation, lastSeen, deviceId }
+
+function getActiveStaffList() {
+  const now = Date.now();
+  const seenStaff = new Map();
+  for (const [key, session] of activeStaffSessions.entries()) {
+    if (now - session.lastSeen < 60000) { // Active within last 60 seconds
+      const normKey = String(session.id || session.name).toUpperCase();
+      if (!seenStaff.has(normKey)) {
+        seenStaff.set(normKey, {
+          id: session.id,
+          name: session.name,
+          role: session.role || session.designation,
+          designation: session.designation || session.role,
+          lastSeen: session.lastSeen
+        });
+      }
+    } else {
+      activeStaffSessions.delete(key);
+    }
+  }
+  return Array.from(seenStaff.values());
+}
+
+function updateStaffHeartbeat(staff, deviceId) {
+  if (!staff || (!staff.id && !staff.name)) return getActiveStaffList();
+  const key = deviceId ? `${staff.id || staff.name}_${deviceId}` : `${staff.id || staff.name}`;
+  activeStaffSessions.set(key, {
+    id: staff.id,
+    name: staff.name,
+    role: staff.role || staff.designation,
+    designation: staff.designation || staff.role,
+    deviceId: deviceId || 'default',
+    lastSeen: Date.now()
+  });
+  const list = getActiveStaffList();
+  broadcastEvent('staff:active', list);
+  return list;
+}
+
+function removeStaffSession(staffId, deviceId) {
+  let changed = false;
+  for (const [key, session] of activeStaffSessions.entries()) {
+    if ((deviceId && session.deviceId === deviceId) || (staffId && String(session.id).toUpperCase() === String(staffId).toUpperCase())) {
+      activeStaffSessions.delete(key);
+      changed = true;
+    }
+  }
+  const list = getActiveStaffList();
+  if (changed) {
+    broadcastEvent('staff:active', list);
+  }
+  return list;
+}
+
+// Periodically clean up expired sessions and broadcast if count changed
+setInterval(() => {
+  const initialCount = activeStaffSessions.size;
+  const list = getActiveStaffList();
+  if (activeStaffSessions.size !== initialCount) {
+    broadcastEvent('staff:active', list);
+  }
+}, 15000);
+
+// Active Table Checkin & Occupancy Tracker
+const activeTableCheckins = new Map(); // key: table, value: { table, guestName, checkinAt, deviceId }
+
+async function getTablesOccupancy() {
+  const orders = await getOrders();
+  const occupied = {};
+
+  // 1. Mark tables with active unpaid dine-in orders as OCCUPIED
+  for (const o of orders) {
+    if (o.mode === 'Dine in' && o.table && o.status !== 'Cancelled' && o.paymentStatus !== 'Paid') {
+      const t = o.table.trim();
+      occupied[t] = {
+        table: t,
+        guestName: o.guestName || 'Guest',
+        orderId: o.id,
+        status: o.status,
+        paymentStatus: o.paymentStatus || 'Unpaid',
+        total: o.total || 0,
+        createdAt: o.createdAt
+      };
+    }
+  }
+
+  // 2. Mark active check-ins (within last 45 mins)
+  const now = Date.now();
+  for (const [t, checkin] of activeTableCheckins.entries()) {
+    if (now - checkin.checkinAt < 45 * 60 * 1000) {
+      if (!occupied[t]) {
+        occupied[t] = {
+          table: t,
+          guestName: checkin.guestName || 'Guest',
+          orderId: checkin.orderId || null,
+          status: 'Checked-in',
+          paymentStatus: 'Unpaid',
+          checkinAt: checkin.checkinAt
+        };
+      }
+    } else {
+      activeTableCheckins.delete(t);
+    }
+  }
+
+  return occupied;
+}
+
 async function getOrders() {
   try {
     const content = await readFile(ordersFile, 'utf8');
@@ -197,12 +307,76 @@ const server = createServer(async (request, response) => {
         'Access-Control-Allow-Origin': '*'
       });
       response.write('retry: 3000\n\n');
+      // Send immediate active staff list and table occupancy on connect
+      response.write(`event: staff:active\ndata: ${JSON.stringify(getActiveStaffList())}\n\n`);
+      getTablesOccupancy().then(occ => {
+        try {
+          response.write(`event: table:status\ndata: ${JSON.stringify(occ)}\n\n`);
+        } catch {}
+      });
       sseClients.add(response);
 
       request.on('close', () => {
         sseClients.delete(response);
       });
       return;
+    }
+
+    // GET /api/tables/status (Get real-time table occupancy status)
+    if (request.method === 'GET' && pathname === '/api/tables/status') {
+      const occ = await getTablesOccupancy();
+      return send(response, 200, occ);
+    }
+
+    // POST /api/tables/checkin (Customer checks into a table)
+    if (request.method === 'POST' && pathname === '/api/tables/checkin') {
+      const payload = await readBody(request);
+      const table = String(payload.table || '').trim();
+      if (table) {
+        activeTableCheckins.set(table, {
+          table,
+          guestName: String(payload.guestName || 'Guest').trim(),
+          deviceId: payload.deviceId || 'default',
+          checkinAt: Date.now()
+        });
+        const occ = await getTablesOccupancy();
+        broadcastEvent('table:status', occ);
+        return send(response, 200, { success: true, occupiedTables: occ });
+      }
+      return send(response, 400, { error: 'Table is required' });
+    }
+
+    // POST /api/tables/checkout (Table released/vacated)
+    if (request.method === 'POST' && pathname === '/api/tables/checkout') {
+      const payload = await readBody(request);
+      const table = String(payload.table || '').trim();
+      if (table) {
+        activeTableCheckins.delete(table);
+        const occ = await getTablesOccupancy();
+        broadcastEvent('table:status', occ);
+        return send(response, 200, { success: true, occupiedTables: occ });
+      }
+      return send(response, 400, { error: 'Table is required' });
+    }
+
+    // GET /api/staff/active (Get list of active staff members logged in across all devices)
+    if (request.method === 'GET' && pathname === '/api/staff/active') {
+      return send(response, 200, getActiveStaffList());
+    }
+
+    // POST /api/staff/heartbeat (Keep-alive presence ping from active staff devices)
+    if (request.method === 'POST' && pathname === '/api/staff/heartbeat') {
+      const payload = await readBody(request);
+      const staffObj = payload.staff || (payload.name || payload.staffId || payload.id ? { id: payload.staffId || payload.id, name: payload.name, role: payload.role || payload.designation } : null);
+      const activeList = updateStaffHeartbeat(staffObj, payload.deviceId);
+      return send(response, 200, { success: true, activeStaff: activeList });
+    }
+
+    // POST /api/staff/logout (Explicit staff logout notification)
+    if (request.method === 'POST' && pathname === '/api/staff/logout') {
+      const payload = await readBody(request);
+      const activeList = removeStaffSession(payload.staffId || payload.id, payload.deviceId);
+      return send(response, 200, { success: true, activeStaff: activeList });
     }
 
     // Kitchen Summary Stats
@@ -255,10 +429,14 @@ const server = createServer(async (request, response) => {
         loggedInAt: new Date().toISOString()
       };
 
+      // Register staff presence immediately upon login
+      const activeList = updateStaffHeartbeat(chefProfile, payload.deviceId);
+
       return send(response, 200, {
         success: true,
         token: `kds_token_${Date.now()}_${matched.id.replace(/\s+/g, '')}`,
-        chef: chefProfile
+        chef: chefProfile,
+        activeStaff: activeList
       });
     }
 
@@ -333,8 +511,32 @@ const server = createServer(async (request, response) => {
       orders.unshift(order);
       await saveOrders(orders);
       broadcastEvent('order:created', order);
+      getTablesOccupancy().then(occ => broadcastEvent('table:status', occ));
 
       return send(response, 201, order);
+    }
+
+    // PATCH /api/orders/:id/pay (Customer or Chef settles/pays final bill for an order)
+    const payMatch = pathname.match(/^\/api\/orders\/([^/]+)\/pay$/);
+    if (request.method === 'PATCH' && payMatch) {
+      const orderId = payMatch[1];
+      const payload = await readBody(request);
+      const orders = await getOrders();
+      const order = orders.find(item => item.id === orderId);
+
+      if (!order) return send(response, 404, { error: 'Order not found.' });
+
+      order.paymentStatus = 'Paid';
+      order.paidAt = new Date().toISOString();
+      if (payload.paymentMethod) order.paymentMethod = String(payload.paymentMethod);
+      if (payload.status) order.status = payload.status;
+      if (order.table) activeTableCheckins.delete(order.table);
+
+      await saveOrders(orders);
+      broadcastEvent('order:updated', order);
+      getTablesOccupancy().then(occ => broadcastEvent('table:status', occ));
+
+      return send(response, 200, order);
     }
 
     // PATCH /api/orders/:id/approve (Chef approves order and sets prep time)
@@ -355,6 +557,7 @@ const server = createServer(async (request, response) => {
 
       await saveOrders(orders);
       broadcastEvent('order:updated', order);
+      getTablesOccupancy().then(occ => broadcastEvent('table:status', occ));
 
       return send(response, 200, order);
     }
@@ -372,9 +575,11 @@ const server = createServer(async (request, response) => {
       order.status = 'Cancelled';
       order.cancelledAt = new Date().toISOString();
       order.rejectionReason = payload.reason || 'Kitchen unable to fulfill order at this time.';
+      if (order.table) activeTableCheckins.delete(order.table);
 
       await saveOrders(orders);
       broadcastEvent('order:updated', order);
+      getTablesOccupancy().then(occ => broadcastEvent('table:status', occ));
 
       return send(response, 200, order);
     }
@@ -400,13 +605,25 @@ const server = createServer(async (request, response) => {
       if (payload.status === 'Preparing' && !order.approvedAt) order.approvedAt = now;
       if (payload.status === 'Ready') order.readyAt = now;
       if (payload.status === 'Completed') order.completedAt = now;
-      if (payload.status === 'Cancelled') order.cancelledAt = now;
+      if (payload.status === 'Cancelled') {
+        order.cancelledAt = now;
+        if (order.table) activeTableCheckins.delete(order.table);
+      }
+
+      if (payload.paymentStatus) {
+        order.paymentStatus = payload.paymentStatus;
+        if (payload.paymentStatus === 'Paid') {
+          order.paidAt = now;
+          if (order.table) activeTableCheckins.delete(order.table);
+        }
+      }
 
       if (payload.prepTime) order.estimatedPrepTime = Number(payload.prepTime);
       if (payload.chefNote) order.chefNote = String(payload.chefNote).trim();
 
       await saveOrders(orders);
       broadcastEvent('order:updated', order);
+      getTablesOccupancy().then(occ => broadcastEvent('table:status', occ));
 
       return send(response, 200, order);
     }
@@ -425,6 +642,7 @@ const server = createServer(async (request, response) => {
 
       await saveOrders(orders);
       broadcastEvent('order:deleted', { id: orderId });
+      getTablesOccupancy().then(occ => broadcastEvent('table:status', occ));
       return send(response, 200, { success: true, message: 'Order removed' });
     }
 

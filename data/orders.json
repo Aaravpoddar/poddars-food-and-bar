@@ -1,5 +1,128 @@
 [
   {
+    "id": "TP-405203",
+    "status": "Cancelled",
+    "createdAt": "2026-08-24T13:37:24.078Z",
+    "guestName": "Rahul",
+    "mode": "Dine in",
+    "table": "Table 7",
+    "items": [
+      {
+        "id": 1,
+        "name": "Butter Chicken",
+        "price": 795,
+        "qty": 1,
+        "color": "coral",
+        "mark": "FD"
+      }
+    ],
+    "instructions": "",
+    "subtotal": 0,
+    "gst": 0,
+    "total": 834.75,
+    "estimatedPrepTime": null,
+    "approvedAt": null,
+    "readyAt": null,
+    "completedAt": null,
+    "cancelledAt": "2026-08-24T13:37:24.498Z",
+    "chefNote": "",
+    "rejectionReason": "Ingredient out of stock for tonight"
+  },
+  {
+    "id": "TP-493749",
+    "status": "Preparing",
+    "createdAt": "2026-08-24T13:37:23.242Z",
+    "guestName": "Ananya",
+    "mode": "Dine in",
+    "table": "Table 5",
+    "items": [
+      {
+        "id": 2,
+        "name": "Paneer Tikka Masala",
+        "price": 695,
+        "qty": 1,
+        "color": "coral",
+        "mark": "FD"
+      }
+    ],
+    "instructions": "",
+    "subtotal": 0,
+    "gst": 0,
+    "total": 729.75,
+    "estimatedPrepTime": 20,
+    "approvedAt": "2026-08-24T13:37:23.659Z",
+    "readyAt": null,
+    "completedAt": null,
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "approvedBy": "Executive Chef Vikas"
+  },
+  {
+    "id": "TP-344610",
+    "status": "New",
+    "createdAt": "2026-08-24T13:34:03.069Z",
+    "guestName": "Rohan Sharma",
+    "mode": "Dine in",
+    "table": "Table 3",
+    "items": [
+      {
+        "id": 1,
+        "name": "Butter Chicken",
+        "price": 795,
+        "qty": 1,
+        "color": "coral",
+        "mark": "FD"
+      }
+    ],
+    "instructions": "",
+    "subtotal": 795,
+    "gst": 39.75,
+    "total": 834.75,
+    "estimatedPrepTime": null,
+    "approvedAt": null,
+    "readyAt": null,
+    "completedAt": null,
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-24T13:34:03.074Z",
+    "paymentMethod": "UPI"
+  },
+  {
+    "id": "TP-544253",
+    "status": "New",
+    "createdAt": "2026-08-24T13:33:11.997Z",
+    "guestName": "Rohan Sharma",
+    "mode": "Dine in",
+    "table": "Table 3",
+    "items": [
+      {
+        "id": 1,
+        "name": "Butter Chicken",
+        "price": 795,
+        "qty": 1,
+        "color": "coral",
+        "mark": "FD"
+      }
+    ],
+    "instructions": "",
+    "subtotal": 795,
+    "gst": 39.75,
+    "total": 834.75,
+    "estimatedPrepTime": null,
+    "approvedAt": null,
+    "readyAt": null,
+    "completedAt": null,
+    "cancelledAt": null,
+    "chefNote": "",
+    "rejectionReason": null,
+    "paymentStatus": "Paid",
+    "paidAt": "2026-08-24T13:33:12.003Z",
+    "paymentMethod": "UPI"
+  },
+  {
     "id": "TP-437086",
     "status": "Completed",
     "createdAt": "2026-08-21T14:35:30.479Z",

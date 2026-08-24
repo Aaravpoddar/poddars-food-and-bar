@@ -1905,6 +1905,112 @@ header {
   box-shadow: var(--shadow-orange);
 }
 
+.guest-table-chip.occupied {
+  background: #fff1f2;
+  border-color: #fecdd3;
+  color: #e11d48;
+  opacity: 0.85;
+  position: relative;
+}
+
+.guest-table-chip.occupied:hover {
+  background: #ffe4e6;
+  border-color: #fda4af;
+}
+
+.guest-table-chip.self-occupied {
+  background: #ecfdf5;
+  border-color: #a7f3d0;
+  color: #059669;
+}
+
+.guest-table-chip.self-occupied.selected {
+  background: var(--brand-primary);
+  color: #ffffff;
+  border-color: var(--brand-primary);
+}
+
+.table-legend-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+  font-size: 10px;
+  color: var(--text-muted);
+  font-family: 'DM Mono', monospace;
+}
+
+.table-legend-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.table-dot-free {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #10b981;
+  display: inline-block;
+}
+
+.table-dot-occupied {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #ef4444;
+  display: inline-block;
+}
+
+.kds-unpaid-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #fef2f2;
+  border: 1px solid #fecdd3;
+  color: #e11d48;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+}
+
+.kds-paid-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #059669;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 6px;
+  font-family: 'DM Mono', monospace;
+}
+
+.kds-btn-settle-table {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #059669, #047857);
+  color: #ffffff;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 6px rgba(5, 150, 105, 0.25);
+}
+
+.kds-btn-settle-table:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(5, 150, 105, 0.35);
+}
+
 .chef-input-group {
   display: flex;
   flex-direction: column;

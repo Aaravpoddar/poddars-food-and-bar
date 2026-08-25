@@ -1,11 +1,11 @@
 Active Cloudflare Tunnel URL:
-https://plane-observer-mia-verde.trycloudflare.com
+https://advocacy-shakespeare-river-manager.trycloudflare.com
 
 Customer Menu:
-https://plane-observer-mia-verde.trycloudflare.com
+https://advocacy-shakespeare-river-manager.trycloudflare.com
 
 Admin / Kitchen KDS:
-https://plane-observer-mia-verde.trycloudflare.com
+https://advocacy-shakespeare-river-manager.trycloudflare.com
 
 Local WiFi URL (Same Network):
 http://10.5.168.113:3002

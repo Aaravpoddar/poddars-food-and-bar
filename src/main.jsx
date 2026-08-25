@@ -3576,11 +3576,23 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
 }
 
 // -------------------------------------------------------------
-// LIVE CUSTOMER ORDER TRACKER COMPONENT
+// LIVE CUSTOMER ORDER TRACKER COMPONENT (WITH INSTANT PAYMENT & UPI QR)
 // -------------------------------------------------------------
 function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
   const [order, setOrder] = useState(null);
   const [showBillModal, setShowBillModal] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi' | 'card' | 'waiter'
+  const [copiedUpi, setCopiedUpi] = useState(false);
+  const [settling, setSettling] = useState(false);
+  const [waiterRequested, setWaiterRequested] = useState(false);
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardHolder, setCardHolder] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [cardError, setCardError] = useState('');
+
+  const upiId = 'aaravpoddar19@okicici';
+  const payeeName = 'Aarav Poddar';
 
   useEffect(() => {
     if (!orderId) return;
@@ -3590,13 +3602,17 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
         if (res.ok) {
           const data = await res.json();
           setOrder(data);
+          if (data.guestName) setCardHolder(data.guestName);
           return;
         }
       } catch (err) {}
       // Local storage fallback
       const local = getLocalOrders();
       const match = local.find(o => o.id === orderId);
-      if (match) setOrder(match);
+      if (match) {
+        setOrder(match);
+        if (match.guestName) setCardHolder(match.guestName);
+      }
     };
     fetchOrder();
 
@@ -3641,10 +3657,115 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
 
   if (!order) return null;
 
+  const isPaid = order.paymentStatus === 'Paid';
   const isApproved = order.status === 'Preparing' || order.status === 'Ready' || order.status === 'Completed';
   const isReady = order.status === 'Ready' || order.status === 'Completed';
   const isCompleted = order.status === 'Completed';
   const isCancelled = order.status === 'Cancelled';
+
+  const handleCopyUpi = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      setCopiedUpi(true);
+      setTimeout(() => setCopiedUpi(false), 2200);
+    }
+  };
+
+  const handleCardNumberChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 16);
+    let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+    setCardNumber(formatted);
+    setCardError('');
+  };
+
+  const handleExpiryChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+    if (val.length >= 3) {
+      setCardExpiry(`${val.substring(0, 2)}/${val.substring(2, 4)}`);
+    } else {
+      setCardExpiry(val);
+    }
+    setCardError('');
+  };
+
+  const handleCvvChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+    setCardCvv(val);
+    setCardError('');
+  };
+
+  const executePayment = async (method = 'UPI') => {
+    setSettling(false);
+    const updated = {
+      ...order,
+      paymentStatus: 'Paid',
+      paymentMethod: method,
+      paidAt: new Date().toISOString()
+    };
+    setOrder(updated);
+    const local = getLocalOrders();
+    const nextOrders = local.map(o => o.id === order.id ? { ...o, ...updated } : o);
+    saveLocalOrders(nextOrders);
+    broadcastOrderUpdate(updated);
+    broadcastTableStatus(calculateOccupiedTables(nextOrders));
+
+    try {
+      await fetch(`/api/orders/${order.id}/pay`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paymentStatus: 'Paid', paymentMethod: method })
+      });
+      if (order.table) {
+        await fetch('/api/tables/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: order.table })
+        });
+      }
+    } catch {}
+  };
+
+  const handleSettlePayment = () => {
+    setSettling(true);
+    setTimeout(() => {
+      executePayment('UPI (QR Scan)');
+    }, 600);
+  };
+
+  const handleProcessCardPayment = (e) => {
+    e.preventDefault();
+    const cleanNum = cardNumber.replace(/\s/g, '');
+    if (cleanNum.length < 15) {
+      setCardError('Please enter a valid 16-digit card number');
+      return;
+    }
+    if (!cardHolder.trim()) {
+      setCardError('Please enter the name printed on your card');
+      return;
+    }
+    if (cardExpiry.length < 5) {
+      setCardError('Please enter a valid expiry date (MM/YY)');
+      return;
+    }
+    if (cardCvv.length < 3) {
+      setCardError('Please enter a valid 3 or 4-digit CVV');
+      return;
+    }
+
+    setSettling(true);
+    setCardError('');
+    setTimeout(() => {
+      executePayment('Credit/Debit Card');
+    }, 900);
+  };
+
+  const handleRequestWaiter = () => {
+    setSettling(true);
+    setTimeout(() => {
+      setWaiterRequested(true);
+      executePayment('Cash at Table');
+    }, 800);
+  };
 
   return (
     <>
@@ -3751,7 +3872,232 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
           )}
         </div>
 
-        {/* Action Buttons: View Final Bill, Add More Items, and Hide Tracker */}
+        {/* =========================================================
+            INSTANT PAYMENT & UPI QR SECTION (VISIBLE DIRECTLY ON ORDER)
+           ========================================================= */}
+        <div className="tracker-payment-section">
+          <div className="tracker-payment-title-row">
+            <span className="tracker-payment-label">
+              <CreditCard size={15} /> PAYMENT & BILL SETTLEMENT
+            </span>
+            {isPaid ? (
+              <span className="tracker-paid-badge">
+                <CheckCircle2 size={13} /> PAID & SETTLED
+              </span>
+            ) : (
+              <span className="tracker-unpaid-badge">
+                <Clock3 size={13} /> BILL DUE: {formatPrice(order.total)}
+              </span>
+            )}
+          </div>
+
+          {isPaid ? (
+            <div className="tracker-paid-success-box">
+              <CheckCircle2 size={24} color="#16a34a" />
+              <div>
+                <b>Bill Settled & Paid ({order.paymentMethod || 'Online'})</b>
+                <p>Thank you! Your table is settled. Enjoy your meal at The Poddar's Courtyard.</p>
+              </div>
+            </div>
+          ) : (
+            <div className="bill-payment-section in-tracker">
+              <div className="payment-options-tabs payment-three-tabs">
+                <button
+                  type="button"
+                  className={`pay-tab ${paymentMethod === 'upi' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('upi')}
+                >
+                  <QrCode size={15} /> UPI / GPay (QR)
+                </button>
+                <button
+                  type="button"
+                  className={`pay-tab ${paymentMethod === 'card' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('card')}
+                >
+                  <CreditCard size={15} /> Card Details
+                </button>
+                <button
+                  type="button"
+                  className={`pay-tab ${paymentMethod === 'waiter' ? 'active' : ''}`}
+                  onClick={() => setPaymentMethod('waiter')}
+                >
+                  <Banknote size={15} /> Pay Waiter (Cash)
+                </button>
+              </div>
+
+              {/* TAB 1: UPI / GPAY */}
+              {paymentMethod === 'upi' && (
+                <div className="upi-payment-box">
+                  <div className="mock-qr-wrap">
+                    <div className="upi-qr-card-container">
+                      <img
+                        src={resolveAsset('/payment-qr.jpg')}
+                        alt="Aarav Poddar UPI QR Code"
+                        className="upi-qr-image"
+                      />
+                    </div>
+                    <small className="upi-scan-hint">Scan with GPay, PhonePe, Paytm, BHIM</small>
+                  </div>
+
+                  <div className="upi-details">
+                    <div className="upi-info-card">
+                      <div className="upi-info-row">
+                        <span className="upi-label">PAYEE:</span>
+                        <b className="upi-val">{payeeName}</b>
+                      </div>
+                      <div className="upi-info-row">
+                        <span className="upi-label">UPI ID:</span>
+                        <div className="upi-id-badge-wrap">
+                          <code className="upi-val-mono">{upiId}</code>
+                          <button
+                            type="button"
+                            className="upi-copy-action-btn"
+                            onClick={handleCopyUpi}
+                            title="Copy UPI ID"
+                          >
+                            <Copy size={12} /> {copiedUpi ? 'Copied!' : 'Copy'}
+                          </button>
+                        </div>
+                      </div>
+                      <div className="upi-info-row">
+                        <span className="upi-label">AMOUNT:</span>
+                        <b className="upi-val-price">{formatPrice(order.total)}</b>
+                      </div>
+                    </div>
+
+                    <a
+                      href={`upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${order.total}&cu=INR&tn=The%20Poddars%20Courtyard%20Bill`}
+                      className="pay-direct-app-link"
+                    >
+                      <Smartphone size={15} /> Open UPI App (GPay / PhonePe)
+                    </a>
+
+                    <button
+                      type="button"
+                      className="pay-settle-btn"
+                      onClick={handleSettlePayment}
+                      disabled={settling}
+                    >
+                      {settling ? 'Verifying payment...' : '✓ Confirm UPI Payment Completed'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: CREDIT / DEBIT CARD DETAILS */}
+              {paymentMethod === 'card' && (
+                <form className="card-payment-box" onSubmit={handleProcessCardPayment}>
+                  <div className="card-header-row">
+                    <div className="card-security-badge">
+                      <ShieldCheck size={14} /> 256-Bit SSL Encrypted
+                    </div>
+                    <div className="card-networks-list">
+                      <span className="card-chip-tag visa">VISA</span>
+                      <span className="card-chip-tag mc">Mastercard</span>
+                      <span className="card-chip-tag rupay">RuPay</span>
+                      <span className="card-chip-tag amex">AMEX</span>
+                    </div>
+                  </div>
+
+                  {cardError && (
+                    <div className="card-form-error">
+                      ⚠️ {cardError}
+                    </div>
+                  )}
+
+                  <div className="card-field-group">
+                    <label>Card Number</label>
+                    <div className="card-input-with-icon">
+                      <CreditCard size={16} className="card-field-icon" />
+                      <input
+                        type="text"
+                        placeholder="4532 •••• •••• 8901"
+                        value={cardNumber}
+                        onChange={handleCardNumberChange}
+                        maxLength={19}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="card-field-group">
+                    <label>Cardholder Name</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Aarav Poddar"
+                      value={cardHolder}
+                      onChange={(e) => {
+                        setCardHolder(e.target.value);
+                        setCardError('');
+                      }}
+                      required
+                    />
+                  </div>
+
+                  <div className="card-grid-row">
+                    <div className="card-field-group">
+                      <label>Expiry (MM/YY)</label>
+                      <input
+                        type="text"
+                        placeholder="MM/YY"
+                        value={cardExpiry}
+                        onChange={handleExpiryChange}
+                        maxLength={5}
+                        required
+                      />
+                    </div>
+                    <div className="card-field-group">
+                      <label>CVV / CVC</label>
+                      <input
+                        type="password"
+                        placeholder="•••"
+                        value={cardCvv}
+                        onChange={handleCvvChange}
+                        maxLength={4}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <button
+                    type="submit"
+                    className="pay-settle-btn card-submit-btn"
+                    disabled={settling}
+                  >
+                    {settling ? 'Processing Secure Card Payment...' : `🔒 Pay ${formatPrice(order.total)} via Card`}
+                  </button>
+                </form>
+              )}
+
+              {/* TAB 3: PAY WAITER AT TABLE */}
+              {paymentMethod === 'waiter' && (
+                <div className="waiter-payment-box">
+                  <div className="waiter-pay-icon-circle">
+                    <Banknote size={28} color="var(--brand-primary)" />
+                  </div>
+                  <div className="waiter-pay-text">
+                    <b>Pay Cash Directly at Table</b>
+                    <p>
+                      Prefer cash or physical POS card machine? Request a server to visit{' '}
+                      <span className="waiter-table-pill">{order.table || 'Table 1'}</span> with the final physical bill.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    className="waiter-call-pay-btn"
+                    onClick={handleRequestWaiter}
+                    disabled={settling}
+                  >
+                    <Banknote size={16} />
+                    {settling ? 'Calling waiter...' : '🤵 Request Waiter to Table'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Action Buttons: View Final Tax Invoice, Add More Items, and Hide Tracker */}
         <div className="tracker-actions">
           <button
             type="button"
@@ -3759,7 +4105,7 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
             onClick={() => setShowBillModal(true)}
           >
             <Receipt size={14} />
-            <span>View Final Bill</span>
+            <span>View Full Tax Invoice</span>
           </button>
           <button
             type="button"

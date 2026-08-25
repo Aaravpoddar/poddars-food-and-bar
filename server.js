@@ -8,7 +8,8 @@ const rootDirectory = dirname(fileURLToPath(import.meta.url));
 const distDirectory = join(rootDirectory, 'dist');
 const ordersFile = join(rootDirectory, 'data', 'orders.json');
 const waiterCallsFile = join(rootDirectory, 'data', 'waiter_calls.json');
-const port = 3002;
+const port = process.env.PORT || 3002;
+let flashSaleActive = true;
 
 const mimeTypes = {
   '.html': 'text/html; charset=utf-8',
@@ -753,6 +754,19 @@ const server = createServer(async (request, response) => {
       return send(response, 200, { success: true, message: 'Waiter call removed' });
     }
 
+    // GET /api/flash-sale
+    if (request.method === 'GET' && pathname === '/api/flash-sale') {
+      return send(response, 200, { enabled: flashSaleActive });
+    }
+
+    // POST /api/flash-sale (Toggle Flash Sale ON/OFF from KDS)
+    if (request.method === 'POST' && pathname === '/api/flash-sale') {
+      const payload = await readBody(request);
+      flashSaleActive = payload.enabled !== undefined ? Boolean(payload.enabled) : true;
+      broadcastEvent('flash-sale:changed', { enabled: flashSaleActive });
+      return send(response, 200, { success: true, enabled: flashSaleActive });
+    }
+
     // Serve Frontend Static Web App for all other routes
     if (!pathname.startsWith('/api')) {
       return serveStaticFile(response, pathname);
@@ -765,7 +779,7 @@ const server = createServer(async (request, response) => {
   }
 });
 
-server.listen(port, () => {
+server.listen(port, '0.0.0.0', () => {
   const ips = getLocalIpAddresses();
   console.log(`==================================================`);
   console.log(`🍽️  THE PODDAR'S COURTYARD Server is Running!`);

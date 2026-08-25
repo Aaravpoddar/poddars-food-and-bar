@@ -5298,5 +5298,436 @@ header {
   color: #ef4444;
 }
 
+/* =============================================================
+   1. DYNAMIC HAPPY HOUR & FLASH DEALS BANNER & BADGES
+   ============================================================= */
+.happy-hour-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: linear-gradient(135deg, #1e1b4b 0%, #31104b 50%, #450a0a 100%);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.25), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+  border-radius: 18px;
+  padding: 16px 20px;
+  margin: 0 0 20px 0;
+  position: relative;
+  overflow: hidden;
+  color: #ffffff;
+  animation: hh-glow-pulse 4s ease-in-out infinite alternate;
+}
+
+@keyframes hh-glow-pulse {
+  0% {
+    box-shadow: 0 8px 24px -4px rgba(245, 158, 11, 0.25), 0 0 0 1px rgba(245, 158, 11, 0.3);
+  }
+  100% {
+    box-shadow: 0 12px 32px -4px rgba(239, 68, 68, 0.4), 0 0 0 1.5px rgba(245, 158, 11, 0.6);
+  }
+}
+
+.happy-hour-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.12) 0%, transparent 60%);
+  pointer-events: none;
+}
+
+.hh-left {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-width: 0;
+}
+
+.hh-pulse-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+  animation: hh-flame-bounce 2s infinite ease-in-out;
+}
+
+@keyframes hh-flame-bounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08) rotate(3deg); }
+}
+
+.hh-text-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.hh-title-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hh-badge {
+  background: #ef4444;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.hh-deal-tag {
+  color: #fde047;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+
+.hh-subtitle {
+  margin: 0;
+  font-size: 12px;
+  color: #cbd5e1;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+.hh-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
+}
+
+.hh-timer-box {
+  background: rgba(15, 23, 42, 0.7);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  border-radius: 12px;
+  padding: 8px 14px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hh-timer-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: #fbbf24;
+  text-transform: uppercase;
+}
+
+.hh-timer-clock {
+  font-family: 'DM Mono', monospace;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffffff;
+  letter-spacing: 1px;
+}
+
+.hh-cta-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+  color: #ffffff;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 16px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.4);
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.hh-cta-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 18px rgba(217, 119, 6, 0.55);
+}
+
+/* Happy Hour Filter Pill */
+.diet-filter-btn.happyhour {
+  border-color: rgba(245, 158, 11, 0.4);
+  background: rgba(254, 243, 199, 0.6);
+  color: #b45309;
+}
+
+.diet-filter-btn.happyhour.selected {
+  background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.35);
+}
+
+.filter-icon-happyhour {
+  color: #ef4444;
+}
+
+.diet-filter-btn.happyhour.selected .filter-icon-happyhour {
+  color: #ffffff;
+}
+
+/* Dish Badges for Happy Hour */
+.dish-highlight-badge.happyhour {
+  background: linear-gradient(135deg, #dc2626 0%, #ea580c 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.4);
+  font-weight: 800;
+  letter-spacing: 0.4px;
+}
+
+.dish-highlight-badge.happyhour-deal {
+  background: linear-gradient(135deg, #d97706 0%, #b45309 100%);
+  color: #ffffff;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.4);
+  font-weight: 800;
+}
+
+/* Mobile Responsive for Happy Hour */
+@media (max-width: 680px) {
+  .happy-hour-banner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 14px;
+    gap: 12px;
+  }
+  .hh-right {
+    justify-content: space-between;
+    width: 100%;
+  }
+  .hh-timer-box {
+    flex: 1;
+    padding: 6px 10px;
+  }
+  .hh-timer-clock {
+    font-size: 13px;
+  }
+}
+
+/* =============================================================
+   2. AI SOMMELIER & FOOD PAIRING RECOMMENDATIONS IN CART
+   ============================================================= */
+.cart-pairing-section {
+  background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 40%, #ffffff 100%);
+  border: 1.5px solid #fde68a;
+  border-radius: 14px;
+  padding: 14px;
+  margin: 14px 0 10px 0;
+  box-shadow: 0 4px 14px rgba(217, 119, 6, 0.08);
+}
+
+.cart-pairing-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.cart-pairing-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: #92400e;
+  letter-spacing: -0.2px;
+}
+
+.cart-pairing-pill {
+  background: #f59e0b;
+  color: #ffffff;
+  font-size: 10px;
+  font-weight: 800;
+  padding: 2px 8px;
+  border-radius: 999px;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+}
+
+.cart-pairing-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.cart-pairing-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff;
+  border: 1px solid #fef08a;
+  border-radius: 12px;
+  padding: 10px 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.03);
+  transition: all 0.2s ease;
+}
+
+.cart-pairing-card:hover {
+  border-color: #f59e0b;
+  box-shadow: 0 4px 12px rgba(245, 158, 11, 0.15);
+}
+
+.cart-pairing-img-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 10px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-pairing-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.cart-pairing-placeholder {
+  font-size: 14px;
+  font-weight: 800;
+  color: #64748b;
+}
+
+.cart-pairing-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.cart-pairing-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  margin-bottom: 2px;
+}
+
+.cart-pairing-badge {
+  font-size: 10px;
+  font-weight: 700;
+  color: #b45309;
+  background: #fef3c7;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.cart-pairing-price {
+  font-size: 13px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.cart-pairing-name {
+  margin: 0 0 2px 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cart-pairing-reason {
+  margin: 0;
+  font-size: 11px;
+  color: #64748b;
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cart-pairing-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #047857;
+  color: #ffffff;
+  border: 0;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.cart-pairing-add-btn:hover {
+  background: #065f46;
+  box-shadow: 0 2px 8px rgba(4, 120, 87, 0.3);
+  transform: translateY(-1px);
+}
+
+/* =============================================================
+   3. KDS FLASH SALE / HAPPY HOUR TOGGLE BUTTON
+   ============================================================= */
+.kds-flash-toggle.active-flash {
+  background: linear-gradient(135deg, #ef4444 0%, #f59e0b 100%) !important;
+  color: #ffffff !important;
+  border-color: transparent !important;
+  box-shadow: 0 4px 14px rgba(239, 68, 68, 0.35) !important;
+  font-weight: 800 !important;
+}
+
+.kds-flash-toggle.active-flash:hover {
+  box-shadow: 0 6px 18px rgba(239, 68, 68, 0.5) !important;
+  transform: translateY(-1px);
+}
+
+.kds-flash-toggle.inactive-flash {
+  background: var(--bg-surface) !important;
+  color: var(--text-muted) !important;
+  border-color: var(--line) !important;
+  opacity: 0.85;
+}
+
+.kds-flash-toggle.inactive-flash:hover {
+  background: #f1f5f9 !important;
+  color: var(--text-main) !important;
+  opacity: 1;
+}
+
+.kds-flame-flicker {
+  animation: kds-flicker 1.2s infinite ease-in-out alternate;
+}
+
+@keyframes kds-flicker {
+  0% { transform: scale(0.95); opacity: 0.85; }
+  100% { transform: scale(1.15) rotate(4deg); opacity: 1; }
+}
+
+
+
 
 

@@ -68,6 +68,7 @@ const TOPIC_WAITER_CALL = `${TOPIC_PREFIX}/waiter/call`;
 const TOPIC_WAITER_UPDATE = `${TOPIC_PREFIX}/waiter/update`;
 const TOPIC_STAFF_PRESENCE = `${TOPIC_PREFIX}/staff/presence`;
 const TOPIC_TABLE_STATUS = `${TOPIC_PREFIX}/table/status`;
+const TOPIC_FLASH_SALE = `${TOPIC_PREFIX}/flash_sale`;
 const TOPIC_SYNC_REQ = `${TOPIC_PREFIX}/sync/req`;
 const TOPIC_SYNC_RES = `${TOPIC_PREFIX}/sync/res`;
 
@@ -79,6 +80,7 @@ const orderListeners = new Set();
 const waiterListeners = new Set();
 const staffListeners = new Set();
 const tableListeners = new Set();
+const flashSaleListeners = new Set();
 const syncListeners = new Set();
 let cloudPingInterval = null;
 
@@ -183,6 +185,7 @@ function initCloudSync() {
             TOPIC_WAITER_UPDATE,
             TOPIC_STAFF_PRESENCE,
             TOPIC_TABLE_STATUS,
+            TOPIC_FLASH_SALE,
             TOPIC_SYNC_REQ,
             TOPIC_SYNC_RES
           ].forEach(top => {
@@ -227,6 +230,8 @@ function initCloudSync() {
               staffListeners.forEach(fn => fn(payload.action || 'heartbeat', payload.staff, payload.deviceId));
             } else if (topic === TOPIC_TABLE_STATUS && payload.occupiedTables !== undefined) {
               tableListeners.forEach(fn => fn(payload.occupiedTables || {}));
+            } else if (topic === TOPIC_FLASH_SALE && payload.enabled !== undefined) {
+              flashSaleListeners.forEach(fn => fn(Boolean(payload.enabled)));
             } else if (topic === TOPIC_SYNC_REQ) {
               if (payload.senderId && payload.senderId !== CLOUD_CLIENT_ID) {
                 syncListeners.forEach(fn => fn(payload.senderId));
@@ -240,6 +245,9 @@ function initCloudSync() {
               }
               if (payload.occupiedTables !== undefined && typeof payload.occupiedTables === 'object') {
                 tableListeners.forEach(fn => fn(payload.occupiedTables || {}));
+              }
+              if (payload.flashSale !== undefined) {
+                flashSaleListeners.forEach(fn => fn(Boolean(payload.flashSale)));
               }
             }
           }
@@ -314,12 +322,22 @@ function broadcastTableStatus(occupiedTables) {
   });
 }
 
-function sendSyncResponse(targetId, orders, waiterCalls, occupiedTables = {}) {
+function broadcastFlashSale(enabled) {
+  publishCloudMessage(TOPIC_FLASH_SALE, {
+    enabled,
+    deviceId: CLOUD_CLIENT_ID,
+    timestamp: Date.now(),
+    senderId: CLOUD_CLIENT_ID
+  });
+}
+
+function sendSyncResponse(targetId, orders, waiterCalls, occupiedTables = {}, flashSale = true) {
   publishCloudMessage(TOPIC_SYNC_RES, {
     targetId,
     orders,
     waiterCalls,
     occupiedTables: occupiedTables || {},
+    flashSale,
     senderId: CLOUD_CLIENT_ID
   });
 }
@@ -346,6 +364,12 @@ function onCloudTableEvent(listener) {
   tableListeners.add(listener);
   initCloudSync();
   return () => tableListeners.delete(listener);
+}
+
+function onCloudFlashSaleEvent(listener) {
+  flashSaleListeners.add(listener);
+  initCloudSync();
+  return () => flashSaleListeners.delete(listener);
 }
 
 function onSyncRequestReceived(listener) {
@@ -507,6 +531,172 @@ const categoryMetadata = {
 
 const bestsellerIds = new Set([1, 4, 6, 11, 15, 18, 33, 38, 49, 55, 61, 73, 81]);
 const chefPickIds = new Set([2, 5, 8, 12, 13, 21, 29, 30, 34, 39, 43, 51, 52, 56, 58, 66, 74, 76, 77]);
+const happyHourItemIds = new Set([68, 69, 70, 71, 72, 73, 74, 76, 77, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 66, 99, 5, 16, 37, 38, 61, 62, 63]);
+
+// -------------------------------------------------------------
+// DYNAMIC HAPPY HOUR & FLASH DEALS COUNTDOWN ENGINE
+// -------------------------------------------------------------
+function useHappyHourCountdown() {
+  const [timeLeft, setTimeLeft] = useState({ hours: 1, minutes: 45, seconds: 20, isLive: true, formatted: '01h : 45m : 20s' });
+
+  useEffect(() => {
+    const calculateTime = () => {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMin = now.getMinutes();
+      const currentSec = now.getSeconds();
+
+      // Dynamic flash deals refresh every 3-hour cycle
+      const cycleSeconds = 3 * 3600;
+      const elapsedInCycle = ((currentHour % 3) * 3600) + (currentMin * 60) + currentSec;
+      const remainingSec = Math.max(0, cycleSeconds - elapsedInCycle);
+
+      const h = Math.floor(remainingSec / 3600);
+      const m = Math.floor((remainingSec % 3600) / 60);
+      const s = remainingSec % 60;
+
+      setTimeLeft({
+        hours: h,
+        minutes: m,
+        seconds: s,
+        isLive: true,
+        formatted: `${String(h).padStart(2, '0')}h : ${String(m).padStart(2, '0')}m : ${String(s).padStart(2, '0')}s`
+      });
+    };
+
+    calculateTime();
+    const interval = setInterval(calculateTime, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return timeLeft;
+}
+
+// -------------------------------------------------------------
+// AI SOMMELIER & SMART FOOD PAIRING ENGINE
+// -------------------------------------------------------------
+function getSmartPairingRecommendations(cartItems, allMenu) {
+  if (!cartItems || cartItems.length === 0) return [];
+
+  const inCartIds = new Set(cartItems.map(i => i.id));
+  const inCartCats = new Set(cartItems.map(i => i.category));
+
+  const hasIndian = inCartCats.has('Indian');
+  const hasItalian = inCartCats.has('Italian');
+  const hasChinese = inCartCats.has('Chinese');
+  const hasDosa = inCartCats.has('Dosa');
+  const hasContinental = inCartCats.has('Continental');
+  const hasStarters = inCartCats.has('Starters');
+  const hasAlcohol = inCartCats.has('Alcohol');
+  const hasBeverages = inCartCats.has('Beverages');
+  const hasDessert = inCartCats.has('Dessert');
+  const hasBreads = inCartCats.has('Breads');
+
+  const recommendations = [];
+
+  const tryAdd = (itemId, reason, badge) => {
+    if (inCartIds.has(itemId)) return;
+    const found = allMenu.find(m => m.id === itemId);
+    if (found && !recommendations.some(r => r.item.id === itemId)) {
+      recommendations.push({ item: found, reason, badge });
+    }
+  };
+
+  // 1. Indian Curry Pairings
+  if (hasIndian) {
+    if (!hasBreads) {
+      tryAdd(26, 'Garlic Naan pairs exquisitely with rich curry gravies', '🫓 Essential Bread');
+      tryAdd(25, 'Soft Butter Naan to soak up delicious makhani sauce', '🫓 Bestseller Bread');
+    }
+    if (!hasBeverages && !hasAlcohol) {
+      tryAdd(42, 'Creamy Mango Lassi cools down Indian spices perfectly', '🥭 Perfect Drink');
+      tryAdd(68, 'Chilled Kingfisher Ultra creates a classic curry balance', '🍺 Beer Match');
+    }
+    if (!hasDessert) {
+      tryAdd(17, 'Warm Gulab Jamun gives the ultimate sweet finale', '🍨 Sweet Finish');
+      tryAdd(29, 'Royal Rasmalai to round off your North Indian feast', '🍨 Chef Choice');
+    }
+  }
+
+  // 2. Italian Pizza & Pasta Pairings
+  if (hasItalian) {
+    if (!inCartIds.has(49)) {
+      tryAdd(49, 'Crisp Cheese Garlic Bread completes your Italian table', '🥖 Chef Companion');
+    }
+    if (!hasAlcohol && !hasBeverages) {
+      tryAdd(89, 'Jacob’s Creek Cabernet is a timeless red wine match', '🍷 Wine Pairing');
+      tryAdd(66, 'Zesty Virgin Mojito complements creamy pasta sauces', '🌿 Cool Drink');
+    }
+    if (!hasDessert) {
+      tryAdd(18, 'Warm Belgian Dark Chocolate Brownie with Vanilla Gelato', '🍫 Sweet Pairing');
+    }
+  }
+
+  // 3. Chinese Wok & Dim Sum Pairings
+  if (hasChinese) {
+    if (!hasStarters && !inCartIds.has(37) && !inCartIds.has(51)) {
+      tryAdd(51, 'Steamed Chicken Momos with spicy dip for starter crunch', '🥟 Dim Sum Starter');
+      tryAdd(37, 'Crispy Spring Rolls before your main noodles/rice', '🥢 Golden Starter');
+    }
+    if (!hasBeverages && !hasAlcohol) {
+      tryAdd(99, 'Vibrant Blue Lagoon Mocktail cuts through wok seasoning', '🍹 Refreshing Fizz');
+      tryAdd(71, 'Heineken Silver Pure Malt Lager matches Chinese spice', '🍺 Bar Pairing');
+    }
+  }
+
+  // 4. Bar & Alcohol Bites
+  if (hasAlcohol) {
+    if (!hasStarters) {
+      tryAdd(38, 'Bhatti-smoked Chicken Tikka is the #1 bar favorite', '🔥 Top Bar Bite');
+      tryAdd(61, 'Charred Paneer Tikka with mint chutney & lemon', '🧀 Sizzling Bite');
+      tryAdd(62, 'Loaded Nachos Supreme with guacamole & warm queso', '🧀 Crunchy Snack');
+    }
+  }
+
+  // 5. Starters Only -> Recommend Drink or Main Course
+  if (hasStarters && !hasIndian && !hasItalian && !hasChinese) {
+    if (!hasAlcohol && !hasBeverages) {
+      tryAdd(73, 'Signature Long Island Iced Tea elevates starter platters', '🍸 Cocktail Match');
+      tryAdd(66, 'Refreshing Virgin Mojito with fresh crushed mint', '🌿 Cool Mocktail');
+    }
+    tryAdd(1, 'Slow-simmered Butter Chicken for the main course', '🍛 Main Course');
+    tryAdd(11, 'Wood-fired Margherita Pizza to share with the table', '🍕 Main Course');
+  }
+
+  // 6. Dosa Pairings
+  if (hasDosa) {
+    if (!hasBeverages) {
+      tryAdd(41, 'Artisanal Cold Brew Coffee with vanilla bean gelato', '☕ Cold Coffee');
+      tryAdd(19, 'First-flush Assam Masala Chai brewed with fresh spices', '☕ Hot Chai');
+    }
+    if (!hasDessert) {
+      tryAdd(64, 'Traditional Kesar Pista Kulfi to conclude lightly', '🍨 Dessert');
+    }
+  }
+
+  // 7. Continental (Burgers & Sandwiches)
+  if (hasContinental) {
+    if (!inCartIds.has(16)) {
+      tryAdd(16, 'Hand-cut Truffle Fries with garlic aioli dip', '🍟 Must-Have Side');
+    }
+    if (!hasBeverages) {
+      tryAdd(65, 'Thick Belgian Dark Chocolate Shake', '🥤 Rich Shake');
+    }
+  }
+
+  // Fallbacks if less than 2 items
+  if (recommendations.length < 2) {
+    if (!hasBeverages && !hasAlcohol) {
+      tryAdd(66, 'Signature Virgin Mojito with fresh Persian lime', '⭐ Crowd Favorite');
+    }
+    if (!hasDessert) {
+      tryAdd(18, 'Warm Belgian Chocolate Brownie with Ice Cream', '🍫 Dessert Star');
+    }
+  }
+
+  return recommendations.slice(0, 2);
+}
+
 const ratingMap = {
   1: '4.9', 2: '4.8', 4: '4.9', 5: '4.8', 6: '4.8', 8: '4.7', 11: '4.9', 12: '4.9', 13: '4.8', 15: '4.8', 18: '4.9',
   21: '4.8', 26: '4.8', 29: '4.9', 30: '4.9', 33: '4.9', 34: '4.9', 38: '4.8', 39: '4.8', 43: '4.8', 49: '4.8', 51: '4.8',
@@ -663,6 +853,21 @@ function saveLocalOccupiedTables(occ) {
   try {
     localStorage.setItem('poddars_occupied_tables', JSON.stringify(occ || {}));
     window.dispatchEvent(new CustomEvent('poddars_table_sync', { detail: occ || {} }));
+  } catch {}
+}
+
+function getLocalFlashSale() {
+  try {
+    const raw = localStorage.getItem('poddars_flash_sale');
+    if (raw !== null) return JSON.parse(raw);
+  } catch {}
+  return true; // Default ON
+}
+
+function saveLocalFlashSale(enabled) {
+  try {
+    localStorage.setItem('poddars_flash_sale', JSON.stringify(enabled));
+    window.dispatchEvent(new CustomEvent('poddars_flash_sale_sync', { detail: enabled }));
   } catch {}
 }
 
@@ -1389,6 +1594,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
   const [stats, setStats] = useState(() => calculateStats(getLocalOrders()));
   const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
   const [activeStaffList, setActiveStaffList] = useState([]);
+  const [flashSale, setFlashSale] = useState(() => getLocalFlashSale());
   const [waiterFilter, setWaiterFilter] = useState('Active'); // 'Active' | 'Attended' | 'All'
   const [activeTab, setActiveTab] = useState('New'); // 'New' | 'Preparing' | 'Ready' | 'AllActive' | 'History' | 'ServiceCalls'
   const [search, setSearch] = useState('');
@@ -1678,9 +1884,29 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           }
         } catch {}
       });
+      // Flash Sale SSE Event
+      eventSource.addEventListener('flash-sale:changed', (e) => {
+        try {
+          const { enabled } = JSON.parse(e.data);
+          if (enabled !== undefined) {
+            setFlashSale(Boolean(enabled));
+            saveLocalFlashSale(Boolean(enabled));
+          }
+        } catch {}
+      });
     } catch (e) {
       console.warn('SSE not available, falling back to polling');
     }
+
+    const handleFlashSaleLocalSync = (e) => {
+      if (e.detail !== undefined) setFlashSale(Boolean(e.detail));
+    };
+    window.addEventListener('poddars_flash_sale_sync', handleFlashSaleLocalSync);
+
+    const unsubCloudFlashSale = onCloudFlashSaleEvent((enabled) => {
+      setFlashSale(enabled);
+      saveLocalFlashSale(enabled);
+    });
 
     const handleBeforeUnload = () => {
       if (chefAuth) {
@@ -1703,16 +1929,34 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
       clearInterval(heartbeatInterval);
       window.removeEventListener('poddars_orders_sync', handleLocalSync);
       window.removeEventListener('poddars_waiter_sync', handleWaiterLocalSync);
+      window.removeEventListener('poddars_flash_sale_sync', handleFlashSaleLocalSync);
       window.removeEventListener('storage', handleLocalSync);
       window.removeEventListener('storage', handleWaiterLocalSync);
       window.removeEventListener('beforeunload', handleBeforeUnload);
       unsubCloudOrders();
       unsubCloudWaiter();
       unsubCloudStaff();
+      unsubCloudFlashSale();
       unsubSyncReq();
       if (eventSource) eventSource.close();
     };
   }, [soundEnabled, chefAuth]);
+
+  const handleToggleFlashSale = async () => {
+    const nextState = !flashSale;
+    setFlashSale(nextState);
+    saveLocalFlashSale(nextState);
+    broadcastFlashSale(nextState);
+    try {
+      await fetch('/api/flash-sale', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ enabled: nextState })
+      });
+    } catch (e) {
+      console.warn('Flash sale toggle synced via cloud MQTT');
+    }
+  };
 
   const handleAttendWaiterCall = async (callId) => {
     const now = new Date().toISOString();
@@ -2127,6 +2371,17 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
               <span>Logout</span>
             </button>
           </div>
+
+          {/* Live Flash Sale / Happy Hour Switch */}
+          <button
+            type="button"
+            className={'kds-btn-tool kds-flash-toggle ' + (flashSale ? 'active-flash' : 'inactive-flash')}
+            onClick={handleToggleFlashSale}
+            title={flashSale ? '🔥 Flash Sale is LIVE on customer menu. Click to turn OFF.' : '⚡ Flash Sale is OFF. Click to turn ON.'}
+          >
+            <Flame size={16} className={flashSale ? 'kds-flame-flicker' : ''} />
+            <span>{flashSale ? '🔥 Flash Sale: ON' : '⚡ Flash Sale: OFF'}</span>
+          </button>
 
           <button
             type="button"
@@ -3606,6 +3861,7 @@ function App() {
   const [showTracker, setShowTracker] = useState(false);
   const [callWaiterModalOpen, setCallWaiterModalOpen] = useState(false);
   const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
+  const [flashSaleEnabled, setFlashSaleEnabled] = useState(() => getLocalFlashSale());
   const [occupiedTables, setOccupiedTables] = useState(() => {
     const local = getLocalOccupiedTables();
     if (Object.keys(local).length > 0) return local;
@@ -3615,13 +3871,14 @@ function App() {
   const occupiedTablesRef = useRef(occupiedTables);
   occupiedTablesRef.current = occupiedTables;
 
-  // Real-time synchronization for Waiter Calls, Table Occupancy, and Cloud Sync in Customer View
+  // Real-time synchronization for Waiter Calls, Table Occupancy, Flash Sale, and Cloud Sync in Customer View
   useEffect(() => {
-    const fetchCallsAndTables = async () => {
+    const fetchCallsTablesAndSale = async () => {
       try {
-        const [callsRes, tablesRes] = await Promise.all([
+        const [callsRes, tablesRes, saleRes] = await Promise.all([
           fetch('/api/waiter-calls').catch(() => null),
-          fetch('/api/tables/status').catch(() => null)
+          fetch('/api/tables/status').catch(() => null),
+          fetch('/api/flash-sale').catch(() => null)
         ]);
         if (callsRes && callsRes.ok) {
           const data = await callsRes.json();
@@ -3635,9 +3892,16 @@ function App() {
             saveLocalOccupiedTables(tableData);
           }
         }
+        if (saleRes && saleRes.ok) {
+          const saleData = await saleRes.json();
+          if (saleData && saleData.enabled !== undefined) {
+            setFlashSaleEnabled(Boolean(saleData.enabled));
+            saveLocalFlashSale(Boolean(saleData.enabled));
+          }
+        }
       } catch {}
     };
-    fetchCallsAndTables();
+    fetchCallsTablesAndSale();
 
     const handleSync = (e) => {
       setWaiterCalls(e.detail || getLocalWaiterCalls());
@@ -3645,9 +3909,13 @@ function App() {
     const handleTableSync = (e) => {
       setOccupiedTables(e.detail || getLocalOccupiedTables());
     };
+    const handleFlashSaleSync = (e) => {
+      if (e.detail !== undefined) setFlashSaleEnabled(Boolean(e.detail));
+    };
 
     window.addEventListener('poddars_waiter_sync', handleSync);
     window.addEventListener('poddars_table_sync', handleTableSync);
+    window.addEventListener('poddars_flash_sale_sync', handleFlashSaleSync);
     window.addEventListener('storage', handleSync);
     window.addEventListener('storage', handleTableSync);
 
@@ -3671,6 +3939,11 @@ function App() {
         setOccupiedTables(occ);
         saveLocalOccupiedTables(occ);
       }
+    });
+
+    const unsubCloudFlashSale = onCloudFlashSaleEvent((enabled) => {
+      setFlashSaleEnabled(enabled);
+      saveLocalFlashSale(enabled);
     });
 
     const unsubCloudOrder = onCloudOrderEvent((eventType, order) => {
@@ -3720,7 +3993,7 @@ function App() {
     });
 
     const unsubSyncReq = onSyncRequestReceived((senderId) => {
-      sendSyncResponse(senderId, getLocalOrders(), getLocalWaiterCalls(), occupiedTablesRef.current);
+      sendSyncResponse(senderId, getLocalOrders(), getLocalWaiterCalls(), occupiedTablesRef.current, getLocalFlashSale());
     });
 
     let es;
@@ -3747,18 +4020,29 @@ function App() {
           }
         } catch {}
       });
+      es.addEventListener('flash-sale:changed', (e) => {
+        try {
+          const { enabled } = JSON.parse(e.data);
+          if (enabled !== undefined) {
+            setFlashSaleEnabled(Boolean(enabled));
+            saveLocalFlashSale(Boolean(enabled));
+          }
+        } catch {}
+      });
     } catch {}
 
-    const interval = setInterval(fetchCallsAndTables, 3500);
+    const interval = setInterval(fetchCallsTablesAndSale, 3500);
     return () => {
       clearInterval(interval);
       window.removeEventListener('poddars_waiter_sync', handleSync);
       window.removeEventListener('poddars_table_sync', handleTableSync);
+      window.removeEventListener('poddars_flash_sale_sync', handleFlashSaleSync);
       window.removeEventListener('storage', handleSync);
       window.removeEventListener('storage', handleTableSync);
       unsubCloudWaiter();
       unsubCloudTable();
       unsubCloudOrder();
+      unsubCloudFlashSale();
       unsubSyncReq();
       if (es) es.close();
     };
@@ -3810,12 +4094,16 @@ function App() {
     } catch {}
   };
 
+  const happyHourTime = useHappyHourCountdown();
+  const pairingRecommendations = useMemo(() => getSmartPairingRecommendations(cart, menu), [cart]);
+
   const visibleMenu = useMemo(() => {
     return menu
       .filter(item => {
         const matchesCategory = category === 'All' || item.category === category;
         const matchesDiet =
           diet === 'All' ||
+          (flashSaleEnabled && diet === 'Happy Hour' && (item.category === 'Alcohol' || happyHourItemIds.has(item.id))) ||
           (diet === 'Veg' && !nonVegIds.has(item.id)) ||
           (diet === 'Non-veg' && nonVegIds.has(item.id)) ||
           (diet === 'Bestseller' && bestsellerIds.has(item.id)) ||
@@ -3830,7 +4118,7 @@ function App() {
         const categoryOrder = eatingOrder.indexOf(first.category) - eatingOrder.indexOf(second.category);
         return categoryOrder || Number(nonVegIds.has(first.id)) - Number(nonVegIds.has(second.id));
       });
-  }, [category, diet, search]);
+  }, [category, diet, search, flashSaleEnabled]);
 
   const activeTableCall = waiterCalls.find(c => c.status === 'Pending' && (guest?.table ? c.table === guest.table : c.table === 'Table 1'));
 
@@ -4160,6 +4448,44 @@ function App() {
 
           {/* Menu Main Section */}
           <section className="menu-section">
+            {/* Dynamic Happy Hour & Flash Deals Live Banner (Toggleable from KDS) */}
+            {flashSaleEnabled && (
+              <div className="happy-hour-banner">
+                <div className="hh-left">
+                  <div className="hh-pulse-icon">
+                    <Flame size={20} className="hh-fire-icon" />
+                  </div>
+                  <div className="hh-text-content">
+                    <div className="hh-title-row">
+                      <span className="hh-badge">🔥 FLASH HAPPY HOUR</span>
+                      <span className="hh-deal-tag">BUY 1 GET 1 COCKTAILS & 20% OFF STARTERS</span>
+                    </div>
+                    <p className="hh-subtitle">
+                      Limited-time flash specials on signature bar drinks, chilled craft beers & chef appetizers!
+                    </p>
+                  </div>
+                </div>
+
+                <div className="hh-right">
+                  <div className="hh-timer-box">
+                    <span className="hh-timer-label"><Clock size={12} /> FLASH DEAL ENDS IN</span>
+                    <span className="hh-timer-clock">{happyHourTime.formatted}</span>
+                  </div>
+                  <button
+                    type="button"
+                    className="hh-cta-btn"
+                    onClick={() => {
+                      setDiet('Happy Hour');
+                      setCategory('All');
+                    }}
+                  >
+                    <Zap size={14} />
+                    <span>View Deals</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Clean Integrated Controls Bar */}
             <div className="menu-controls-bar">
               <div className="search-wrap">
@@ -4180,6 +4506,7 @@ function App() {
               <div className="diet-filter-pill" role="group" aria-label="Diet and specialty filter">
                 {[
                   { id: 'All', label: 'All', icon: null, classKey: 'all' },
+                  ...(flashSaleEnabled ? [{ id: 'Happy Hour', label: '⚡ Happy Hour', icon: <Flame size={13} className="filter-icon-happyhour" />, classKey: 'happyhour' }] : []),
                   { id: 'Veg', label: 'Veg', icon: <span className="diet-dot veg-dot"></span>, classKey: 'veg' },
                   { id: 'Non-veg', label: 'Non-Veg', icon: <span className="diet-dot nonveg-dot"></span>, classKey: 'nonveg' },
                   { id: 'Bestseller', label: 'Bestseller', icon: <Flame size={13} className="filter-icon-bestseller" />, classKey: 'bestseller' },
@@ -4206,6 +4533,7 @@ function App() {
                   const matchesCat = itemCategory === 'All' || i.category === itemCategory;
                   const matchesD =
                     diet === 'All' ||
+                    (flashSaleEnabled && diet === 'Happy Hour' && (i.category === 'Alcohol' || happyHourItemIds.has(i.id))) ||
                     (diet === 'Veg' && !nonVegIds.has(i.id)) ||
                     (diet === 'Non-veg' && nonVegIds.has(i.id)) ||
                     (diet === 'Bestseller' && bestsellerIds.has(i.id)) ||
@@ -4257,6 +4585,7 @@ function App() {
                 const cartItem = cart.find(entry => entry.id === item.id);
                 const isBestseller = bestsellerIds.has(item.id);
                 const isChefPick = chefPickIds.has(item.id);
+                const isHappyHourEligible = item.category === 'Alcohol' || happyHourItemIds.has(item.id);
                 const rating = ratingMap[item.id] || '4.8';
 
                 return (
@@ -4290,7 +4619,15 @@ function App() {
 
                       {/* Bottom Image Badges */}
                       <div className="dish-img-footer-badges">
-                        {isBestseller ? (
+                        {flashSaleEnabled && item.category === 'Alcohol' ? (
+                          <span className="dish-highlight-badge happyhour">
+                            <Zap size={11} /> 1+1 HAPPY HOUR
+                          </span>
+                        ) : flashSaleEnabled && isHappyHourEligible && diet === 'Happy Hour' ? (
+                          <span className="dish-highlight-badge happyhour-deal">
+                            <Flame size={11} /> 20% FLASH DEAL
+                          </span>
+                        ) : isBestseller ? (
                           <span className="dish-highlight-badge bestseller">
                             <Flame size={11} /> BESTSELLER
                           </span>
@@ -4442,6 +4779,59 @@ function App() {
                         </div>
                       ))}
                     </div>
+
+                    {/* AI Sommelier & Food Pairing Recommendations */}
+                    {pairingRecommendations.length > 0 && (
+                      <div className="cart-pairing-section">
+                        <div className="cart-pairing-header">
+                          <div className="cart-pairing-title">
+                            <Sparkles size={15} color="var(--brand-gold)" />
+                            <b>Chef & Sommelier Pairing</b>
+                          </div>
+                          <span className="cart-pairing-pill">AI Suggested</span>
+                        </div>
+
+                        <div className="cart-pairing-cards">
+                          {pairingRecommendations.map(({ item, reason, badge }) => (
+                            <div className="cart-pairing-card" key={item.id}>
+                              <div className="cart-pairing-img-wrap">
+                                {item.image ? (
+                                  <img
+                                    src={resolveAsset(item.image)}
+                                    alt={item.name}
+                                    className="cart-pairing-thumb"
+                                    onError={e => {
+                                      e.currentTarget.style.display = 'none';
+                                    }}
+                                  />
+                                ) : (
+                                  <div className="cart-pairing-placeholder">{item.mark}</div>
+                                )}
+                              </div>
+
+                              <div className="cart-pairing-info">
+                                <div className="cart-pairing-top">
+                                  <span className="cart-pairing-badge">{badge}</span>
+                                  <b className="cart-pairing-price">{formatPrice(item.price)}</b>
+                                </div>
+                                <h4 className="cart-pairing-name">{item.name}</h4>
+                                <p className="cart-pairing-reason">{reason}</p>
+                              </div>
+
+                              <button
+                                type="button"
+                                className="cart-pairing-add-btn"
+                                onClick={() => updateCart(item, 1)}
+                                title={`Add ${item.name} to order`}
+                              >
+                                <Plus size={14} />
+                                <span>Add</span>
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
                     {/* Cooking Instructions inside Drawer (Scrolls with items, never blocks totals/checkout) */}
                     <div className="cart-instructions-box">

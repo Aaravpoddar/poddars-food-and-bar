@@ -4,6 +4,14 @@ import { dirname, join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { networkInterfaces } from 'node:os';
 
+process.on('uncaughtException', (err) => {
+  if (err.code === 'ECONNRESET' || err.code === 'EPIPE' || err.code === 'ERR_STREAM_DESTROYED') return;
+  console.error('[UNCAUGHT EXCEPTION]', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('[UNHANDLED REJECTION]', reason);
+});
+
 const rootDirectory = dirname(fileURLToPath(import.meta.url));
 const distDirectory = join(rootDirectory, 'dist');
 const publicDirectory = join(rootDirectory, 'public');
@@ -58,41 +66,51 @@ async function serveStaticFile(response, pathname) {
   if (content) {
     const contentType = mimeTypes[ext] || 'application/octet-stream';
     const isImageOrFont = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif', '.woff', '.woff2', '.ttf'].includes(ext);
-    response.writeHead(200, {
-      'Content-Type': contentType,
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
-      'Cache-Control': ext === '.html'
-        ? 'no-cache, no-store, must-revalidate'
-        : isImageOrFont
-          ? 'public, max-age=31536000, immutable'
-          : 'public, max-age=86400'
-    });
-    return response.end(content);
+    if (!response.writableEnded && response.writable) {
+      response.writeHead(200, {
+        'Content-Type': contentType,
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
+        'Cache-Control': ext === '.html'
+          ? 'no-cache, no-store, must-revalidate'
+          : isImageOrFont
+            ? 'public, max-age=31536000, immutable'
+            : 'public, max-age=86400'
+      });
+      return response.end(content);
+    }
+    return;
   }
 
   // 3. If asset file (image, js, css) was not found, return 404 instead of serving index.html
   if (pathname.startsWith('/images/') || pathname.startsWith('/assets/') || pathname.includes('.')) {
-    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
-    return response.end('Asset not found');
+    if (!response.writableEnded && response.writable) {
+      response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+      return response.end('Asset not found');
+    }
+    return;
   }
 
   // 4. SPA Fallback: serve index.html for React routing
   try {
     const indexContent = await readFile(join(distDirectory, 'index.html'));
-    response.writeHead(200, {
-      'Content-Type': 'text/html; charset=utf-8',
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
-      'Cache-Control': 'no-cache, no-store, must-revalidate'
-    });
-    return response.end(indexContent);
+    if (!response.writableEnded && response.writable) {
+      response.writeHead(200, {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
+        'Cache-Control': 'no-cache, no-store, must-revalidate'
+      });
+      return response.end(indexContent);
+    }
   } catch {
-    response.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-    return response.end(`
-      <h2>THE PODDAR'S COURTYARD</h2>
-      <p>Please build the frontend using <code>npm run build</code> or run with <code>npm run dev</code>.</p>
-    `);
+    if (!response.writableEnded && response.writable) {
+      response.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+      return response.end(`
+        <h2>THE PODDAR'S COURTYARD</h2>
+        <p>Please build the frontend using <code>npm run build</code> or run with <code>npm run dev</code>.</p>
+      `);
+    }
   }
 }
 
@@ -114,14 +132,37 @@ const sseClients = new Set();
 
 function broadcastEvent(eventType, data) {
   const message = `event: ${eventType}\ndata: ${JSON.stringify(data)}\n\n`;
-  for (const client of sseClients) {
+  for (const client of Array.from(sseClients)) {
     try {
-      client.write(message);
+      if (!client.writableEnded && client.writable) {
+        client.write(message, (err) => {
+          if (err) sseClients.delete(client);
+        });
+      } else {
+        sseClients.delete(client);
+      }
     } catch {
       sseClients.delete(client);
     }
   }
 }
+
+// Keep-alive heartbeat every 15s so tunnels (Cloudflare / Localtunnel) never drop SSE connections
+setInterval(() => {
+  for (const client of Array.from(sseClients)) {
+    try {
+      if (!client.writableEnded && client.writable) {
+        client.write(': ping\n\n', (err) => {
+          if (err) sseClients.delete(client);
+        });
+      } else {
+        sseClients.delete(client);
+      }
+    } catch {
+      sseClients.delete(client);
+    }
+  }
+}, 15000);
 
 // Active Staff Tracking System (Tracks multi-device active chefs/staff in real-time)
 const activeStaffSessions = new Map(); // key: `${id}_${deviceId}`, val: { id, name, role, designation, lastSeen, deviceId }
@@ -281,6 +322,7 @@ function readBody(request) {
         reject(new Error('Invalid JSON body'));
       }
     });
+    request.on('error', err => reject(err));
   });
 }
 
@@ -318,9 +360,12 @@ function getStats(orders) {
 }
 
 const server = createServer(async (request, response) => {
+  request.on('error', () => {});
+  response.on('error', () => {});
+
   response.setHeader('Access-Control-Allow-Origin', '*');
   response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
-  response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  response.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Bypass-Tunnel-Reminder');
 
   if (request.method === 'OPTIONS') {
     response.writeHead(204);
@@ -340,23 +385,32 @@ const server = createServer(async (request, response) => {
     if (request.method === 'GET' && pathname === '/api/events') {
       response.writeHead(200, {
         'Content-Type': 'text/event-stream',
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-cache, no-transform',
         'Connection': 'keep-alive',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'X-Accel-Buffering': 'no'
       });
       response.write('retry: 3000\n\n');
+
+      const cleanup = () => {
+        sseClients.delete(response);
+      };
+      request.on('close', cleanup);
+      request.on('error', cleanup);
+      response.on('close', cleanup);
+      response.on('error', cleanup);
+
+      sseClients.add(response);
+
       // Send immediate active staff list and table occupancy on connect
       response.write(`event: staff:active\ndata: ${JSON.stringify(getActiveStaffList())}\n\n`);
       getTablesOccupancy().then(occ => {
         try {
-          response.write(`event: table:status\ndata: ${JSON.stringify(occ)}\n\n`);
+          if (!response.writableEnded && response.writable) {
+            response.write(`event: table:status\ndata: ${JSON.stringify(occ)}\n\n`);
+          }
         } catch {}
-      });
-      sseClients.add(response);
-
-      request.on('close', () => {
-        sseClients.delete(response);
-      });
+      }).catch(() => {});
       return;
     }
 
@@ -812,6 +866,13 @@ const server = createServer(async (request, response) => {
     console.error(error);
     return send(response, 500, { error: 'Unable to process the request.' });
   }
+});
+
+server.on('clientError', (err, socket) => {
+  if (err.code === 'ECONNRESET' || !socket.writable) return;
+  try {
+    socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+  } catch {}
 });
 
 server.listen(port, '0.0.0.0', () => {

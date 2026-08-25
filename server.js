@@ -9,7 +9,7 @@ const distDirectory = join(rootDirectory, 'dist');
 const publicDirectory = join(rootDirectory, 'public');
 const ordersFile = join(rootDirectory, 'data', 'orders.json');
 const waiterCallsFile = join(rootDirectory, 'data', 'waiter_calls.json');
-const port = process.env.PORT || 3002;
+const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3002;
 let flashSaleActive = true;
 
 const mimeTypes = {
@@ -331,6 +331,11 @@ const server = createServer(async (request, response) => {
   const pathname = urlObj.pathname;
 
   try {
+    // Health Check for Cloud Hosting / Render
+    if (pathname === '/health' || pathname === '/api/health') {
+      return send(response, 200, { status: 'healthy', timestamp: new Date().toISOString() });
+    }
+
     // SSE Stream for Realtime Live Sync
     if (request.method === 'GET' && pathname === '/api/events') {
       response.writeHead(200, {

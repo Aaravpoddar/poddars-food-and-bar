@@ -4597,6 +4597,7 @@ function App() {
                           alt={item.name}
                           className="dish-photo"
                           loading="lazy"
+                          decoding="async"
                           onError={(e) => {
                             e.currentTarget.style.display = 'none';
                           }}

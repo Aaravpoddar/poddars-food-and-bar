@@ -6,6 +6,7 @@ import { networkInterfaces } from 'node:os';
 
 const rootDirectory = dirname(fileURLToPath(import.meta.url));
 const distDirectory = join(rootDirectory, 'dist');
+const publicDirectory = join(rootDirectory, 'public');
 const ordersFile = join(rootDirectory, 'data', 'orders.json');
 const waiterCallsFile = join(rootDirectory, 'data', 'waiter_calls.json');
 const port = process.env.PORT || 3002;
@@ -31,38 +32,67 @@ const mimeTypes = {
 
 async function serveStaticFile(response, pathname) {
   let targetPath = join(distDirectory, pathname === '/' ? 'index.html' : pathname);
+  let content = null;
+  let ext = '';
+
+  // 1. Check in dist directory first
   try {
     const fileStat = await stat(targetPath);
     if (fileStat.isDirectory()) {
       targetPath = join(targetPath, 'index.html');
     }
-    const content = await readFile(targetPath);
-    const ext = extname(targetPath).toLowerCase();
+    content = await readFile(targetPath);
+    ext = extname(targetPath).toLowerCase();
+  } catch {
+    // 2. Fallback to public directory directly (fast direct image loading)
+    try {
+      const publicPath = join(publicDirectory, pathname);
+      const pubStat = await stat(publicPath);
+      if (!pubStat.isDirectory()) {
+        content = await readFile(publicPath);
+        ext = extname(publicPath).toLowerCase();
+      }
+    } catch {}
+  }
+
+  if (content) {
     const contentType = mimeTypes[ext] || 'application/octet-stream';
+    const isImageOrFont = ['.png', '.jpg', '.jpeg', '.webp', '.svg', '.gif', '.woff', '.woff2', '.ttf'].includes(ext);
     response.writeHead(200, {
       'Content-Type': contentType,
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
-      'Cache-Control': ext === '.html' ? 'no-cache, no-store, must-revalidate' : 'public, max-age=31536000'
+      'Cache-Control': ext === '.html'
+        ? 'no-cache, no-store, must-revalidate'
+        : isImageOrFont
+          ? 'public, max-age=31536000, immutable'
+          : 'public, max-age=86400'
     });
     return response.end(content);
+  }
+
+  // 3. If asset file (image, js, css) was not found, return 404 instead of serving index.html
+  if (pathname.startsWith('/images/') || pathname.startsWith('/assets/') || pathname.includes('.')) {
+    response.writeHead(404, { 'Content-Type': 'text/plain; charset=utf-8' });
+    return response.end('Asset not found');
+  }
+
+  // 4. SPA Fallback: serve index.html for React routing
+  try {
+    const indexContent = await readFile(join(distDirectory, 'index.html'));
+    response.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
+      'Cache-Control': 'no-cache, no-store, must-revalidate'
+    });
+    return response.end(indexContent);
   } catch {
-    try {
-      const indexContent = await readFile(join(distDirectory, 'index.html'));
-      response.writeHead(200, {
-        'Content-Type': 'text/html; charset=utf-8',
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, Bypass-Tunnel-Reminder',
-        'Cache-Control': 'no-cache, no-store, must-revalidate'
-      });
-      return response.end(indexContent);
-    } catch {
-      response.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
-      return response.end(`
-        <h2>THE PODDAR'S COURTYARD</h2>
-        <p>Please build the frontend using <code>npm run build</code> or run in development mode with <code>npm run dev</code>.</p>
-      `);
-    }
+    response.writeHead(404, { 'Content-Type': 'text/html; charset=utf-8' });
+    return response.end(`
+      <h2>THE PODDAR'S COURTYARD</h2>
+      <p>Please build the frontend using <code>npm run build</code> or run with <code>npm run dev</code>.</p>
+    `);
   }
 }
 

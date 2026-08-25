@@ -3084,11 +3084,14 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
     minute: '2-digit'
   });
 
-  const subtotal = Number(order.subtotal || order.items?.reduce((s, i) => s + (i.price * i.qty), 0) || 0);
+  const grossSubtotal = Number(order.subtotal || order.items?.reduce((s, i) => s + (i.price * i.qty), 0) || 0);
+  const discount = Number(order.discount || 0);
+  const discountLabel = order.discountLabel || 'Happy Hour 20% Discount';
+  const subtotal = Math.max(0, grossSubtotal - discount);
   const cgst = subtotal * 0.025;
   const sgst = subtotal * 0.025;
-  const gst = cgst + sgst;
-  const total = subtotal + gst;
+  const gst = Number(order.gst || (cgst + sgst));
+  const total = Number(order.total || (subtotal + gst));
 
   const handleCopyUpi = () => {
     if (navigator.clipboard) {
@@ -3177,13 +3180,6 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
         });
       }
     } catch {}
-
-    // Auto logout guest from table upon bill settlement
-    setTimeout(() => {
-      if (onPrintAndLogout) {
-        onPrintAndLogout();
-      }
-    }, 2800);
   };
 
   const handleSettlePayment = () => {
@@ -3205,12 +3201,6 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
     window.print();
     if (!isPaid) {
       executePayment('Printed & Settled');
-    }
-    // After printing the bill, log out the customer and open the main menu login dialog
-    if (onPrintAndLogout) {
-      setTimeout(() => {
-        onPrintAndLogout();
-      }, 400);
     }
   };
 
@@ -3293,8 +3283,14 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
           <div className="bill-totals-breakdown">
             <div className="bill-row">
               <span>Food & Beverage Subtotal:</span>
-              <b>{formatPrice(subtotal)}</b>
+              <b>{formatPrice(grossSubtotal)}</b>
             </div>
+            {discount > 0 && (
+              <div className="bill-row" style={{ color: '#16a34a', fontWeight: '600' }}>
+                <span>🔥 {discountLabel}:</span>
+                <b>-{formatPrice(discount)}</b>
+              </div>
+            )}
             <div className="bill-row">
               <span>CGST (2.5%):</span>
               <b>{formatPrice(cgst)}</b>
@@ -3716,13 +3712,6 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
         });
       }
     } catch {}
-
-    // Auto logout guest from table upon bill settlement
-    setTimeout(() => {
-      if (onPrintAndLogout) {
-        onPrintAndLogout();
-      }
-    }, 2800);
   };
 
   const handleSettlePayment = () => {
@@ -3861,6 +3850,12 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
             <span>Dining Mode:</span>
             <b>{order.mode === 'Dine in' ? `${order.table || 'Table 1'}` : 'Self Pickup'}</b>
           </div>
+          {order.discount > 0 && (
+            <div style={{ color: '#16a34a' }}>
+              <span>🔥 Happy Hour Discount:</span>
+              <b>-{formatPrice(order.discount)}</b>
+            </div>
+          )}
           <div>
             <span>Total Bill:</span>
             <b>{formatPrice(order.total)}</b>
@@ -4214,77 +4209,6 @@ function App() {
     return calculateOccupiedTables(getLocalOrders());
   });
 
-  const [cartStep, setCartStep] = useState('items'); // 'items' | 'payment'
-  const [cartPaymentMethod, setCartPaymentMethod] = useState('upi'); // 'upi' | 'card' | 'waiter'
-  const [cartCopiedUpi, setCartCopiedUpi] = useState(false);
-  const [cartCardNumber, setCartCardNumber] = useState('');
-  const [cartCardHolder, setCartCardHolder] = useState(() => guest?.name || '');
-  const [cartCardExpiry, setCartCardExpiry] = useState('');
-  const [cartCardCvv, setCartCardCvv] = useState('');
-  const [cartCardError, setCartCardError] = useState('');
-  const [cartSettling, setCartSettling] = useState(false);
-  const [cartWaiterRequested, setCartWaiterRequested] = useState(false);
-
-  const upiId = 'aaravpoddar19@okicici';
-  const payeeName = 'Aarav Poddar';
-
-  const handleCartCopyUpi = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(upiId);
-      setCartCopiedUpi(true);
-      setTimeout(() => setCartCopiedUpi(false), 2200);
-    }
-  };
-
-  const handleCartCardNumberChange = (e) => {
-    let val = e.target.value.replace(/\D/g, '').substring(0, 16);
-    let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
-    setCartCardNumber(formatted);
-    setCartCardError('');
-  };
-
-  const handleCartExpiryChange = (e) => {
-    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
-    if (val.length >= 3) {
-      setCartCardExpiry(`${val.substring(0, 2)}/${val.substring(2, 4)}`);
-    } else {
-      setCartCardExpiry(val);
-    }
-    setCartCardError('');
-  };
-
-  const handleCartCvvChange = (e) => {
-    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
-    setCartCardCvv(val);
-    setCartCardError('');
-  };
-
-  const handleCartProcessCardPayment = (e) => {
-    if (e) e.preventDefault();
-    const cleanNum = cartCardNumber.replace(/\s/g, '');
-    if (cleanNum.length < 15) {
-      setCartCardError('Please enter a valid 16-digit card number');
-      return;
-    }
-    if (!cartCardHolder.trim()) {
-      setCartCardError('Please enter the name on your card');
-      return;
-    }
-    if (cartCardExpiry.length < 5) {
-      setCartCardError('Please enter a valid expiry date (MM/YY)');
-      return;
-    }
-    if (cartCardCvv.length < 3) {
-      setCartCardError('Please enter a valid 3 or 4-digit CVV');
-      return;
-    }
-    setCartSettling(true);
-    setCartCardError('');
-    setTimeout(() => {
-      submitOrder({ paymentStatus: 'Paid', paymentMethod: 'Credit/Debit Card' });
-    }, 800);
-  };
-
   const occupiedTablesRef = useRef(occupiedTables);
   occupiedTablesRef.current = occupiedTables;
 
@@ -4540,8 +4464,18 @@ function App() {
   const activeTableCall = waiterCalls.find(c => c.status === 'Pending' && (guest?.table ? c.table === guest.table : c.table === 'Table 1'));
 
   const count = cart.reduce((sum, item) => sum + item.qty, 0);
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
-  const gst = subtotal * 0.05;
+  const grossSubtotal = cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+
+  // Happy Hour 20% Discount for eligible items when flashSaleEnabled is true
+  const happyHourDiscount = flashSaleEnabled
+    ? cart.reduce((sum, item) => {
+        const isEligible = item.category === 'Alcohol' || happyHourItemIds.has(item.id);
+        return sum + (isEligible ? Math.round(item.price * item.qty * 0.20) : 0);
+      }, 0)
+    : 0;
+
+  const subtotal = Math.max(0, grossSubtotal - happyHourDiscount);
+  const gst = Math.round(subtotal * 0.05);
   const total = subtotal + gst;
 
   const updateCart = (item, delta) => {
@@ -4589,10 +4523,13 @@ function App() {
         price: item.price,
         qty: item.qty,
         color: item.color,
-        mark: item.mark
+        mark: item.mark,
+        isHappyHour: flashSaleEnabled && (item.category === 'Alcohol' || happyHourItemIds.has(item.id))
       })),
       instructions: instruction,
-      subtotal,
+      subtotal: grossSubtotal,
+      discount: happyHourDiscount,
+      discountLabel: happyHourDiscount > 0 ? 'Happy Hour 20% Discount' : '',
       gst,
       total,
       paymentStatus: isPaid ? 'Paid' : 'Unpaid',
@@ -4613,26 +4550,7 @@ function App() {
       const response = await fetch('/api/orders', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          guestName: guest.name,
-          mode,
-          table: mode === 'Dine in' ? (guest.table || 'Table 1') : null,
-          items: cart.map(item => ({
-            id: item.id,
-            name: item.name,
-            price: item.price,
-            qty: item.qty,
-            color: item.color,
-            mark: item.mark
-          })),
-          instructions: instruction,
-          subtotal,
-          gst,
-          total,
-          paymentStatus: isPaid ? 'Paid' : 'Unpaid',
-          paymentMethod: finalPaymentMethod,
-          paidAt: isPaid ? new Date().toISOString() : null
-        })
+        body: JSON.stringify(newOrderPayload)
       });
       if (response.ok) {
         finalOrder = await response.json();
@@ -5153,455 +5071,221 @@ function App() {
               <div className="drawer-head">
                 <button
                   type="button"
-                  className="icon-btn"
-                  onClick={() => {
-                    if (cartStep === 'payment') {
-                      setCartStep('items');
-                    } else {
-                      setCartOpen(false);
-                    }
-                  }}
-                  title={cartStep === 'payment' ? 'Back to items' : 'Close cart'}
+                  className="close"
+                  onClick={() => setCartOpen(false)}
+                  title="Close cart"
                 >
                   <ArrowLeft size={20} />
                 </button>
-                <h2>{cartStep === 'payment' ? 'Confirm & Settle Bill' : 'Your order'}</h2>
+                <h2>Your Order</h2>
                 <span className="item-count">
-                  {cartStep === 'payment' ? formatPrice(total) : `${count} items`}
+                  {count} items
                 </span>
               </div>
 
-              {cartStep === 'payment' ? (
-                /* =================================================== */
-                /* STEP 2: BILL CONFIRMATION & PAYMENT OPTIONS VIEW   */
-                /* =================================================== */
-                <div className="cart-items" style={{ paddingBottom: '20px' }}>
-                  <div className="cart-payment-step-wrap">
-                    {/* Bill Confirmation Summary Card */}
-                    <div className="cart-bill-confirmation-summary">
-                      <div className="cart-bill-summary-top">
-                        <div className="cart-bill-summary-guest">
-                          {mode === 'Dine in' ? <UtensilsCrossed size={16} color="var(--brand-primary)" /> : <ShoppingBag size={16} color="var(--brand-primary)" />}
-                          <span>{guest?.name || 'Guest'} • {mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Self Pickup'}</span>
-                        </div>
-                        <span className="cart-bill-summary-badge">{cart.length} Dish{cart.length > 1 ? 'es' : ''}</span>
-                      </div>
-
-                      <div className="cart-bill-summary-price-row">
-                        <span>Total Payable (incl. 5% GST):</span>
-                        <strong>{formatPrice(total)}</strong>
-                      </div>
-                    </div>
-
-                    <span className="cart-payment-method-selector-title">
-                      Select How You'd Like to Pay
-                    </span>
-
-                    {/* 3 Payment Method Tabs */}
-                    <div className="payment-options-tabs payment-three-tabs" style={{ marginBottom: '12px' }}>
-                      <button
-                        type="button"
-                        className={`pay-tab ${cartPaymentMethod === 'upi' ? 'active' : ''}`}
-                        onClick={() => setCartPaymentMethod('upi')}
-                      >
-                        <QrCode size={14} /> UPI / QR
-                      </button>
-                      <button
-                        type="button"
-                        className={`pay-tab ${cartPaymentMethod === 'card' ? 'active' : ''}`}
-                        onClick={() => setCartPaymentMethod('card')}
-                      >
-                        <CreditCard size={14} /> Card
-                      </button>
-                      <button
-                        type="button"
-                        className={`pay-tab ${cartPaymentMethod === 'waiter' ? 'active' : ''}`}
-                        onClick={() => setCartPaymentMethod('waiter')}
-                      >
-                        <Banknote size={14} /> Cash at Table
-                      </button>
-                    </div>
-
-                    {/* TAB 1: UPI / QR CODE (CENTERED & ZERO OVERFLOW) */}
-                    {cartPaymentMethod === 'upi' && (
-                      <div className="cart-upi-vertical-box">
-                        <div className="cart-upi-qr-frame">
-                          <img
-                            src={resolveAsset('/payment-qr.jpg')}
-                            alt="Aarav Poddar UPI QR Code"
-                            className="cart-upi-qr-img"
-                          />
-                        </div>
-                        <small style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '-6px' }}>
-                          Scan with any UPI app (GPay, PhonePe, Paytm, BHIM)
-                        </small>
-
-                        <div className="cart-upi-stacked-details">
-                          <div className="cart-upi-info-card">
-                            <div className="cart-upi-info-row">
-                              <span>PAYEE:</span>
-                              <b>{payeeName}</b>
-                            </div>
-                            <div className="cart-upi-info-row">
-                              <span>UPI ID:</span>
-                              <div className="upi-id-badge-wrap">
-                                <code className="upi-val-mono">{upiId}</code>
-                                <button
-                                  type="button"
-                                  className="upi-copy-action-btn"
-                                  onClick={handleCartCopyUpi}
-                                  title="Copy UPI ID"
-                                >
-                                  <Copy size={12} /> {cartCopiedUpi ? 'Copied!' : 'Copy'}
-                                </button>
-                              </div>
-                            </div>
-                            <div className="cart-upi-info-row">
-                              <span>AMOUNT:</span>
-                              <b style={{ color: 'var(--brand-primary)', fontSize: '14px' }}>{formatPrice(total)}</b>
-                            </div>
-                          </div>
-
-                          <a
-                            href={`upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${total}&cu=INR&tn=The%20Poddars%20Courtyard%20Bill`}
-                            className="pay-direct-app-link"
-                          >
-                            <Smartphone size={15} /> Open in UPI App (GPay / PhonePe)
-                          </a>
-
-                          <button
-                            type="button"
-                            className="pay-settle-btn cart-pay-action-btn"
-                            onClick={() => submitOrder({ paymentStatus: 'Paid', paymentMethod: 'UPI' })}
-                            disabled={submitting || cartSettling}
-                          >
-                            <CheckCircle2 size={16} />
-                            {submitting ? 'Placing & Settling...' : `✓ I Have Paid ${formatPrice(total)} (Confirm & Settle)`}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* TAB 2: CREDIT / DEBIT CARD */}
-                    {cartPaymentMethod === 'card' && (
-                      <form className="cart-card-vertical-box" onSubmit={handleCartProcessCardPayment}>
-                        <div className="card-header-row">
-                          <div className="card-security-badge">
-                            <ShieldCheck size={14} /> 256-Bit SSL Encrypted
-                          </div>
-                          <div className="card-networks-list">
-                            <span className="card-chip-tag visa">VISA</span>
-                            <span className="card-chip-tag mc">Mastercard</span>
-                            <span className="card-chip-tag rupay">RuPay</span>
-                          </div>
-                        </div>
-
-                        {cartCardError && (
-                          <div className="card-form-error">
-                            ⚠️ {cartCardError}
-                          </div>
-                        )}
-
-                        <div className="card-field-group">
-                          <label>Card Number</label>
-                          <div className="card-input-with-icon">
-                            <CreditCard size={16} className="card-field-icon" />
-                            <input
-                              type="text"
-                              placeholder="4532 •••• •••• 8901"
-                              value={cartCardNumber}
-                              onChange={handleCartCardNumberChange}
-                              maxLength={19}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <div className="card-field-group">
-                          <label>Cardholder Name</label>
-                          <input
-                            type="text"
-                            placeholder="e.g. Aarav Poddar"
-                            value={cartCardHolder}
-                            onChange={(e) => {
-                              setCartCardHolder(e.target.value);
-                              setCartCardError('');
-                            }}
-                            required
-                          />
-                        </div>
-
-                        <div className="card-grid-row">
-                          <div className="card-field-group">
-                            <label>Expiry (MM/YY)</label>
-                            <input
-                              type="text"
-                              placeholder="MM/YY"
-                              value={cartCardExpiry}
-                              onChange={handleCartExpiryChange}
-                              maxLength={5}
-                              required
-                            />
-                          </div>
-                          <div className="card-field-group">
-                            <label>CVV / CVC</label>
-                            <input
-                              type="password"
-                              placeholder="•••"
-                              value={cartCardCvv}
-                              onChange={handleCartCvvChange}
-                              maxLength={4}
-                              required
-                            />
-                          </div>
-                        </div>
-
-                        <button
-                          type="submit"
-                          className="pay-settle-btn card-submit-btn cart-pay-action-btn"
-                          disabled={submitting || cartSettling}
-                        >
-                          {cartSettling || submitting ? 'Processing Secure Card Payment...' : `🔒 Pay ${formatPrice(total)} & Settle via Card`}
-                        </button>
-                      </form>
-                    )}
-
-                    {/* TAB 3: PAY CASH AT TABLE */}
-                    {cartPaymentMethod === 'waiter' && (
-                      <div className="cart-waiter-vertical-box">
-                        <div className="waiter-pay-icon-circle">
-                          <Banknote size={32} color="var(--brand-primary)" />
-                        </div>
-                        <div className="waiter-pay-text">
-                          <b style={{ fontSize: '14.5px', color: 'var(--text-main)' }}>Pay Cash at Table</b>
-                          <p style={{ fontSize: '12.5px', color: 'var(--text-muted)', marginTop: '4px', lineHeight: '1.4' }}>
-                            Your order will be instantly sent to the kitchen. You can hand cash directly to your server or at the reception when your food arrives.
-                          </p>
-                        </div>
-                        <button
-                          type="button"
-                          className="pay-settle-btn waiter-action-btn cart-pay-action-btn"
-                          onClick={() => submitOrder({ paymentStatus: 'Paid', paymentMethod: 'Cash at Table' })}
-                          disabled={submitting || cartSettling}
-                        >
-                          <Banknote size={16} />
-                          {submitting ? 'Placing Order...' : `💵 Place Order & Pay ${formatPrice(total)} Cash`}
-                        </button>
-                      </div>
-                    )}
-
-                    <button
-                      type="button"
-                      className="cart-back-to-items-btn"
-                      onClick={() => setCartStep('items')}
-                    >
-                      <ArrowLeft size={14} /> Back to Edit Cart Items
-                    </button>
-                  </div>
+              <div className="order-type">
+                <span>{mode === 'Dine in' ? <UtensilsCrossed size={18} /> : <ShoppingBag size={18} />}</span>
+                <div>
+                  <b>{guest?.name || 'Guest'} • {mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Self Pickup'}</b>
+                  <small>{mode === 'Dine in' ? 'Food served to your table' : 'Pick up at the counter'}</small>
                 </div>
-              ) : (
-                /* =================================================== */
-                /* STEP 1: CART ITEMS LIST & BILL CONFIRMATION BUTTON */
-                /* =================================================== */
-                <>
-                  <div className="order-type">
-                    <span>{mode === 'Dine in' ? <UtensilsCrossed size={18} /> : <ShoppingBag size={18} />}</span>
-                    <div>
-                      <b>{guest?.name || 'Guest'} • {mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Self Pickup'}</b>
-                      <small>{mode === 'Dine in' ? 'Food served to your table' : 'Pick up at the counter'}</small>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => setGuestModalOpen(true)}
-                    >
-                      Change
-                    </button>
-                  </div>
+                <button
+                  type="button"
+                  onClick={() => setGuestModalOpen(true)}
+                >
+                  Change
+                </button>
+              </div>
 
-                  <div className="cart-items">
-                    {cart.length ? (
-                      <>
-                        <div className="cart-items-list">
-                          {cart.map(item => (
-                            <div className="cart-item" key={item.id}>
-                              <div className={'tiny ' + item.color}>
-                                {item.image && (
+              <div className="cart-items">
+                {cart.length ? (
+                  <>
+                    <div className="cart-items-list">
+                      {cart.map(item => {
+                        const isHappyHour = flashSaleEnabled && (item.category === 'Alcohol' || happyHourItemIds.has(item.id));
+                        const discountedPrice = isHappyHour ? Math.round(item.price * 0.80) : item.price;
+                        return (
+                          <div className="cart-item" key={item.id}>
+                            <div className={'tiny ' + item.color}>
+                              {item.image && (
+                                <img
+                                  src={resolveAsset(item.image)}
+                                  alt={item.name}
+                                  className="tiny-img"
+                                  onError={e => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              )}
+                              <span>{item.mark}</span>
+                            </div>
+                            <div className="cart-name">
+                              <b>{item.name}</b>
+                              {isHappyHour ? (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '5px', flexWrap: 'wrap' }}>
+                                  <span style={{ textDecoration: 'line-through', opacity: 0.55, fontSize: '11px' }}>{formatPrice(item.price)}</span>
+                                  <span style={{ color: '#16a34a', fontWeight: '700' }}>{formatPrice(discountedPrice)}</span>
+                                  <span style={{ fontSize: '9.5px', background: '#dcfce7', color: '#15803d', padding: '1px 5px', borderRadius: '4px', fontWeight: '700' }}>20% OFF</span>
+                                </div>
+                              ) : (
+                                <span>{formatPrice(item.price)}</span>
+                              )}
+                            </div>
+                            <div className="quantity">
+                              <button type="button" onClick={() => updateCart(item, -1)}>
+                                <Minus size={14} />
+                              </button>
+                              <b>{item.qty}</b>
+                              <button type="button" onClick={() => updateCart(item, 1)}>
+                                <Plus size={14} />
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    {/* AI Sommelier & Food Pairing Recommendations */}
+                    {pairingRecommendations.length > 0 && (
+                      <div className="cart-pairing-section">
+                        <div className="cart-pairing-header">
+                          <div className="cart-pairing-title">
+                            <Sparkles size={15} color="var(--brand-gold)" />
+                            <b>Chef & Sommelier Pairing</b>
+                          </div>
+                          <span className="cart-pairing-pill">AI Suggested</span>
+                        </div>
+
+                        <div className="cart-pairing-cards">
+                          {pairingRecommendations.map(({ item, reason, badge }) => (
+                            <div className="cart-pairing-card" key={item.id}>
+                              <div className="cart-pairing-img-wrap">
+                                {item.image ? (
                                   <img
                                     src={resolveAsset(item.image)}
                                     alt={item.name}
-                                    className="tiny-img"
+                                    className="cart-pairing-thumb"
                                     onError={e => {
                                       e.currentTarget.style.display = 'none';
                                     }}
                                   />
+                                ) : (
+                                  <div className="cart-pairing-placeholder">{item.mark}</div>
                                 )}
-                                <span>{item.mark}</span>
                               </div>
-                              <div className="cart-name">
-                                <b>{item.name}</b>
-                                <span>{formatPrice(item.price)}</span>
+
+                              <div className="cart-pairing-info">
+                                <div className="cart-pairing-top">
+                                  <span className="cart-pairing-badge">{badge}</span>
+                                  <b className="cart-pairing-price">{formatPrice(item.price)}</b>
+                                </div>
+                                <h4 className="cart-pairing-name">{item.name}</h4>
+                                <p className="cart-pairing-reason">{reason}</p>
                               </div>
-                              <div className="quantity">
-                                <button type="button" onClick={() => updateCart(item, -1)}>
-                                  <Minus size={14} />
-                                </button>
-                                <b>{item.qty}</b>
-                                <button type="button" onClick={() => updateCart(item, 1)}>
-                                  <Plus size={14} />
-                                </button>
-                              </div>
+
+                              <button
+                                type="button"
+                                className="cart-pairing-add-btn"
+                                onClick={() => updateCart(item, 1)}
+                                title={`Add ${item.name} to order`}
+                              >
+                                <Plus size={14} />
+                                <span>Add</span>
+                              </button>
                             </div>
                           ))}
                         </div>
+                      </div>
+                    )}
 
-                        {/* AI Sommelier & Food Pairing Recommendations */}
-                        {pairingRecommendations.length > 0 && (
-                          <div className="cart-pairing-section">
-                            <div className="cart-pairing-header">
-                              <div className="cart-pairing-title">
-                                <Sparkles size={15} color="var(--brand-gold)" />
-                                <b>Chef & Sommelier Pairing</b>
-                              </div>
-                              <span className="cart-pairing-pill">AI Suggested</span>
-                            </div>
-
-                            <div className="cart-pairing-cards">
-                              {pairingRecommendations.map(({ item, reason, badge }) => (
-                                <div className="cart-pairing-card" key={item.id}>
-                                  <div className="cart-pairing-img-wrap">
-                                    {item.image ? (
-                                      <img
-                                        src={resolveAsset(item.image)}
-                                        alt={item.name}
-                                        className="cart-pairing-thumb"
-                                        onError={e => {
-                                          e.currentTarget.style.display = 'none';
-                                        }}
-                                      />
-                                    ) : (
-                                      <div className="cart-pairing-placeholder">{item.mark}</div>
-                                    )}
-                                  </div>
-
-                                  <div className="cart-pairing-info">
-                                    <div className="cart-pairing-top">
-                                      <span className="cart-pairing-badge">{badge}</span>
-                                      <b className="cart-pairing-price">{formatPrice(item.price)}</b>
-                                    </div>
-                                    <h4 className="cart-pairing-name">{item.name}</h4>
-                                    <p className="cart-pairing-reason">{reason}</p>
-                                  </div>
-
-                                  <button
-                                    type="button"
-                                    className="cart-pairing-add-btn"
-                                    onClick={() => updateCart(item, 1)}
-                                    title={`Add ${item.name} to order`}
-                                  >
-                                    <Plus size={14} />
-                                    <span>Add</span>
-                                  </button>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-
-                        {/* Cooking Instructions inside Drawer (Scrolls with items, never blocks totals/checkout) */}
-                        <div className="cart-instructions-box">
-                          <div className="cart-instructions-title">
-                            <ChefHat size={14} />
-                            <span>Cooking Instructions for Chef</span>
-                          </div>
-                          <textarea
-                            value={instruction}
-                            onChange={event => setInstruction(event.target.value)}
-                            placeholder="E.g., less spicy, no onion, extra crispy, sauce on side..."
-                            className="cart-instructions-input"
-                            rows={2}
-                          />
+                    {/* Cooking Instructions inside Drawer */}
+                    <div className="cart-instructions-box">
+                      <div className="cart-instructions-title">
+                        <ChefHat size={14} />
+                        <span>Cooking Instructions for Chef</span>
+                      </div>
+                      <textarea
+                        value={instruction}
+                        onChange={event => setInstruction(event.target.value)}
+                        placeholder="E.g., less spicy, no onion, extra crispy, sauce on side..."
+                        className="cart-instructions-input"
+                        rows={2}
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div className="empty">
+                    <ShoppingBag size={30} />
+                    <p>Your bag is waiting for something delicious.</p>
+                    {activeTrackingOrderId && (
+                      <div className="cart-active-table-bill-box">
+                        <div className="cart-active-table-bill-header">
+                          <b><Receipt size={15} /> Active Table Order</b>
+                          <span className="cart-payment-badge">Running Tab</span>
                         </div>
-                      </>
-                    ) : (
-                      <div className="empty">
-                        <ShoppingBag size={30} />
-                        <p>Your bag is waiting for something delicious.</p>
-                        {activeTrackingOrderId && (
-                          <div className="cart-active-table-bill-box">
-                            <div className="cart-active-table-bill-header">
-                              <b><Receipt size={15} /> Active Table Order</b>
-                              <span className="cart-payment-badge">Running Tab</span>
-                            </div>
-                            <p style={{ fontSize: '12px', color: '#713f12', margin: '4px 0 8px' }}>
-                              Order #{activeTrackingOrderId} is active for your table.
-                            </p>
-                            <button
-                              type="button"
-                              className="cart-active-table-bill-btn"
-                              onClick={() => {
-                                setCartOpen(false);
-                                setShowTracker(true);
-                              }}
-                            >
-                              <CreditCard size={14} /> View Running Bill & Settle Payment
-                            </button>
-                          </div>
-                        )}
+                        <p style={{ fontSize: '12px', color: '#713f12', margin: '4px 0 8px' }}>
+                          Order #{activeTrackingOrderId} is active for your table.
+                        </p>
+                        <button
+                          type="button"
+                          className="cart-active-table-bill-btn"
+                          onClick={() => {
+                            setCartOpen(false);
+                            setShowTracker(true);
+                          }}
+                        >
+                          <CreditCard size={14} /> View Order Status & Settle Bill
+                        </button>
                       </div>
                     )}
                   </div>
+                )}
+              </div>
 
-                  <div className="drawer-footer">
-                    <div className="totals">
-                      <span>Subtotal</span>
-                      <b>{formatPrice(subtotal)}</b>
-                      <span>GST (5%)</span>
-                      <b>{formatPrice(gst)}</b>
-                      <strong>
-                        Total <b>{formatPrice(total)}</b>
-                      </strong>
-                    </div>
+              <div className="drawer-footer">
+                <div className="totals">
+                  <span>Subtotal</span>
+                  <b>{formatPrice(grossSubtotal)}</b>
+                  {happyHourDiscount > 0 && (
+                    <>
+                      <span style={{ color: '#16a34a', fontWeight: '600' }}>🔥 Happy Hour (20% OFF)</span>
+                      <b style={{ color: '#16a34a' }}>-{formatPrice(happyHourDiscount)}</b>
+                    </>
+                  )}
+                  <span>GST (5%)</span>
+                  <b>{formatPrice(gst)}</b>
+                  <strong>
+                    Total <b>{formatPrice(total)}</b>
+                  </strong>
+                </div>
 
-                    {/* PRIMARY ACTION: Confirm the bill and proceed to choose payment option */}
-                    <button
-                      type="button"
-                      className="cart-confirm-proceed-btn"
-                      disabled={!cart.length || submitting}
-                      onClick={() => setCartStep('payment')}
-                      title="Confirm bill and select payment method"
-                    >
-                      <CreditCard size={17} />
-                      <span>Confirm Bill & Settle ({formatPrice(total)})</span>
-                      <span>→</span>
-                    </button>
+                {/* PRIMARY ACTION: Send Order to Kitchen */}
+                <button
+                  type="button"
+                  className="checkout"
+                  disabled={!cart.length || submitting}
+                  onClick={() => submitOrder()}
+                  title="Send order directly to kitchen"
+                  style={{ width: '100%', padding: '14px', fontSize: '14px', fontWeight: '700', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
+                >
+                  <UtensilsCrossed size={17} />
+                  <span>{submitting ? 'Sending to Kitchen...' : mode === 'Dine in' ? `🍽️ Send Order to Kitchen (${formatPrice(total)})` : `🛍️ Place Pickup Order (${formatPrice(total)})`}</span>
+                  <span>→</span>
+                </button>
 
-                    {/* SECONDARY ACTION: Send to kitchen to pay later at table */}
-                    <button
-                      type="button"
-                      className="checkout secondary-pay-later-btn"
-                      disabled={!cart.length || submitting}
-                      onClick={() => submitOrder({ paymentStatus: 'Unpaid', paymentMethod: 'Pending at Table' })}
-                      title="Send order to kitchen and pay later"
-                    >
-                      <span>{submitting ? 'Sending order...' : mode === 'Dine in' ? `🍽️ Send to Kitchen (Pay Later at Table)` : 'Place Pickup Order (Pay at Counter)'}</span>
-                      <span>→</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="cart-drawer-kitchen-btn"
-                      onClick={() => {
-                        setCartOpen(false);
-                        window.location.hash = 'kitchen';
-                        setCurrentView('chef');
-                      }}
-                      title="Open Staff & Kitchen Portal"
-                    >
-                      <ChefHat size={14} /> Open Staff & Kitchen Portal
-                    </button>
-                  </div>
-                </>
-              )}
+                <button
+                  type="button"
+                  className="cart-drawer-kitchen-btn"
+                  onClick={() => {
+                    setCartOpen(false);
+                    window.location.hash = 'kitchen';
+                    setCurrentView('chef');
+                  }}
+                  title="Open Staff & Kitchen Portal"
+                >
+                  <ChefHat size={14} /> Open Staff & Kitchen Portal
+                </button>
+              </div>
             </aside>
           )}
 

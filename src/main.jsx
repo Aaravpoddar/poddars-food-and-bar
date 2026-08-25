@@ -4491,21 +4491,19 @@ function App() {
 
   const submitOrder = async (paymentOverride = null) => {
     if (!cart.length || submitting) return;
-    if (!guest?.name) {
-      setGuestModalOpen(true);
-      return;
-    }
-    if (mode === 'Dine in') {
-      const chosenTable = (guest.table || 'Table 1').trim();
-      const occ = occupiedTables && occupiedTables[chosenTable];
-      if (occ && occ.guestName?.toLowerCase() !== guest.name.toLowerCase() && occ.orderId !== activeTrackingOrderId) {
-        alert(`⚠️ ${chosenTable} is currently occupied by ${occ.guestName}. Tables remain reserved until the final bill is paid. Please choose an available table.`);
-        setGuestModalOpen(true);
-        return;
-      }
-    }
     setSubmitting(true);
     setOrderError('');
+
+    const activeGuestName = (guest?.name || 'Guest').trim();
+    const activeTable = mode === 'Dine in' ? (guest?.table || 'Table 1') : null;
+
+    if (!guest || !guest.name) {
+      const defaultGuest = { name: activeGuestName, table: activeTable || 'Table 1', mode: mode || 'Dine in' };
+      setGuest(defaultGuest);
+      try {
+        localStorage.setItem('poddars_guest_session', JSON.stringify(defaultGuest));
+      } catch {}
+    }
 
     const isPaid = paymentOverride?.paymentStatus === 'Paid';
     const finalPaymentMethod = paymentOverride?.paymentMethod || (isPaid ? 'UPI' : 'Pending at Table');
@@ -4514,9 +4512,9 @@ function App() {
       id: `TP-${Math.floor(100000 + Math.random() * 900000)}`,
       status: 'New',
       createdAt: new Date().toISOString(),
-      guestName: guest.name,
+      guestName: activeGuestName,
       mode,
-      table: mode === 'Dine in' ? (guest.table || 'Table 1') : null,
+      table: activeTable,
       items: cart.map(item => ({
         id: item.id,
         name: item.name,

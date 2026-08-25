@@ -383,8 +383,8 @@ function calculateOccupiedTables(ordersList, extraOccupied = {}) {
   const now = Date.now();
   (ordersList || []).forEach(o => {
     const isRecent = o.createdAt ? (now - new Date(o.createdAt).getTime() < 12 * 60 * 60 * 1000) : false;
-    const isActiveSession = ['New', 'Preparing', 'Ready'].includes(o.status);
-    if (o.mode === 'Dine in' && o.table && isActiveSession && isRecent && o.paymentStatus !== 'Paid') {
+    const isNotCancelled = o.status !== 'Cancelled';
+    if (o.mode === 'Dine in' && o.table && isNotCancelled && isRecent && o.paymentStatus !== 'Paid') {
       const t = o.table.trim();
       map[t] = {
         table: t,
@@ -920,9 +920,9 @@ function GuestLoginModal({ guest, occupiedTables = {}, onSaveGuest, onLogoutGues
 
   const handleSelectTable = (t) => {
     const occ = occupiedTables && occupiedTables[t];
-    const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== guest?.name?.toLowerCase());
+    const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== name.trim().toLowerCase()) && (occ.guestName?.toLowerCase() !== guest?.name?.toLowerCase());
     if (isOccupiedByOther) {
-      setError(`⚠️ ${t} is currently occupied by ${occ.guestName || 'another guest'}. It remains occupied until final bill is paid.`);
+      setError(`⚠️ ${t} is currently occupied by ${occ.guestName || 'another guest'}. Tables remain occupied until the final bill is settled.`);
       return;
     }
     setTable(t);
@@ -938,7 +938,7 @@ function GuestLoginModal({ guest, occupiedTables = {}, onSaveGuest, onLogoutGues
     const selTable = diningMode === 'Dine in' ? (table.trim() || 'Table 1') : null;
     if (diningMode === 'Dine in' && selTable) {
       const occ = occupiedTables && occupiedTables[selTable];
-      const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== name.trim().toLowerCase());
+      const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== name.trim().toLowerCase()) && (occ.guestName?.toLowerCase() !== guest?.name?.toLowerCase());
       if (isOccupiedByOther) {
         setError(`⚠️ ${selTable} is currently occupied by ${occ.guestName || 'another guest'}. Please pick an available table.`);
         return;
@@ -1007,7 +1007,10 @@ function GuestLoginModal({ guest, occupiedTables = {}, onSaveGuest, onLogoutGues
               <input
                 placeholder="Enter your name (e.g. Aarav)"
                 value={name}
-                onChange={e => setName(e.target.value)}
+                onChange={e => {
+                  setName(e.target.value);
+                  setError('');
+                }}
                 autoFocus
               />
             </div>
@@ -1043,13 +1046,14 @@ function GuestLoginModal({ guest, occupiedTables = {}, onSaveGuest, onLogoutGues
               <div className="guest-table-grid compact-grid">
                 {quickTables.map(t => {
                   const occ = occupiedTables && occupiedTables[t];
-                  const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== guest?.name?.toLowerCase());
+                  const isOccupiedByOther = !!occ && (occ.guestName?.toLowerCase() !== name.trim().toLowerCase()) && (occ.guestName?.toLowerCase() !== guest?.name?.toLowerCase());
                   const isSelfOccupied = !!occ && !isOccupiedByOther;
                   const isSelected = table === t;
                   return (
                     <button
                       type="button"
                       key={t}
+                      disabled={isOccupiedByOther}
                       className={`guest-table-chip ${isSelected ? 'selected' : ''} ${isOccupiedByOther ? 'occupied' : ''} ${isSelfOccupied ? 'self-occupied' : ''}`}
                       onClick={() => handleSelectTable(t)}
                       title={isOccupiedByOther ? `${t}: Occupied by ${occ.guestName} (Pending Bill Payment)` : isSelfOccupied ? `${t}: Occupied by You` : `${t}: Available`}
@@ -2406,16 +2410,6 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
           <button
             type="button"
             className="kds-btn-tool"
-            onClick={handleSeedDemoOrder}
-            style={{ borderColor: 'var(--lime)', color: 'var(--lime)' }}
-          >
-            <Plus size={15} />
-            <span>+ Simulate Order</span>
-          </button>
-
-          <button
-            type="button"
-            className="kds-btn-tool"
             onClick={handleResetAllTables}
             title="Log out and vacate all tables across the restaurant"
             style={{ background: '#fff1f2', borderColor: '#fecdd3', color: '#e11d48' }}
@@ -3015,17 +3009,9 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
               <h3>No orders in this view</h3>
               <p>
                 {activeTab === 'New'
-                  ? 'All incoming orders have been reviewed and approved.'
+                  ? 'All incoming guest orders have been reviewed and approved.'
                   : 'No order tickets match the selected filter.'}
               </p>
-              <button
-                type="button"
-                className="kds-btn-tool"
-                onClick={handleSeedDemoOrder}
-                style={{ display: 'inline-flex', margin: '0 auto' }}
-              >
-                <Plus size={15} /> Create a Test Order
-              </button>
             </div>
           )}
         </div>
@@ -3191,6 +3177,13 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
         });
       }
     } catch {}
+
+    // Auto logout guest from table upon bill settlement
+    setTimeout(() => {
+      if (onPrintAndLogout) {
+        onPrintAndLogout();
+      }
+    }, 2800);
   };
 
   const handleSettlePayment = () => {
@@ -3723,6 +3716,13 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
         });
       }
     } catch {}
+
+    // Auto logout guest from table upon bill settlement
+    setTimeout(() => {
+      if (onPrintAndLogout) {
+        onPrintAndLogout();
+      }
+    }, 2800);
   };
 
   const handleSettlePayment = () => {

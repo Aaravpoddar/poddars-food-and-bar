@@ -4214,6 +4214,76 @@ function App() {
     return calculateOccupiedTables(getLocalOrders());
   });
 
+  const [cartPaymentMethod, setCartPaymentMethod] = useState('upi'); // 'upi' | 'card' | 'waiter'
+  const [cartCopiedUpi, setCartCopiedUpi] = useState(false);
+  const [cartCardNumber, setCartCardNumber] = useState('');
+  const [cartCardHolder, setCartCardHolder] = useState(() => guest?.name || '');
+  const [cartCardExpiry, setCartCardExpiry] = useState('');
+  const [cartCardCvv, setCartCardCvv] = useState('');
+  const [cartCardError, setCartCardError] = useState('');
+  const [cartSettling, setCartSettling] = useState(false);
+  const [cartWaiterRequested, setCartWaiterRequested] = useState(false);
+
+  const upiId = 'aaravpoddar19@okicici';
+  const payeeName = 'Aarav Poddar';
+
+  const handleCartCopyUpi = () => {
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(upiId);
+      setCartCopiedUpi(true);
+      setTimeout(() => setCartCopiedUpi(false), 2200);
+    }
+  };
+
+  const handleCartCardNumberChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 16);
+    let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
+    setCartCardNumber(formatted);
+    setCartCardError('');
+  };
+
+  const handleCartExpiryChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+    if (val.length >= 3) {
+      setCartCardExpiry(`${val.substring(0, 2)}/${val.substring(2, 4)}`);
+    } else {
+      setCartCardExpiry(val);
+    }
+    setCartCardError('');
+  };
+
+  const handleCartCvvChange = (e) => {
+    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
+    setCartCardCvv(val);
+    setCartCardError('');
+  };
+
+  const handleCartProcessCardPayment = (e) => {
+    if (e) e.preventDefault();
+    const cleanNum = cartCardNumber.replace(/\s/g, '');
+    if (cleanNum.length < 15) {
+      setCartCardError('Please enter a valid 16-digit card number');
+      return;
+    }
+    if (!cartCardHolder.trim()) {
+      setCartCardError('Please enter the name on your card');
+      return;
+    }
+    if (cartCardExpiry.length < 5) {
+      setCartCardError('Please enter a valid expiry date (MM/YY)');
+      return;
+    }
+    if (cartCardCvv.length < 3) {
+      setCartCardError('Please enter a valid 3 or 4-digit CVV');
+      return;
+    }
+    setCartSettling(true);
+    setCartCardError('');
+    setTimeout(() => {
+      submitOrder({ paymentStatus: 'Paid', paymentMethod: 'Credit/Debit Card' });
+    }, 800);
+  };
+
   const occupiedTablesRef = useRef(occupiedTables);
   occupiedTablesRef.current = occupiedTables;
 
@@ -4484,7 +4554,7 @@ function App() {
     });
   };
 
-  const submitOrder = async () => {
+  const submitOrder = async (paymentOverride = null) => {
     if (!cart.length || submitting) return;
     if (!guest?.name) {
       setGuestModalOpen(true);
@@ -4501,6 +4571,9 @@ function App() {
     }
     setSubmitting(true);
     setOrderError('');
+
+    const isPaid = paymentOverride?.paymentStatus === 'Paid';
+    const finalPaymentMethod = paymentOverride?.paymentMethod || (isPaid ? 'UPI' : 'Pending at Table');
 
     const newOrderPayload = {
       id: `TP-${Math.floor(100000 + Math.random() * 900000)}`,
@@ -4521,6 +4594,9 @@ function App() {
       subtotal,
       gst,
       total,
+      paymentStatus: isPaid ? 'Paid' : 'Unpaid',
+      paymentMethod: finalPaymentMethod,
+      paidAt: isPaid ? new Date().toISOString() : null,
       estimatedPrepTime: null,
       approvedAt: null,
       readyAt: null,
@@ -4551,7 +4627,10 @@ function App() {
           instructions: instruction,
           subtotal,
           gst,
-          total
+          total,
+          paymentStatus: isPaid ? 'Paid' : 'Unpaid',
+          paymentMethod: finalPaymentMethod,
+          paidAt: isPaid ? new Date().toISOString() : null
         })
       });
       if (response.ok) {
@@ -4561,6 +4640,7 @@ function App() {
       console.warn('Server offline, persisting order locally:', error);
     } finally {
       setSubmitting(false);
+      setCartSettling(false);
     }
 
     // Save to local storage cache so Kitchen Portal receives it immediately across tabs
@@ -5194,11 +5274,236 @@ function App() {
                         rows={2}
                       />
                     </div>
+
+                    {/* PAYMENT & FINAL BILL SETTLEMENT SECTION (AT BOTTOM OF CART) */}
+                    <div className="cart-payment-settlement-section">
+                      <div className="cart-payment-header">
+                        <div className="cart-payment-title">
+                          <CreditCard size={16} color="var(--brand-primary)" />
+                          <b>Payment & Bill Settlement</b>
+                        </div>
+                        <span className="cart-payment-badge">Instant Settle</span>
+                      </div>
+
+                      <div className="payment-options-tabs payment-three-tabs">
+                        <button
+                          type="button"
+                          className={`pay-tab ${cartPaymentMethod === 'upi' ? 'active' : ''}`}
+                          onClick={() => setCartPaymentMethod('upi')}
+                        >
+                          <QrCode size={14} /> UPI / QR (Scan)
+                        </button>
+                        <button
+                          type="button"
+                          className={`pay-tab ${cartPaymentMethod === 'card' ? 'active' : ''}`}
+                          onClick={() => setCartPaymentMethod('card')}
+                        >
+                          <CreditCard size={14} /> Card Details
+                        </button>
+                        <button
+                          type="button"
+                          className={`pay-tab ${cartPaymentMethod === 'waiter' ? 'active' : ''}`}
+                          onClick={() => setCartPaymentMethod('waiter')}
+                        >
+                          <Banknote size={14} /> Cash at Table
+                        </button>
+                      </div>
+
+                      {/* TAB 1: UPI / QR CODE */}
+                      {cartPaymentMethod === 'upi' && (
+                        <div className="upi-payment-box cart-upi-box">
+                          <div className="mock-qr-wrap">
+                            <div className="upi-qr-card-container">
+                              <img
+                                src={resolveAsset('/payment-qr.jpg')}
+                                alt="Aarav Poddar UPI QR Code"
+                                className="upi-qr-image"
+                              />
+                            </div>
+                            <small className="upi-scan-hint">Scan with GPay, PhonePe, Paytm</small>
+                          </div>
+
+                          <div className="upi-details">
+                            <div className="upi-info-card">
+                              <div className="upi-info-row">
+                                <span className="upi-label">PAYEE:</span>
+                                <b className="upi-val">{payeeName}</b>
+                              </div>
+                              <div className="upi-info-row">
+                                <span className="upi-label">UPI ID:</span>
+                                <div className="upi-id-badge-wrap">
+                                  <code className="upi-val-mono">{upiId}</code>
+                                  <button
+                                    type="button"
+                                    className="upi-copy-action-btn"
+                                    onClick={handleCartCopyUpi}
+                                    title="Copy UPI ID"
+                                  >
+                                    <Copy size={12} /> {cartCopiedUpi ? 'Copied!' : 'Copy'}
+                                  </button>
+                                </div>
+                              </div>
+                              <div className="upi-info-row">
+                                <span className="upi-label">BILL TOTAL:</span>
+                                <b className="upi-val-price">{formatPrice(total)}</b>
+                              </div>
+                            </div>
+
+                            <a
+                              href={`upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${total}&cu=INR&tn=The%20Poddars%20Courtyard%20Bill`}
+                              className="pay-direct-app-link"
+                            >
+                              <Smartphone size={15} /> Open in UPI App (GPay / PhonePe)
+                            </a>
+
+                            <button
+                              type="button"
+                              className="pay-settle-btn cart-pay-action-btn"
+                              onClick={() => submitOrder({ paymentStatus: 'Paid', paymentMethod: 'UPI' })}
+                              disabled={submitting || cartSettling}
+                            >
+                              <CheckCircle2 size={16} />
+                              {submitting ? 'Placing & Settling...' : `✓ Pay ${formatPrice(total)} & Settle via UPI`}
+                            </button>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* TAB 2: CREDIT / DEBIT CARD */}
+                      {cartPaymentMethod === 'card' && (
+                        <form className="card-payment-box cart-card-box" onSubmit={handleCartProcessCardPayment}>
+                          <div className="card-header-row">
+                            <div className="card-security-badge">
+                              <ShieldCheck size={14} /> 256-Bit SSL Encrypted
+                            </div>
+                            <div className="card-networks-list">
+                              <span className="card-chip-tag visa">VISA</span>
+                              <span className="card-chip-tag mc">Mastercard</span>
+                              <span className="card-chip-tag rupay">RuPay</span>
+                              <span className="card-chip-tag amex">AMEX</span>
+                            </div>
+                          </div>
+
+                          {cartCardError && (
+                            <div className="card-form-error">
+                              ⚠️ {cartCardError}
+                            </div>
+                          )}
+
+                          <div className="card-field-group">
+                            <label>Card Number</label>
+                            <div className="card-input-with-icon">
+                              <CreditCard size={16} className="card-field-icon" />
+                              <input
+                                type="text"
+                                placeholder="4532 •••• •••• 8901"
+                                value={cartCardNumber}
+                                onChange={handleCartCardNumberChange}
+                                maxLength={19}
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <div className="card-field-group">
+                            <label>Cardholder Name</label>
+                            <input
+                              type="text"
+                              placeholder="e.g. Aarav Poddar"
+                              value={cartCardHolder}
+                              onChange={(e) => {
+                                setCartCardHolder(e.target.value);
+                                setCartCardError('');
+                              }}
+                              required
+                            />
+                          </div>
+
+                          <div className="card-grid-row">
+                            <div className="card-field-group">
+                              <label>Expiry (MM/YY)</label>
+                              <input
+                                type="text"
+                                placeholder="MM/YY"
+                                value={cartCardExpiry}
+                                onChange={handleCartExpiryChange}
+                                maxLength={5}
+                                required
+                              />
+                            </div>
+                            <div className="card-field-group">
+                              <label>CVV / CVC</label>
+                              <input
+                                type="password"
+                                placeholder="•••"
+                                value={cartCardCvv}
+                                onChange={handleCartCvvChange}
+                                maxLength={4}
+                                required
+                              />
+                            </div>
+                          </div>
+
+                          <button
+                            type="submit"
+                            className="pay-settle-btn card-submit-btn cart-pay-action-btn"
+                            disabled={submitting || cartSettling}
+                          >
+                            {cartSettling || submitting ? 'Processing Secure Card Payment...' : `🔒 Pay ${formatPrice(total)} & Settle via Card`}
+                          </button>
+                        </form>
+                      )}
+
+                      {/* TAB 3: PAY CASH AT TABLE */}
+                      {cartPaymentMethod === 'waiter' && (
+                        <div className="waiter-payment-box cart-waiter-box">
+                          <div className="waiter-pay-icon-circle">
+                            <Banknote size={28} color="var(--brand-primary)" />
+                          </div>
+                          <div className="waiter-pay-text">
+                            <b>Pay Cash Directly at Table / Counter</b>
+                            <p>
+                              Your order will be instantly sent to the kitchen. You can hand cash directly to your server or at the counter upon food delivery.
+                            </p>
+                          </div>
+                          <button
+                            type="button"
+                            className="pay-settle-btn waiter-action-btn cart-pay-action-btn"
+                            onClick={() => submitOrder({ paymentStatus: 'Paid', paymentMethod: 'Cash at Table' })}
+                            disabled={submitting || cartSettling}
+                          >
+                            <Banknote size={16} />
+                            {submitting ? 'Placing Order...' : `💵 Place Order & Pay ${formatPrice(total)} Cash`}
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </>
                 ) : (
                   <div className="empty">
                     <ShoppingBag size={30} />
                     <p>Your bag is waiting for something delicious.</p>
+                    {activeTrackingOrderId && (
+                      <div className="cart-active-table-bill-box">
+                        <div className="cart-active-table-bill-header">
+                          <b><Receipt size={15} /> Active Table Order</b>
+                          <span className="cart-payment-badge">Running Tab</span>
+                        </div>
+                        <p style={{ fontSize: '12px', color: '#713f12', margin: '4px 0 8px' }}>
+                          Order #{activeTrackingOrderId} is active for your table.
+                        </p>
+                        <button
+                          type="button"
+                          className="cart-active-table-bill-btn"
+                          onClick={() => {
+                            setCartOpen(false);
+                            setShowTracker(true);
+                          }}
+                        >
+                          <CreditCard size={14} /> View Running Bill & Settle Payment
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
@@ -5213,13 +5518,16 @@ function App() {
                     Total <b>{formatPrice(total)}</b>
                   </strong>
                 </div>
+
+                {/* Option to send to kitchen without instant settlement (Pay later at table) */}
                 <button
                   type="button"
-                  className="checkout"
+                  className="checkout secondary-pay-later-btn"
                   disabled={!cart.length || submitting}
-                  onClick={submitOrder}
+                  onClick={() => submitOrder({ paymentStatus: 'Unpaid', paymentMethod: 'Pending at Table' })}
+                  title="Send order to kitchen and pay later"
                 >
-                  <span>{submitting ? 'Sending order...' : mode === 'Dine in' ? `Send to kitchen (${guest?.table || 'Table 1'})` : 'Place pickup order'}</span>
+                  <span>{submitting ? 'Sending order...' : mode === 'Dine in' ? `🍽️ Send to Kitchen (Pay Later at Table)` : 'Place Pickup Order (Pay at Counter)'}</span>
                   <span>→</span>
                 </button>
 

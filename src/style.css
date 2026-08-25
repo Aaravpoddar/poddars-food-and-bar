@@ -5817,6 +5817,153 @@ header {
   padding: 14px;
 }
 
+/* In-Cart Payment & Bill Settlement Section */
+.cart-payment-settlement-section {
+  margin-top: 18px;
+  padding: 16px 14px;
+  background: #f8fafc;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 16px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.03);
+}
+
+.cart-payment-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.cart-payment-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13.5px;
+  color: var(--text-main);
+  font-weight: 800;
+}
+
+.cart-payment-badge {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 800;
+  color: #15803d;
+  background: #dcfce7;
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid #bbf7d0;
+  letter-spacing: 0.3px;
+}
+
+.cart-upi-box {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+@media (min-width: 480px) {
+  .cart-upi-box {
+    flex-direction: row;
+    align-items: flex-start;
+  }
+}
+
+.cart-card-box {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.cart-waiter-box {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.cart-pay-action-btn {
+  margin-top: 10px;
+  width: 100%;
+  padding: 13px 16px;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.secondary-pay-later-btn {
+  background: #f1f5f9 !important;
+  color: #334155 !important;
+  border: 1px solid #cbd5e1 !important;
+  box-shadow: none !important;
+  margin-top: 8px !important;
+}
+
+.secondary-pay-later-btn:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+
+.cart-active-table-bill-box {
+  background: #fefce8;
+  border: 1.5px solid #fde047;
+  border-radius: 14px;
+  padding: 14px 16px;
+  margin-bottom: 16px;
+}
+
+.cart-active-table-bill-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.cart-active-table-bill-header b {
+  font-size: 13px;
+  color: #854d0e;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.cart-active-table-bill-btn {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px;
+  background: #eab308;
+  color: #000000;
+  font-weight: 800;
+  font-size: 13px;
+  border-radius: 10px;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+
+.cart-active-table-bill-btn:hover {
+  background: #ca8a04;
+}
+
+
 
 
 

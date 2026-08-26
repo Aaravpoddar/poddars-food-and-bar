@@ -3059,6 +3059,7 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
   const [isPaid, setIsPaid] = useState(order?.paymentStatus === 'Paid' || false);
   const [settling, setSettling] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
+  const [logoutCountdown, setLogoutCountdown] = useState(null);
 
   // Card Payment States
   const [cardNumber, setCardNumber] = useState('');
@@ -3070,6 +3071,29 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
 
   const upiId = 'aaravpoddar19@okicici';
   const payeeName = 'Aarav Poddar';
+
+  // Auto-logout countdown timer when bill is settled
+  useEffect(() => {
+    if (isPaid || order?.paymentStatus === 'Paid') {
+      if (logoutCountdown === null) {
+        setLogoutCountdown(5);
+      }
+    } else {
+      setLogoutCountdown(null);
+    }
+  }, [isPaid, order?.paymentStatus]);
+
+  useEffect(() => {
+    if (logoutCountdown === null) return;
+    if (logoutCountdown <= 0) {
+      if (onPrintAndLogout) onPrintAndLogout();
+      return;
+    }
+    const timer = setTimeout(() => {
+      setLogoutCountdown(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [logoutCountdown, onPrintAndLogout]);
 
   if (!order) return null;
 
@@ -3588,24 +3612,13 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
 }
 
 // -------------------------------------------------------------
-// LIVE CUSTOMER ORDER TRACKER COMPONENT (WITH INSTANT PAYMENT & UPI QR)
 // -------------------------------------------------------------
-function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
+// LIVE CUSTOMER KITCHEN TRACKER COMPONENT (PURELY FOCUSED ON LIVE COOKING)
+// -------------------------------------------------------------
+function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout, onOpenBill }) {
   const [order, setOrder] = useState(null);
   const [showBillModal, setShowBillModal] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState('upi'); // 'upi' | 'card' | 'waiter'
-  const [copiedUpi, setCopiedUpi] = useState(false);
-  const [settling, setSettling] = useState(false);
-  const [waiterRequested, setWaiterRequested] = useState(false);
-  const [cardNumber, setCardNumber] = useState('');
-  const [cardHolder, setCardHolder] = useState('');
-  const [cardExpiry, setCardExpiry] = useState('');
-  const [cardCvv, setCardCvv] = useState('');
-  const [cardError, setCardError] = useState('');
   const [logoutCountdown, setLogoutCountdown] = useState(null);
-
-  const upiId = 'aaravpoddar19@okicici';
-  const payeeName = 'Aarav Poddar';
 
   useEffect(() => {
     if (!orderId) return;
@@ -3615,17 +3628,13 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
         if (res.ok) {
           const data = await res.json();
           setOrder(data);
-          if (data.guestName) setCardHolder(data.guestName);
           return;
         }
       } catch (err) {}
       // Local storage fallback
       const local = getLocalOrders();
       const match = local.find(o => o.id === orderId);
-      if (match) {
-        setOrder(match);
-        if (match.guestName) setCardHolder(match.guestName);
-      }
+      if (match) setOrder(match);
     };
     fetchOrder();
 
@@ -3668,7 +3677,7 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
     };
   }, [orderId]);
 
-  // Trigger auto-logout countdown whenever order is marked Paid
+  // Trigger auto-logout countdown if order is marked Paid (e.g. settled by staff/cashier or online)
   useEffect(() => {
     if (order && order.paymentStatus === 'Paid') {
       if (logoutCountdown === null) {
@@ -3699,117 +3708,13 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
   const isCompleted = order.status === 'Completed';
   const isCancelled = order.status === 'Cancelled';
 
-  const handleCopyUpi = () => {
-    if (navigator.clipboard) {
-      navigator.clipboard.writeText(upiId);
-      setCopiedUpi(true);
-      setTimeout(() => setCopiedUpi(false), 2200);
-    }
-  };
-
-  const handleCardNumberChange = (e) => {
-    let val = e.target.value.replace(/\D/g, '').substring(0, 16);
-    let formatted = val.match(/.{1,4}/g)?.join(' ') || val;
-    setCardNumber(formatted);
-    setCardError('');
-  };
-
-  const handleExpiryChange = (e) => {
-    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
-    if (val.length >= 3) {
-      setCardExpiry(`${val.substring(0, 2)}/${val.substring(2, 4)}`);
-    } else {
-      setCardExpiry(val);
-    }
-    setCardError('');
-  };
-
-  const handleCvvChange = (e) => {
-    let val = e.target.value.replace(/\D/g, '').substring(0, 4);
-    setCardCvv(val);
-    setCardError('');
-  };
-
-  const executePayment = async (method = 'UPI') => {
-    setSettling(false);
-    const updated = {
-      ...order,
-      paymentStatus: 'Paid',
-      paymentMethod: method,
-      paidAt: new Date().toISOString()
-    };
-    setOrder(updated);
-    const local = getLocalOrders();
-    const nextOrders = local.map(o => o.id === order.id ? { ...o, ...updated } : o);
-    saveLocalOrders(nextOrders);
-    broadcastOrderUpdate(updated);
-    broadcastTableStatus(calculateOccupiedTables(nextOrders));
-
-    try {
-      await fetch(`/api/orders/${order.id}/pay`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ paymentStatus: 'Paid', paymentMethod: method })
-      });
-      if (order.table) {
-        await fetch('/api/tables/checkout', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ table: order.table })
-        });
-      }
-    } catch {}
-  };
-
-  const handleSettlePayment = () => {
-    setSettling(true);
-    setTimeout(() => {
-      executePayment('UPI (QR Scan)');
-    }, 600);
-  };
-
-  const handleProcessCardPayment = (e) => {
-    e.preventDefault();
-    const cleanNum = cardNumber.replace(/\s/g, '');
-    if (cleanNum.length < 15) {
-      setCardError('Please enter a valid 16-digit card number');
-      return;
-    }
-    if (!cardHolder.trim()) {
-      setCardError('Please enter the name printed on your card');
-      return;
-    }
-    if (cardExpiry.length < 5) {
-      setCardError('Please enter a valid expiry date (MM/YY)');
-      return;
-    }
-    if (cardCvv.length < 3) {
-      setCardError('Please enter a valid 3 or 4-digit CVV');
-      return;
-    }
-
-    setSettling(true);
-    setCardError('');
-    setTimeout(() => {
-      executePayment('Credit/Debit Card');
-    }, 900);
-  };
-
-  const handleRequestWaiter = () => {
-    setSettling(true);
-    setTimeout(() => {
-      setWaiterRequested(true);
-      executePayment('Cash at Table');
-    }, 800);
-  };
-
   return (
     <>
       <div className="tracker-card">
         <div className="tracker-header">
           <h4>
-            <Flame size={18} color="var(--brand-primary)" />
-            Live Kitchen Tracking: #{order.id}
+            <ChefHat size={20} color="var(--brand-primary)" />
+            Live Kitchen Cooking Tracker: #{order.id}
           </h4>
           <button type="button" onClick={onClose} aria-label="Close tracker">
             <X size={18} />
@@ -3817,11 +3722,11 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
         </div>
 
         {isCancelled ? (
-          <div style={{ padding: '10px 0', textAlign: 'center' }}>
-            <div style={{ color: '#ef4444', fontSize: '14px', fontWeight: '700', marginBottom: '6px' }}>
-              Order Cancelled by Kitchen
+          <div style={{ padding: '14px 0', textAlign: 'center' }}>
+            <div style={{ color: '#ef4444', fontSize: '15px', fontWeight: '700', marginBottom: '6px' }}>
+              ⚠️ Order Cancelled by Kitchen
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{ fontSize: '13px', color: 'var(--text-muted)', margin: 0 }}>
               {order.rejectionReason || 'The kitchen was unable to fulfill your order at this time.'}
             </p>
           </div>
@@ -3833,8 +3738,8 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
                 {isApproved ? <Check size={14} /> : '1'}
               </div>
               <div className="tracker-step-content">
-                <b>Order Received by Kitchen</b>
-                <span>{isApproved ? 'Chef reviewed and approved' : 'Waiting for chef approval...'}</span>
+                <b>Order Received & Queued in Kitchen</b>
+                <span>{isApproved ? 'Chef reviewed and ticket approved' : 'Waiting for chef approval in kitchen...'}</span>
               </div>
             </div>
 
@@ -3844,18 +3749,18 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
                 {isReady ? <Check size={14} /> : '2'}
               </div>
               <div className="tracker-step-content">
-                <b>{isReady ? 'Chef Cooking Completed' : 'Chef Approved & Cooking'}</b>
+                <b>{isReady ? 'Cooking Finished & Plated' : 'Chef Sizzling & Cooking Live'}</b>
                 <span>
                   {order.status === 'Preparing'
-                    ? 'Your food is sizzling in the kitchen!'
+                    ? 'Dishes are cooking on live stoves & tandoor!'
                     : isReady
-                    ? 'Dishes prepared and plated in kitchen'
-                    : 'Pending chef confirmation'}
+                    ? 'Dishes prepared, garnished and plated in kitchen'
+                    : 'Pending chef cooking queue'}
                 </span>
                 {order.estimatedPrepTime && order.status === 'Preparing' && (
                   <div className="tracker-eta-badge">
                     <Clock3 size={14} />
-                    <span>Estimated: ~{order.estimatedPrepTime} mins</span>
+                    <span>Estimated Kitchen Time: ~{order.estimatedPrepTime} mins</span>
                   </div>
                 )}
               </div>
@@ -3867,11 +3772,11 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
                 {isCompleted ? <Check size={14} /> : '3'}
               </div>
               <div className="tracker-step-content">
-                <b>{isCompleted ? 'Served & Completed' : 'Food Ready!'}</b>
+                <b>{isCompleted ? 'Dishes Served & Enjoying Meal' : 'Food Ready to Serve!'}</b>
                 <span>
                   {order.status === 'Ready'
                     ? order.mode === 'Dine in'
-                      ? `Bringing freshly prepared dishes directly to ${order.table || 'Table 12'}!`
+                      ? `Server is bringing hot dishes directly to ${order.table || 'your table'}!`
                       : 'Dishes are packed and ready for pickup at the counter!'
                     : isCompleted
                     ? order.mode === 'Dine in'
@@ -3886,312 +3791,83 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
           </div>
         )}
 
+        {/* Ordered Dishes Preview */}
         <div className="tracker-order-summary">
-          {order.guestName && (
-            <div>
-              <span>Guest Name:</span>
-              <b>{order.guestName}</b>
-            </div>
-          )}
-          <div>
-            <span>Dining Mode:</span>
-            <b>{order.mode === 'Dine in' ? `${order.table || 'Table 1'}` : 'Self Pickup'}</b>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px', borderBottom: '1px solid var(--line)', paddingBottom: '6px' }}>
+            <span><b>Guest:</b> {order.guestName || 'Guest'}</span>
+            <b style={{ color: 'var(--brand-primary)' }}>{order.mode === 'Dine in' ? (order.table || 'Table 1') : 'Self Pickup'}</b>
           </div>
-          {order.discount > 0 && (
-            <div style={{ color: '#16a34a' }}>
-              <span>🔥 Happy Hour Discount:</span>
-              <b>-{formatPrice(order.discount)}</b>
-            </div>
-          )}
-          <div>
-            <span>Total Bill:</span>
-            <b>{formatPrice(order.total)}</b>
+
+          <div style={{ maxHeight: '130px', overflowY: 'auto', margin: '6px 0' }}>
+            {order.items?.map((item, idx) => (
+              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', padding: '3px 0' }}>
+                <span>{item.qty}x {item.name}</span>
+                <b>{formatPrice(item.price * item.qty)}</b>
+              </div>
+            ))}
           </div>
+
           {order.instructions && (
-            <div style={{ marginTop: '4px', borderTop: '1px solid var(--line)', paddingTop: '4px' }}>
-              <span>Note:</span> <i>"{order.instructions}"</i>
+            <div style={{ marginTop: '6px', borderTop: '1px solid var(--line)', paddingTop: '4px', fontSize: '12px', color: '#6b7280' }}>
+              <span>👨‍🍳 Chef Instruction:</span> <i>"{order.instructions}"</i>
             </div>
           )}
         </div>
 
-        {/* =========================================================
-            INSTANT PAYMENT & UPI QR SECTION (VISIBLE DIRECTLY ON ORDER)
-           ========================================================= */}
-        <div className="tracker-payment-section">
-          <div className="tracker-payment-title-row">
-            <span className="tracker-payment-label">
-              <CreditCard size={15} /> PAYMENT & BILL SETTLEMENT
-            </span>
-            {isPaid ? (
-              <span className="tracker-paid-badge">
-                <CheckCircle2 size={13} /> PAID & SETTLED
-              </span>
-            ) : (
-              <span className="tracker-unpaid-badge">
-                <Clock3 size={13} /> BILL DUE: {formatPrice(order.total)}
-              </span>
-            )}
-          </div>
-
+        {/* Dedicated Separate Billing Callout */}
+        <div className="tracker-billing-callout" style={{ background: isPaid ? '#f0fdf4' : '#fffbeb', border: `1px solid ${isPaid ? '#86efac' : '#fde68a'}`, borderRadius: '12px', padding: '14px', margin: '10px 0' }}>
           {isPaid ? (
-            <div className="tracker-paid-success-box" style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '16px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                <CheckCircle2 size={28} color="#16a34a" />
-                <div style={{ flex: 1 }}>
-                  <b style={{ fontSize: '15px', color: '#166534', display: 'block' }}>🎉 Full Bill Settled & Paid ({order.paymentMethod || 'Online'})</b>
-                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#15803d' }}>
-                    Thank you for dining at The Poddar's Food & Bar! {order.table || 'Your table'} has been settled.
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                <CheckCircle2 size={22} color="#16a34a" />
+                <div>
+                  <b style={{ color: '#166534', fontSize: '14px' }}>Bill Settled & Paid ({order.paymentMethod || 'Online'})</b>
+                  <p style={{ margin: '2px 0 0', fontSize: '12px', color: '#15803d' }}>
+                    Your bill of {formatPrice(order.total)} is paid.
                   </p>
-                  {logoutCountdown !== null && (
-                    <p style={{ margin: '6px 0 0', fontSize: '12.5px', color: '#166534', fontWeight: '700' }}>
-                      ⏳ Logging out customer session in <b>{logoutCountdown}s</b>...
-                    </p>
-                  )}
                 </div>
               </div>
-
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '14px', borderTop: '1px solid #bbf7d0', paddingTop: '12px' }}>
-                <button
-                  type="button"
-                  className="tracker-logout-now-btn"
-                  onClick={() => onPrintAndLogout && onPrintAndLogout()}
-                  style={{
-                    background: '#15803d',
-                    color: '#fff',
-                    border: 'none',
-                    padding: '10px 18px',
-                    borderRadius: '8px',
-                    fontWeight: '700',
-                    fontSize: '13.5px',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
-                  }}
-                >
-                  <LogOut size={15} /> Finish & Log Out Table Now
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowBillModal(true)}
-                  style={{
-                    background: '#ffffff',
-                    color: '#15803d',
-                    border: '1px solid #86efac',
-                    padding: '10px 14px',
-                    borderRadius: '8px',
-                    fontWeight: '600',
-                    fontSize: '13px',
-                    cursor: 'pointer',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px'
-                  }}
-                >
-                  <Printer size={14} /> View & Print Receipt
-                </button>
-              </div>
+              {logoutCountdown !== null && (
+                <p style={{ margin: '8px 0 0', fontSize: '12px', color: '#166534', fontWeight: '700' }}>
+                  ⏳ Logging out customer session in <b>{logoutCountdown}s</b>...
+                </p>
+              )}
             </div>
           ) : (
-            <div className="bill-payment-section in-tracker">
-              <div className="payment-options-tabs payment-three-tabs">
-                <button
-                  type="button"
-                  className={`pay-tab ${paymentMethod === 'upi' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('upi')}
-                >
-                  <QrCode size={15} /> UPI / GPay (QR)
-                </button>
-                <button
-                  type="button"
-                  className={`pay-tab ${paymentMethod === 'card' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('card')}
-                >
-                  <CreditCard size={15} /> Card Details
-                </button>
-                <button
-                  type="button"
-                  className={`pay-tab ${paymentMethod === 'waiter' ? 'active' : ''}`}
-                  onClick={() => setPaymentMethod('waiter')}
-                >
-                  <Banknote size={15} /> Pay Waiter (Cash)
-                </button>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <span style={{ fontSize: '11px', color: '#92400e', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Bill Payable</span>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: '#78350f' }}>{formatPrice(order.total)}</div>
               </div>
-
-              {/* TAB 1: UPI / GPAY */}
-              {paymentMethod === 'upi' && (
-                <div className="upi-payment-box">
-                  <div className="mock-qr-wrap">
-                    <div className="upi-qr-card-container">
-                      <img
-                        src={resolveAsset('/payment-qr.jpg')}
-                        alt="Aarav Poddar UPI QR Code"
-                        className="upi-qr-image"
-                      />
-                    </div>
-                    <small className="upi-scan-hint">Scan with GPay, PhonePe, Paytm, BHIM</small>
-                  </div>
-
-                  <div className="upi-details">
-                    <div className="upi-info-card">
-                      <div className="upi-info-row">
-                        <span className="upi-label">PAYEE:</span>
-                        <b className="upi-val">{payeeName}</b>
-                      </div>
-                      <div className="upi-info-row">
-                        <span className="upi-label">UPI ID:</span>
-                        <div className="upi-id-badge-wrap">
-                          <code className="upi-val-mono">{upiId}</code>
-                          <button
-                            type="button"
-                            className="upi-copy-action-btn"
-                            onClick={handleCopyUpi}
-                            title="Copy UPI ID"
-                          >
-                            <Copy size={12} /> {copiedUpi ? 'Copied!' : 'Copy'}
-                          </button>
-                        </div>
-                      </div>
-                      <div className="upi-info-row">
-                        <span className="upi-label">AMOUNT:</span>
-                        <b className="upi-val-price">{formatPrice(order.total)}</b>
-                      </div>
-                    </div>
-
-                    <a
-                      href={`upi://pay?pa=${upiId}&pn=${encodeURIComponent(payeeName)}&am=${order.total}&cu=INR&tn=The%20Poddars%20Courtyard%20Bill`}
-                      className="pay-direct-app-link"
-                    >
-                      <Smartphone size={15} /> Open UPI App (GPay / PhonePe)
-                    </a>
-
-                    <button
-                      type="button"
-                      className="pay-settle-btn"
-                      onClick={handleSettlePayment}
-                      disabled={settling}
-                    >
-                      {settling ? 'Verifying payment...' : '✓ Confirm UPI Payment Completed'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* TAB 2: CREDIT / DEBIT CARD DETAILS */}
-              {paymentMethod === 'card' && (
-                <form className="card-payment-box" onSubmit={handleProcessCardPayment}>
-                  <div className="card-header-row">
-                    <div className="card-security-badge">
-                      <ShieldCheck size={14} /> 256-Bit SSL Encrypted
-                    </div>
-                    <div className="card-networks-list">
-                      <span className="card-chip-tag visa">VISA</span>
-                      <span className="card-chip-tag mc">Mastercard</span>
-                      <span className="card-chip-tag rupay">RuPay</span>
-                      <span className="card-chip-tag amex">AMEX</span>
-                    </div>
-                  </div>
-
-                  {cardError && (
-                    <div className="card-form-error">
-                      ⚠️ {cardError}
-                    </div>
-                  )}
-
-                  <div className="card-field-group">
-                    <label>Card Number</label>
-                    <div className="card-input-with-icon">
-                      <CreditCard size={16} className="card-field-icon" />
-                      <input
-                        type="text"
-                        placeholder="4532 •••• •••• 8901"
-                        value={cardNumber}
-                        onChange={handleCardNumberChange}
-                        maxLength={19}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <div className="card-field-group">
-                    <label>Cardholder Name</label>
-                    <input
-                      type="text"
-                      placeholder="e.g. Aarav Poddar"
-                      value={cardHolder}
-                      onChange={(e) => {
-                        setCardHolder(e.target.value);
-                        setCardError('');
-                      }}
-                      required
-                    />
-                  </div>
-
-                  <div className="card-grid-row">
-                    <div className="card-field-group">
-                      <label>Expiry (MM/YY)</label>
-                      <input
-                        type="text"
-                        placeholder="MM/YY"
-                        value={cardExpiry}
-                        onChange={handleExpiryChange}
-                        maxLength={5}
-                        required
-                      />
-                    </div>
-                    <div className="card-field-group">
-                      <label>CVV / CVC</label>
-                      <input
-                        type="password"
-                        placeholder="•••"
-                        value={cardCvv}
-                        onChange={handleCvvChange}
-                        maxLength={4}
-                        required
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="pay-settle-btn card-submit-btn"
-                    disabled={settling}
-                  >
-                    {settling ? 'Processing Secure Card Payment...' : `🔒 Pay ${formatPrice(order.total)} via Card`}
-                  </button>
-                </form>
-              )}
-
-              {/* TAB 3: PAY WAITER AT TABLE */}
-              {paymentMethod === 'waiter' && (
-                <div className="waiter-payment-box">
-                  <div className="waiter-pay-icon-circle">
-                    <Banknote size={28} color="var(--brand-primary)" />
-                  </div>
-                  <div className="waiter-pay-text">
-                    <b>Pay Cash Directly at Table</b>
-                    <p>
-                      Prefer cash or physical POS card machine? Request a server to visit{' '}
-                      <span className="waiter-table-pill">{order.table || 'Table 1'}</span> with the final physical bill.
-                    </p>
-                  </div>
-                  <button
-                    type="button"
-                    className="waiter-call-pay-btn"
-                    onClick={handleRequestWaiter}
-                    disabled={settling}
-                  >
-                    <Banknote size={16} />
-                    {settling ? 'Calling waiter...' : '🤵 Request Waiter to Table'}
-                  </button>
-                </div>
-              )}
+              <button
+                type="button"
+                className="tracker-open-bill-cta"
+                onClick={() => {
+                  if (onOpenBill) onOpenBill();
+                  else setShowBillModal(true);
+                }}
+                style={{
+                  background: 'linear-gradient(135deg, #e11d48, #be123c)',
+                  color: '#fff',
+                  border: 'none',
+                  padding: '10px 16px',
+                  borderRadius: '10px',
+                  fontWeight: '700',
+                  fontSize: '13px',
+                  cursor: 'pointer',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  boxShadow: '0 2px 6px rgba(225,29,72,0.25)'
+                }}
+              >
+                <CreditCard size={15} /> Settle Bill / Payment Section ➔
+              </button>
             </div>
           )}
         </div>
 
-        {/* Action Buttons: View Final Tax Invoice, Add More Items, and Hide Tracker */}
+        {/* Action Buttons */}
         <div className="tracker-actions">
           {isPaid ? (
             <button
@@ -4201,37 +3877,41 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
               style={{ background: '#15803d', flex: 2 }}
             >
               <LogOut size={15} />
-              <span>Finish Dining & Log Out</span>
+              <span>Finish & Log Out Table</span>
             </button>
           ) : (
             <button
               type="button"
-              className="tracker-btn-primary"
-              onClick={onNewOrder}
+              className="tracker-btn-bill"
+              onClick={() => {
+                if (onOpenBill) onOpenBill();
+                else setShowBillModal(true);
+              }}
+              style={{ flex: 1.5 }}
             >
-              <Plus size={14} />
-              <span>+ Add More Items</span>
+              <Receipt size={15} />
+              <span>View Tax Invoice / Bill</span>
             </button>
           )}
           <button
             type="button"
-            className="tracker-btn-bill"
-            onClick={() => setShowBillModal(true)}
+            className="tracker-btn-primary"
+            onClick={onNewOrder}
           >
-            <Receipt size={14} />
-            <span>Tax Invoice</span>
+            <Plus size={14} />
+            <span>+ Add More Dishes</span>
           </button>
           <button
             type="button"
             className="tracker-btn-secondary"
             onClick={isPaid ? () => onPrintAndLogout && onPrintAndLogout() : onClose}
           >
-            {isPaid ? 'Log Out' : 'Hide'}
+            {isPaid ? 'Log Out' : 'Hide Tracker'}
           </button>
         </div>
       </div>
 
-      {/* Final Bill Modal Popup */}
+      {/* Separate Final Bill & Payment Modal Popup */}
       {showBillModal && (
         <FinalBillModal
           order={order}
@@ -4311,7 +3991,35 @@ function App() {
   const [orderError, setOrderError] = useState('');
   const [activeTrackingOrderId, setActiveTrackingOrderId] = useState(null);
   const [showTracker, setShowTracker] = useState(false);
+  const [showBillModal, setShowBillModal] = useState(false);
   const [callWaiterModalOpen, setCallWaiterModalOpen] = useState(false);
+
+  const handleGlobalLogout = () => {
+    if (guest?.table) {
+      try {
+        fetch('/api/tables/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ table: guest.table })
+        }).catch(() => {});
+      } catch {}
+      const nextOcc = { ...occupiedTables };
+      delete nextOcc[guest.table];
+      setOccupiedTables(nextOcc);
+      saveLocalOccupiedTables(nextOcc);
+      broadcastTableStatus(nextOcc);
+    }
+    setGuest(null);
+    setCart([]);
+    setActiveTrackingOrderId(null);
+    setShowTracker(false);
+    setShowBillModal(false);
+    setInstruction('');
+    try {
+      localStorage.removeItem('poddars_guest_session');
+    } catch {}
+    setGuestModalOpen(true);
+  };
   const [waiterCalls, setWaiterCalls] = useState(() => getLocalWaiterCalls());
   const [flashSaleEnabled, setFlashSaleEnabled] = useState(() => getLocalFlashSale());
   const [occupiedTables, setOccupiedTables] = useState(() => {
@@ -4796,16 +4504,34 @@ function App() {
               </button>
 
               {activeTrackingOrderId && (
-                <button
-                  type="button"
-                  className="kds-btn-tool active header-track-btn"
-                  onClick={() => setShowTracker(true)}
-                  style={{ fontSize: '11px', padding: '6px 10px' }}
-                  title="Track Active Order"
-                >
-                  <Flame size={14} color="var(--lime)" />
-                  <span className="header-btn-label">Track</span>
-                </button>
+                <>
+                  <button
+                    type="button"
+                    className="kds-btn-tool active header-track-btn"
+                    onClick={() => setShowTracker(true)}
+                    style={{ fontSize: '11.5px', padding: '6px 11px' }}
+                    title="Track Kitchen Cooking Status"
+                  >
+                    <ChefHat size={14} color="var(--lime)" />
+                    <span className="header-btn-label">Kitchen Tracker</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="kds-btn-tool active header-bill-btn"
+                    onClick={() => setShowBillModal(true)}
+                    style={{
+                      fontSize: '11.5px',
+                      padding: '6px 11px',
+                      background: 'linear-gradient(135deg, #e11d48, #be123c)',
+                      color: '#fff',
+                      border: 'none'
+                    }}
+                    title="View Tax Invoice & Settle Bill"
+                  >
+                    <CreditCard size={14} />
+                    <span className="header-btn-label">Bill / Pay</span>
+                  </button>
+                </>
               )}
 
               <button
@@ -5560,7 +5286,7 @@ function App() {
         }}
       />
 
-      {/* Live Order Tracker Modal */}
+      {/* Live Kitchen Cooking Tracker Modal */}
       {showTracker && activeTrackingOrderId && currentView === 'customer' && (
         <CustomerTracker
           orderId={activeTrackingOrderId}
@@ -5568,31 +5294,23 @@ function App() {
           onNewOrder={() => {
             setShowTracker(false);
           }}
-          onPrintAndLogout={() => {
-            if (guest?.table) {
-              try {
-                fetch('/api/tables/checkout', {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ table: guest.table })
-                }).catch(() => {});
-              } catch {}
-              const nextOcc = { ...occupiedTables };
-              delete nextOcc[guest.table];
-              setOccupiedTables(nextOcc);
-              saveLocalOccupiedTables(nextOcc);
-              broadcastTableStatus(nextOcc);
-            }
-            setGuest(null);
-            setCart([]);
-            setActiveTrackingOrderId(null);
+          onOpenBill={() => {
             setShowTracker(false);
-            setInstruction('');
-            try {
-              localStorage.removeItem('poddars_guest_session');
-            } catch {}
-            setGuestModalOpen(true);
+            setShowBillModal(true);
           }}
+          onPrintAndLogout={handleGlobalLogout}
+        />
+      )}
+
+      {/* Dedicated Separate Final Bill & Payment Modal */}
+      {showBillModal && activeTrackingOrderId && currentView === 'customer' && (
+        <FinalBillModal
+          order={getLocalOrders().find(o => o.id === activeTrackingOrderId) || { id: activeTrackingOrderId, items: [], total: 0, guestName: guest?.name, table: guest?.table }}
+          onClose={() => setShowBillModal(false)}
+          onAddMore={() => {
+            setShowBillModal(false);
+          }}
+          onPrintAndLogout={handleGlobalLogout}
         />
       )}
     </main>

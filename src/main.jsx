@@ -4489,6 +4489,25 @@ function App() {
     });
   };
 
+  // Keyboard shortcut listener to send orders to kitchen (Ctrl+Enter, Alt+K, F4, Enter)
+  useEffect(() => {
+    const handleGlobalKeyDown = (e) => {
+      // If modal or login dialogs are open, do not intercept
+      if (guestModalOpen || callWaiterModalOpen) return;
+
+      // When cart has items and user presses Ctrl+Enter or Alt+K or F4
+      if ((e.ctrlKey && e.key === 'Enter') || (e.altKey && (e.key === 'k' || e.key === 'K')) || e.key === 'F4') {
+        if (cart.length > 0 && !submitting) {
+          e.preventDefault();
+          submitOrder();
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleGlobalKeyDown);
+    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+  }, [cart, submitting, guestModalOpen, callWaiterModalOpen, guest, mode, instruction, flashSaleEnabled, grossSubtotal, happyHourDiscount, gst, total]);
+
   const submitOrder = async (paymentOverride = null) => {
     if (!cart.length || submitting) return;
     setSubmitting(true);
@@ -4557,24 +4576,31 @@ function App() {
       console.warn('Server offline, persisting order locally:', error);
     } finally {
       setSubmitting(false);
-      setCartSettling(false);
     }
 
-    // Save to local storage cache so Kitchen Portal receives it immediately across tabs
-    const existingOrders = getLocalOrders();
-    const updatedOrders = [finalOrder, ...existingOrders.filter(o => o.id !== finalOrder.id)];
-    saveLocalOrders(updatedOrders);
+    try {
+      // Save to local storage cache so Kitchen Portal receives it immediately across tabs
+      const existingOrders = getLocalOrders();
+      const updatedOrders = [finalOrder, ...existingOrders.filter(o => o.id !== finalOrder.id)];
+      saveLocalOrders(updatedOrders);
 
-    // Broadcast across all staff devices and chef tablets in real-time
-    broadcastNewOrder(finalOrder);
-    broadcastTableStatus(calculateOccupiedTables(updatedOrders));
+      // Broadcast across all staff devices and chef tablets in real-time
+      broadcastNewOrder(finalOrder);
+      broadcastTableStatus(calculateOccupiedTables(updatedOrders));
 
-    // Open live tracker
-    setActiveTrackingOrderId(finalOrder.id);
-    setShowTracker(true);
-    setCartOpen(false);
-    setCart([]);
-    setInstruction('');
+      // Open live tracker
+      setActiveTrackingOrderId(finalOrder.id);
+      setShowTracker(true);
+      setCartOpen(false);
+      setCart([]);
+      setInstruction('');
+    } catch (postErr) {
+      console.error('Error post-processing order submission:', postErr);
+      setActiveTrackingOrderId(finalOrder.id);
+      setShowTracker(true);
+      setCartOpen(false);
+      setCart([]);
+    }
   };
 
   return (
@@ -5205,7 +5231,13 @@ function App() {
                       <textarea
                         value={instruction}
                         onChange={event => setInstruction(event.target.value)}
-                        placeholder="E.g., less spicy, no onion, extra crispy, sauce on side..."
+                        onKeyDown={e => {
+                          if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
+                            e.preventDefault();
+                            if (cart.length > 0 && !submitting) submitOrder();
+                          }
+                        }}
+                        placeholder="E.g., less spicy, no onion, extra crispy... (Press Ctrl+Enter to send)"
                         className="cart-instructions-input"
                         rows={2}
                       />
@@ -5263,12 +5295,18 @@ function App() {
                   className="checkout"
                   disabled={!cart.length || submitting}
                   onClick={() => submitOrder()}
-                  title="Send order directly to kitchen"
+                  onKeyDown={e => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      submitOrder();
+                    }
+                  }}
+                  title="Send order directly to kitchen (Ctrl+Enter / Alt+K / F4)"
                   style={{ width: '100%', padding: '14px', fontSize: '14px', fontWeight: '700', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}
                 >
                   <UtensilsCrossed size={17} />
                   <span>{submitting ? 'Sending to Kitchen...' : mode === 'Dine in' ? `🍽️ Send Order to Kitchen (${formatPrice(total)})` : `🛍️ Place Pickup Order (${formatPrice(total)})`}</span>
-                  <span>→</span>
+                  <kbd style={{ background: 'rgba(255,255,255,0.2)', padding: '2px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: '600', letterSpacing: '0.5px' }}>Ctrl+↵</kbd>
                 </button>
 
                 <button

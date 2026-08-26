@@ -782,21 +782,7 @@ function getLocalOrders() {
     if (raw) {
       const parsed = JSON.parse(raw);
       if (Array.isArray(parsed)) {
-        const now = Date.now();
-        // Sanitize orders: past completed orders or orders older than 2 hours without payment must be marked paid
-        let needsResave = false;
-        const sanitized = parsed.map(o => {
-          const isOld = !o.createdAt || (now - new Date(o.createdAt).getTime() > 2 * 60 * 60 * 1000);
-          if ((isOld || o.status === 'Completed' || o.status === 'Cancelled') && o.paymentStatus !== 'Paid') {
-            needsResave = true;
-            return { ...o, paymentStatus: 'Paid' };
-          }
-          return o;
-        });
-        if (needsResave) {
-          try { localStorage.setItem('poddars_orders', JSON.stringify(sanitized)); } catch {}
-        }
-        return sanitized;
+        return parsed;
       }
     }
   } catch {}
@@ -3815,7 +3801,7 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout, onOpe
         </div>
 
         {/* Dedicated Separate Billing Callout */}
-        <div className="tracker-billing-callout" style={{ background: isPaid ? '#f0fdf4' : '#fffbeb', border: `1px solid ${isPaid ? '#86efac' : '#fde68a'}`, borderRadius: '12px', padding: '14px', margin: '10px 0' }}>
+        <div className="tracker-billing-callout" style={{ background: isPaid ? '#f0fdf4' : isCompleted ? '#eff6ff' : '#fffbeb', border: `1px solid ${isPaid ? '#86efac' : isCompleted ? '#bfdbfe' : '#fde68a'}`, borderRadius: '12px', padding: '14px', margin: '10px 0' }}>
           {isPaid ? (
             <div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -3836,8 +3822,10 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout, onOpe
           ) : (
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
               <div>
-                <span style={{ fontSize: '11px', color: '#92400e', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Total Bill Payable</span>
-                <div style={{ fontSize: '18px', fontWeight: '800', color: '#78350f' }}>{formatPrice(order.total)}</div>
+                <span style={{ fontSize: '11px', color: isCompleted ? '#1e40af' : '#92400e', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  {isCompleted ? '🍽️ Meal Served • Bill Due' : 'Total Bill Payable'}
+                </span>
+                <div style={{ fontSize: '18px', fontWeight: '800', color: isCompleted ? '#1e3a8a' : '#78350f' }}>{formatPrice(order.total)}</div>
               </div>
               <button
                 type="button"
@@ -3861,7 +3849,7 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout, onOpe
                   boxShadow: '0 2px 6px rgba(225,29,72,0.25)'
                 }}
               >
-                <CreditCard size={15} /> Settle Bill / Payment Section ➔
+                <CreditCard size={15} /> View & Pay Bill (UPI / Card / Cash) ➔
               </button>
             </div>
           )}

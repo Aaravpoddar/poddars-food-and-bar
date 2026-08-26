@@ -3551,13 +3551,36 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
           <button type="button" className="bill-btn-print" onClick={handlePrint}>
             <Printer size={15} /> Print Bill & Finish Dining
           </button>
-          <button
-            type="button"
-            className="bill-btn-add-more"
-            onClick={onAddMore}
-          >
-            <Plus size={15} /> + Add More Items
-          </button>
+          {isPaid ? (
+            <button
+              type="button"
+              className="bill-btn-logout"
+              onClick={() => onPrintAndLogout && onPrintAndLogout()}
+              style={{
+                background: '#15803d',
+                color: '#fff',
+                border: 'none',
+                padding: '10px 16px',
+                borderRadius: '8px',
+                fontWeight: '700',
+                fontSize: '13px',
+                cursor: 'pointer',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '6px'
+              }}
+            >
+              <LogOut size={15} /> Finish & Log Out Table
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="bill-btn-add-more"
+              onClick={onAddMore}
+            >
+              <Plus size={15} /> + Add More Items
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -3579,6 +3602,7 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
   const [cardExpiry, setCardExpiry] = useState('');
   const [cardCvv, setCardCvv] = useState('');
   const [cardError, setCardError] = useState('');
+  const [logoutCountdown, setLogoutCountdown] = useState(null);
 
   const upiId = 'aaravpoddar19@okicici';
   const payeeName = 'Aarav Poddar';
@@ -3643,6 +3667,29 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
       if (eventSource) eventSource.close();
     };
   }, [orderId]);
+
+  // Trigger auto-logout countdown whenever order is marked Paid
+  useEffect(() => {
+    if (order && order.paymentStatus === 'Paid') {
+      if (logoutCountdown === null) {
+        setLogoutCountdown(5);
+      }
+    } else {
+      setLogoutCountdown(null);
+    }
+  }, [order?.paymentStatus]);
+
+  useEffect(() => {
+    if (logoutCountdown === null) return;
+    if (logoutCountdown <= 0) {
+      if (onPrintAndLogout) onPrintAndLogout();
+      return;
+    }
+    const timer = setTimeout(() => {
+      setLogoutCountdown(prev => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [logoutCountdown, onPrintAndLogout]);
 
   if (!order) return null;
 
@@ -3887,11 +3934,63 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
           </div>
 
           {isPaid ? (
-            <div className="tracker-paid-success-box">
-              <CheckCircle2 size={24} color="#16a34a" />
-              <div>
-                <b>Bill Settled & Paid ({order.paymentMethod || 'Online'})</b>
-                <p>Thank you! Your table is settled. Enjoy your meal at The Poddar's Courtyard.</p>
+            <div className="tracker-paid-success-box" style={{ background: '#f0fdf4', border: '1px solid #86efac', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                <CheckCircle2 size={28} color="#16a34a" />
+                <div style={{ flex: 1 }}>
+                  <b style={{ fontSize: '15px', color: '#166534', display: 'block' }}>🎉 Full Bill Settled & Paid ({order.paymentMethod || 'Online'})</b>
+                  <p style={{ margin: '4px 0 0', fontSize: '13px', color: '#15803d' }}>
+                    Thank you for dining at The Poddar's Food & Bar! {order.table || 'Your table'} has been settled.
+                  </p>
+                  {logoutCountdown !== null && (
+                    <p style={{ margin: '6px 0 0', fontSize: '12.5px', color: '#166534', fontWeight: '700' }}>
+                      ⏳ Logging out customer session in <b>{logoutCountdown}s</b>...
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginTop: '14px', borderTop: '1px solid #bbf7d0', paddingTop: '12px' }}>
+                <button
+                  type="button"
+                  className="tracker-logout-now-btn"
+                  onClick={() => onPrintAndLogout && onPrintAndLogout()}
+                  style={{
+                    background: '#15803d',
+                    color: '#fff',
+                    border: 'none',
+                    padding: '10px 18px',
+                    borderRadius: '8px',
+                    fontWeight: '700',
+                    fontSize: '13.5px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px',
+                    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
+                  }}
+                >
+                  <LogOut size={15} /> Finish & Log Out Table Now
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowBillModal(true)}
+                  style={{
+                    background: '#ffffff',
+                    color: '#15803d',
+                    border: '1px solid #86efac',
+                    padding: '10px 14px',
+                    borderRadius: '8px',
+                    fontWeight: '600',
+                    fontSize: '13px',
+                    cursor: 'pointer',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <Printer size={14} /> View & Print Receipt
+                </button>
               </div>
             </div>
           ) : (
@@ -4094,28 +4193,40 @@ function CustomerTracker({ orderId, onClose, onNewOrder, onPrintAndLogout }) {
 
         {/* Action Buttons: View Final Tax Invoice, Add More Items, and Hide Tracker */}
         <div className="tracker-actions">
+          {isPaid ? (
+            <button
+              type="button"
+              className="tracker-btn-primary"
+              onClick={() => onPrintAndLogout && onPrintAndLogout()}
+              style={{ background: '#15803d', flex: 2 }}
+            >
+              <LogOut size={15} />
+              <span>Finish Dining & Log Out</span>
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="tracker-btn-primary"
+              onClick={onNewOrder}
+            >
+              <Plus size={14} />
+              <span>+ Add More Items</span>
+            </button>
+          )}
           <button
             type="button"
             className="tracker-btn-bill"
             onClick={() => setShowBillModal(true)}
           >
             <Receipt size={14} />
-            <span>View Full Tax Invoice</span>
-          </button>
-          <button
-            type="button"
-            className="tracker-btn-primary"
-            onClick={onNewOrder}
-          >
-            <Plus size={14} />
-            <span>+ Add More Items</span>
+            <span>Tax Invoice</span>
           </button>
           <button
             type="button"
             className="tracker-btn-secondary"
-            onClick={onClose}
+            onClick={isPaid ? () => onPrintAndLogout && onPrintAndLogout() : onClose}
           >
-            Hide Tracker
+            {isPaid ? 'Log Out' : 'Hide'}
           </button>
         </div>
       </div>
@@ -5469,6 +5580,7 @@ function App() {
               const nextOcc = { ...occupiedTables };
               delete nextOcc[guest.table];
               setOccupiedTables(nextOcc);
+              saveLocalOccupiedTables(nextOcc);
               broadcastTableStatus(nextOcc);
             }
             setGuest(null);

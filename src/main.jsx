@@ -50,9 +50,39 @@ import {
   QrCode,
   Smartphone,
   Copy,
-  Banknote
+  Banknote,
+  Eye,
+  EyeOff,
+  Database,
+  Key,
+  History,
+  UserPlus,
+  LogIn,
+  Settings,
+  Cloud,
+  ExternalLink,
+  RotateCcw,
+  Calendar,
+  CheckSquare,
+  Mail,
+  Phone,
+  ChevronDown
 } from 'lucide-react';
 import './style.css';
+import {
+  DEFAULT_SUPABASE_URL,
+  getSupabaseCredentials,
+  saveSupabaseCredentials,
+  signUpUser,
+  signInUser,
+  signOutUser,
+  resetPasswordForEmail,
+  getCurrentSession,
+  getUserProfile,
+  saveOrderToSupabase,
+  fetchUserOrderHistory,
+  updateSupabaseOrderStatus
+} from './supabase.js';
 // -------------------------------------------------------------
 // REAL-TIME MULTI-DEVICE CLOUD SYNCHRONIZATION ENGINE
 // Synchronizes orders, status updates, and waiter calls across all staff phones and customer devices in real-time.
@@ -881,6 +911,925 @@ function calculateStats(ordersList) {
       .reduce((sum, o) => sum + (Number(o.total) || 0), 0),
     totalOrders: list.length
   };
+}
+
+// -------------------------------------------------------------
+// SUPABASE AUTHENTICATION & USER LOGIN MODAL
+// -------------------------------------------------------------
+function AuthModal({ isOpen, onClose, onAuthSuccess, onContinueAsGuest, guest, onOpenConfig }) {
+  const [tab, setTab] = useState('signin'); // 'signin' | 'signup' | 'forgot'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState(guest?.name || '');
+  const [phone, setPhone] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setError('');
+      setSuccessMsg('');
+    }
+  }, [isOpen, tab]);
+
+  if (!isOpen) return null;
+
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      setError('Please provide both email and password.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      const { user, session } = await signInUser({ email: email.trim(), password });
+      setSuccessMsg(`Welcome back, ${user?.user_metadata?.full_name || user?.email}!`);
+      setTimeout(() => {
+        onAuthSuccess(user, session);
+        onClose();
+      }, 500);
+    } catch (err) {
+      console.error('Sign in error:', err);
+      setError(err.message || 'Failed to sign in. Please verify your email and password.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSignUp = async (e) => {
+    e.preventDefault();
+    if (!email.trim() || !password) {
+      setError('Please provide email and password.');
+      return;
+    }
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
+      return;
+    }
+    if (!fullName.trim()) {
+      setError('Please enter your full name.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      const { user, session } = await signUpUser({
+        email: email.trim(),
+        password,
+        fullName: fullName.trim(),
+        phone: phone.trim()
+      });
+      if (session) {
+        setSuccessMsg(`Account created! Welcome, ${fullName.trim()}!`);
+        setTimeout(() => {
+          onAuthSuccess(user, session);
+          onClose();
+        }, 600);
+      } else {
+        setSuccessMsg('Registration successful! Please check your email inbox to confirm your account or sign in.');
+        setTab('signin');
+      }
+    } catch (err) {
+      console.error('Sign up error:', err);
+      setError(err.message || 'Failed to create account. Please check your details.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    if (!email.trim()) {
+      setError('Please enter your registered email address.');
+      return;
+    }
+    setLoading(true);
+    setError('');
+    setSuccessMsg('');
+    try {
+      await resetPasswordForEmail(email.trim());
+      setSuccessMsg(`Password reset link sent to ${email.trim()}! Please check your inbox.`);
+    } catch (err) {
+      console.error('Reset error:', err);
+      setError(err.message || 'Could not send reset email. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const creds = getSupabaseCredentials();
+
+  return (
+    <div className="guest-login-overlay auth-modal-overlay" onClick={onClose}>
+      <div className="guest-login-card auth-card" onClick={e => e.stopPropagation()}>
+        {/* Modal Header */}
+        <div className="guest-modal-top">
+          <div className="brand-mark guest-modal-logo auth-modal-logo">
+            <UtensilsCrossed size={18} />
+          </div>
+          <div>
+            <h2>THE PODDAR'S COURTYARD</h2>
+            <p className="guest-login-sub">Member Sign In & Cloud Order Sync</p>
+          </div>
+        </div>
+
+        {/* Supabase Connection Banner */}
+        <div className="supabase-status-pill">
+          <span className="supabase-dot"></span>
+          <Database size={12} color="var(--lime)" />
+          <span>Supabase Project: <code>nfsttzbqcfsffnojikyo</code></span>
+          {!creds.isConfigured && (
+            <button
+              type="button"
+              className="supabase-pill-config-btn"
+              onClick={onOpenConfig}
+              title="Configure Supabase Public Key"
+            >
+              <Key size={11} /> Setup Key
+            </button>
+          )}
+        </div>
+
+        {/* Tab Buttons */}
+        <div className="auth-tab-row">
+          <button
+            type="button"
+            className={`auth-tab-btn ${tab === 'signin' ? 'active' : ''}`}
+            onClick={() => { setTab('signin'); setError(''); setSuccessMsg(''); }}
+          >
+            <LogIn size={14} /> Sign In
+          </button>
+          <button
+            type="button"
+            className={`auth-tab-btn ${tab === 'signup' ? 'active' : ''}`}
+            onClick={() => { setTab('signup'); setError(''); setSuccessMsg(''); }}
+          >
+            <UserPlus size={14} /> Create Account
+          </button>
+        </div>
+
+        {/* Notifications & Error Alerts */}
+        {error && (
+          <div className="chef-login-error auth-alert-error">
+            <AlertTriangle size={14} />
+            <span>{error}</span>
+          </div>
+        )}
+
+        {successMsg && (
+          <div className="auth-alert-success">
+            <CheckCircle2 size={14} color="#10b981" />
+            <span>{successMsg}</span>
+          </div>
+        )}
+
+        {/* SIGN IN FORM */}
+        {tab === 'signin' && (
+          <form onSubmit={handleSignIn} className="guest-form auth-form">
+            <div className="chef-input-group">
+              <label><Mail size={12} /> Email Address</label>
+              <div className="chef-input-box">
+                <Mail size={14} />
+                <input
+                  type="email"
+                  placeholder="your.name@example.com"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError(''); }}
+                  required
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="chef-input-group">
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <label><Lock size={12} /> Password</label>
+                <button
+                  type="button"
+                  className="auth-forgot-link"
+                  onClick={() => { setTab('forgot'); setError(''); }}
+                >
+                  Forgot password?
+                </button>
+              </div>
+              <div className="chef-input-box">
+                <Lock size={14} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(''); }}
+                  required
+                />
+                <button
+                  type="button"
+                  className="auth-eye-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex="-1"
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="chef-login-btn auth-submit-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <span><RefreshCw size={14} className="spin-icon" /> Signing in...</span>
+              ) : (
+                <span><LogIn size={15} /> Sign In & Sync Orders →</span>
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* SIGN UP FORM */}
+        {tab === 'signup' && (
+          <form onSubmit={handleSignUp} className="guest-form auth-form">
+            <div className="chef-input-group">
+              <label><User size={12} /> Full Name</label>
+              <div className="chef-input-box">
+                <User size={14} />
+                <input
+                  type="text"
+                  placeholder="e.g. Aarav Poddar"
+                  value={fullName}
+                  onChange={e => { setFullName(e.target.value); setError(''); }}
+                  required
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <div className="chef-input-group">
+              <label><Mail size={12} /> Email Address</label>
+              <div className="chef-input-box">
+                <Mail size={14} />
+                <input
+                  type="email"
+                  placeholder="your.email@example.com"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError(''); }}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="chef-input-group">
+              <label><Phone size={12} /> Phone Number (Optional)</label>
+              <div className="chef-input-box">
+                <Phone size={14} />
+                <input
+                  type="tel"
+                  placeholder="e.g. +91 98765 43210"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="chef-input-group">
+              <label><Lock size={12} /> Password (Min. 6 characters)</label>
+              <div className="chef-input-box">
+                <Lock size={14} />
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Choose a strong password"
+                  value={password}
+                  onChange={e => { setPassword(e.target.value); setError(''); }}
+                  required
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  className="auth-eye-btn"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex="-1"
+                >
+                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
+                </button>
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="chef-login-btn auth-submit-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <span><RefreshCw size={14} className="spin-icon" /> Creating Account...</span>
+              ) : (
+                <span><UserPlus size={15} /> Create Member Account →</span>
+              )}
+            </button>
+          </form>
+        )}
+
+        {/* FORGOT PASSWORD FORM */}
+        {tab === 'forgot' && (
+          <form onSubmit={handleForgotPassword} className="guest-form auth-form">
+            <div className="chef-input-group">
+              <label><Mail size={12} /> Registered Email Address</label>
+              <div className="chef-input-box">
+                <Mail size={14} />
+                <input
+                  type="email"
+                  placeholder="your.registered@example.com"
+                  value={email}
+                  onChange={e => { setEmail(e.target.value); setError(''); }}
+                  required
+                  autoFocus
+                />
+              </div>
+            </div>
+
+            <button
+              type="submit"
+              className="chef-login-btn auth-submit-btn"
+              disabled={loading}
+            >
+              {loading ? (
+                <span><RefreshCw size={14} className="spin-icon" /> Sending Reset Link...</span>
+              ) : (
+                <span>Send Password Reset Link →</span>
+              )}
+            </button>
+
+            <button
+              type="button"
+              className="chef-back-link"
+              onClick={() => { setTab('signin'); setError(''); setSuccessMsg(''); }}
+              style={{ marginTop: '10px', justifyContent: 'center' }}
+            >
+              ← Back to Sign In
+            </button>
+          </form>
+        )}
+
+        {/* Quick Guest Continue Option & Footer */}
+        <div className="auth-footer-divider">
+          <span>OR</span>
+        </div>
+
+        <button
+          type="button"
+          className="auth-guest-btn"
+          onClick={() => {
+            onContinueAsGuest();
+            onClose();
+          }}
+        >
+          <Utensils size={14} color="var(--lime)" />
+          <span>Continue as Dine-In Guest (No login required)</span>
+        </button>
+
+        <div className="auth-footer-links">
+          <button
+            type="button"
+            className="auth-config-link"
+            onClick={onOpenConfig}
+          >
+            <Settings size={12} /> Supabase Settings & Schema
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// SUPABASE ORDER HISTORY MODAL
+// -------------------------------------------------------------
+function OrderHistoryModal({
+  isOpen,
+  onClose,
+  user,
+  guest,
+  onReorder,
+  onTrackOrder,
+  onOpenBill,
+  onOpenAuth
+}) {
+  const [historyOrders, setHistoryOrders] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [filter, setFilter] = useState('all'); // 'all' | 'active' | 'completed'
+  const [copiedId, setCopiedId] = useState(null);
+
+  const loadOrders = async () => {
+    setLoading(true);
+    try {
+      const local = getLocalOrders();
+      let cloud = [];
+      if (user?.id || user?.email) {
+        cloud = await fetchUserOrderHistory(user.id, user.email);
+      }
+      // Merge unique orders by ID (cloud orders take precedence, plus any local ones)
+      const mergedMap = new Map();
+      for (const o of cloud) {
+        if (o?.id) mergedMap.set(o.id, o);
+      }
+      for (const o of local) {
+        if (o?.id && !mergedMap.has(o.id)) {
+          // If guest name matches or no cloud filter, include local
+          if (!user || o.guestName?.toLowerCase() === (user.user_metadata?.full_name || user.email?.split('@')[0])?.toLowerCase()) {
+            mergedMap.set(o.id, o);
+          }
+        }
+      }
+      const combined = Array.from(mergedMap.values()).sort((a, b) => {
+        const timeA = new Date(a.createdAt || 0).getTime();
+        const timeB = new Date(b.createdAt || 0).getTime();
+        return timeB - timeA;
+      });
+      setHistoryOrders(combined);
+    } catch (err) {
+      console.warn('Error fetching order history:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      loadOrders();
+    }
+  }, [isOpen, user]);
+
+  if (!isOpen) return null;
+
+  const filteredOrders = historyOrders.filter(o => {
+    if (filter === 'active') return ['New', 'Preparing', 'Ready'].includes(o.status);
+    if (filter === 'completed') return o.status === 'Completed' || o.status === 'Cancelled';
+    return true;
+  });
+
+  const getStatusBadge = (status) => {
+    switch (status) {
+      case 'New':
+        return <span className="history-status-badge status-new"><span className="history-dot dot-new"></span> New Order</span>;
+      case 'Preparing':
+        return <span className="history-status-badge status-prep"><span className="history-dot dot-prep"></span> In Kitchen</span>;
+      case 'Ready':
+        return <span className="history-status-badge status-ready"><span className="history-dot dot-ready"></span> Ready to Serve</span>;
+      case 'Completed':
+        return <span className="history-status-badge status-done"><CheckCircle2 size={12} /> Completed</span>;
+      case 'Cancelled':
+        return <span className="history-status-badge status-cancel"><X size={12} /> Cancelled</span>;
+      default:
+        return <span className="history-status-badge">{status}</span>;
+    }
+  };
+
+  const formatOrderTime = (dateStr) => {
+    if (!dateStr) return 'Just now';
+    try {
+      const d = new Date(dateStr);
+      return d.toLocaleDateString('en-IN', {
+        day: 'numeric',
+        month: 'short',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch {
+      return dateStr;
+    }
+  };
+
+  const handleCopyId = (id) => {
+    try {
+      navigator.clipboard.writeText(id);
+      setCopiedId(id);
+      setTimeout(() => setCopiedId(null), 2000);
+    } catch {}
+  };
+
+  return (
+    <div className="guest-login-overlay order-history-overlay" onClick={onClose}>
+      <div className="guest-login-card order-history-modal-card" onClick={e => e.stopPropagation()}>
+        {/* Modal Top Bar */}
+        <div className="order-history-header">
+          <div className="order-history-header-left">
+            <div className="brand-mark history-icon-box">
+              <History size={18} />
+            </div>
+            <div>
+              <h2>Order History</h2>
+              <p className="guest-login-sub">
+                {user ? (
+                  <span><Database size={11} color="var(--lime)" /> Supabase Sync: <b>{user.user_metadata?.full_name || user.email}</b></span>
+                ) : (
+                  <span>Device Orders & Local History</span>
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="order-history-header-actions">
+            <button
+              type="button"
+              className="order-history-refresh-btn"
+              onClick={loadOrders}
+              title="Refresh from Supabase"
+              disabled={loading}
+            >
+              <RefreshCw size={14} className={loading ? 'spin-icon' : ''} />
+            </button>
+            <button
+              type="button"
+              className="order-history-close-btn"
+              onClick={onClose}
+              title="Close"
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Guest Banner if not signed in */}
+        {!user && (
+          <div className="order-history-auth-prompt">
+            <div className="history-auth-prompt-text">
+              <Cloud size={16} color="var(--lime)" />
+              <div>
+                <b>Sign In with Supabase</b>
+                <p>Save and sync your full order history across all phones and tablets.</p>
+              </div>
+            </div>
+            <button
+              type="button"
+              className="history-auth-prompt-btn"
+              onClick={() => {
+                onClose();
+                onOpenAuth();
+              }}
+            >
+              Sign In
+            </button>
+          </div>
+        )}
+
+        {/* Filter Pills */}
+        <div className="history-filter-row">
+          <button
+            type="button"
+            className={`history-filter-chip ${filter === 'all' ? 'active' : ''}`}
+            onClick={() => setFilter('all')}
+          >
+            All Orders ({historyOrders.length})
+          </button>
+          <button
+            type="button"
+            className={`history-filter-chip ${filter === 'active' ? 'active' : ''}`}
+            onClick={() => setFilter('active')}
+          >
+            Active ({historyOrders.filter(o => ['New', 'Preparing', 'Ready'].includes(o.status)).length})
+          </button>
+          <button
+            type="button"
+            className={`history-filter-chip ${filter === 'completed' ? 'active' : ''}`}
+            onClick={() => setFilter('completed')}
+          >
+            Completed ({historyOrders.filter(o => o.status === 'Completed' || o.status === 'Cancelled').length})
+          </button>
+        </div>
+
+        {/* Orders List */}
+        <div className="order-history-list">
+          {loading && historyOrders.length === 0 ? (
+            <div className="history-empty-state">
+              <RefreshCw size={24} className="spin-icon" color="var(--lime)" />
+              <p>Fetching your orders from Supabase...</p>
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="history-empty-state">
+              <UtensilsCrossed size={32} color="var(--text-muted)" />
+              <h3>No {filter !== 'all' ? filter : ''} orders yet</h3>
+              <p>Explore our culinary menu and place your first delicious order!</p>
+              <button
+                type="button"
+                className="chef-login-btn"
+                onClick={onClose}
+                style={{ width: 'auto', padding: '8px 20px', marginTop: '12px', fontSize: '13px' }}
+              >
+                Browse Menu
+              </button>
+            </div>
+          ) : (
+            filteredOrders.map(order => {
+              const isActive = ['New', 'Preparing', 'Ready'].includes(order.status);
+              const itemCount = (order.items || []).reduce((sum, it) => sum + (Number(it.qty) || 1), 0);
+              return (
+                <div key={order.id} className={`history-order-card ${isActive ? 'card-active-order' : ''}`}>
+                  {/* Card Top Row */}
+                  <div className="history-card-header">
+                    <div>
+                      <div className="history-id-row">
+                        <b className="history-order-id">{order.id}</b>
+                        <button
+                          type="button"
+                          className="history-copy-id-btn"
+                          onClick={() => handleCopyId(order.id)}
+                          title="Copy Order ID"
+                        >
+                          {copiedId === order.id ? <Check size={11} color="#10b981" /> : <Copy size={11} />}
+                        </button>
+                        {getStatusBadge(order.status)}
+                      </div>
+                      <div className="history-time-meta">
+                        <Clock size={11} /> {formatOrderTime(order.createdAt)} • {order.mode || 'Dine in'} {order.table ? `(${order.table})` : ''}
+                      </div>
+                    </div>
+                    <div className="history-total-badge">
+                      <small>Total</small>
+                      <b>₹{Number(order.total || 0).toFixed(2)}</b>
+                      <span className={`history-pay-tag ${order.paymentStatus === 'Paid' ? 'pay-paid' : 'pay-unpaid'}`}>
+                        {order.paymentStatus === 'Paid' ? `✓ Paid (${order.paymentMethod || 'UPI'})` : '● Unpaid'}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Items breakdown */}
+                  <div className="history-items-box">
+                    <div className="history-items-summary-header">
+                      <span>{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+                    </div>
+                    <div className="history-items-rows">
+                      {(order.items || []).map((it, idx) => (
+                        <div key={idx} className="history-item-row">
+                          <span className="history-item-qty">{it.qty}x</span>
+                          <span className="history-item-name">{it.name}</span>
+                          <span className="history-item-price">₹{(Number(it.price) * (Number(it.qty) || 1)).toFixed(2)}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Special Chef Note / Rejection Reason */}
+                  {order.chefNote && (
+                    <div className="history-chef-note">
+                      <ChefHat size={13} color="var(--lime)" />
+                      <span><b>Kitchen Note:</b> {order.chefNote}</span>
+                    </div>
+                  )}
+                  {order.rejectionReason && (
+                    <div className="history-chef-note rejection">
+                      <AlertTriangle size={13} color="#ef4444" />
+                      <span><b>Reason:</b> {order.rejectionReason}</span>
+                    </div>
+                  )}
+
+                  {/* Card Action Buttons */}
+                  <div className="history-actions-row">
+                    {/* Reorder Button */}
+                    <button
+                      type="button"
+                      className="history-action-btn btn-reorder"
+                      onClick={() => {
+                        onReorder(order.items || []);
+                        onClose();
+                      }}
+                      title="Add these items to your cart"
+                    >
+                      <RotateCcw size={13} />
+                      <span>Reorder</span>
+                    </button>
+
+                    {/* View Tax Invoice / Receipt Button */}
+                    <button
+                      type="button"
+                      className="history-action-btn btn-receipt"
+                      onClick={() => {
+                        onOpenBill(order);
+                        onClose();
+                      }}
+                      title="View tax invoice and receipt"
+                    >
+                      <Receipt size={13} />
+                      <span>View Receipt</span>
+                    </button>
+
+                    {/* Live Tracker Button if active */}
+                    {isActive && (
+                      <button
+                        type="button"
+                        className="history-action-btn btn-track"
+                        onClick={() => {
+                          onTrackOrder(order.id);
+                          onClose();
+                        }}
+                        title="Open live kitchen cooking tracker"
+                      >
+                        <ChefHat size={13} />
+                        <span>Track Live →</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// -------------------------------------------------------------
+// SUPABASE CONFIGURATION & SCHEMA HELPER MODAL
+// -------------------------------------------------------------
+function SupabaseConfigModal({ isOpen, onClose }) {
+  const [anonKey, setAnonKey] = useState(() => getSupabaseCredentials().anonKey);
+  const [url, setUrl] = useState(() => getSupabaseCredentials().url);
+  const [savedSuccess, setSavedSuccess] = useState(false);
+  const [copiedSchema, setCopiedSchema] = useState(false);
+
+  if (!isOpen) return null;
+
+  const handleSave = (e) => {
+    e.preventDefault();
+    saveSupabaseCredentials(anonKey, url);
+    setSavedSuccess(true);
+    setTimeout(() => {
+      setSavedSuccess(false);
+      onClose();
+    }, 1000);
+  };
+
+  const handleCopySqlSchema = () => {
+    const sqlCode = `-- ==============================================================================
+-- THE PODDAR'S FOOD & BAR - SUPABASE DATABASE SCHEMA & RLS POLICIES
+-- Project ID: nfsttzbqcfsffnojikyo
+-- Copy and run this script in your Supabase SQL Editor:
+-- https://supabase.com/dashboard/project/nfsttzbqcfsffnojikyo/sql/new
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS public.profiles (
+  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  email TEXT,
+  full_name TEXT,
+  phone TEXT,
+  avatar_url TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Public profiles are viewable by everyone" ON public.profiles;
+CREATE POLICY "Public profiles are viewable by everyone" ON public.profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+CREATE POLICY "Users can insert their own profile" ON public.profiles FOR INSERT WITH CHECK (auth.uid() = id);
+
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
+CREATE POLICY "Users can update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
+
+CREATE TABLE IF NOT EXISTS public.orders (
+  id TEXT PRIMARY KEY,
+  user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+  guest_name TEXT NOT NULL,
+  user_email TEXT,
+  mode TEXT DEFAULT 'Dine in',
+  table_number TEXT,
+  items JSONB NOT NULL DEFAULT '[]'::jsonb,
+  instructions TEXT,
+  subtotal NUMERIC(10, 2) DEFAULT 0,
+  discount NUMERIC(10, 2) DEFAULT 0,
+  discount_label TEXT,
+  gst NUMERIC(10, 2) DEFAULT 0,
+  total NUMERIC(10, 2) DEFAULT 0,
+  status TEXT DEFAULT 'New',
+  payment_status TEXT DEFAULT 'Unpaid',
+  payment_method TEXT DEFAULT 'Pending at Table',
+  paid_at TIMESTAMPTZ,
+  estimated_prep_time INTEGER,
+  approved_at TIMESTAMPTZ,
+  ready_at TIMESTAMPTZ,
+  completed_at TIMESTAMPTZ,
+  cancelled_at TIMESTAMPTZ,
+  chef_note TEXT,
+  rejection_reason TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "Anyone can create an order" ON public.orders;
+CREATE POLICY "Anyone can create an order" ON public.orders FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can view their own orders" ON public.orders;
+CREATE POLICY "Users can view their own orders" ON public.orders FOR SELECT 
+USING ((auth.uid() IS NOT NULL AND auth.uid() = user_id) OR (auth.uid() IS NULL) OR (user_id IS NULL));
+
+DROP POLICY IF EXISTS "Anyone can update orders" ON public.orders;
+CREATE POLICY "Anyone can update orders" ON public.orders FOR UPDATE USING (true);
+
+CREATE INDEX IF NOT EXISTS idx_orders_user_id ON public.orders(user_id);
+CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders(status);
+`;
+    try {
+      navigator.clipboard.writeText(sqlCode);
+      setCopiedSchema(true);
+      setTimeout(() => setCopiedSchema(false), 2500);
+    } catch {}
+  };
+
+  return (
+    <div className="guest-login-overlay" onClick={onClose}>
+      <div className="guest-login-card supabase-config-card" onClick={e => e.stopPropagation()}>
+        <div className="guest-modal-top">
+          <div className="brand-mark guest-modal-logo">
+            <Database size={18} />
+          </div>
+          <div>
+            <h2>Supabase Cloud Config</h2>
+            <p className="guest-login-sub">Project: nfsttzbqcfsffnojikyo</p>
+          </div>
+        </div>
+
+        <form onSubmit={handleSave} className="guest-form">
+          <div className="chef-input-group">
+            <label><Cloud size={12} /> Supabase Project URL</label>
+            <div className="chef-input-box">
+              <Cloud size={14} />
+              <input
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                placeholder="https://nfsttzbqcfsffnojikyo.supabase.co"
+                required
+              />
+            </div>
+          </div>
+
+          <div className="chef-input-group">
+            <label><Key size={12} /> Supabase Anon / Public API Key</label>
+            <div className="chef-input-box">
+              <Key size={14} />
+              <input
+                value={anonKey}
+                onChange={e => setAnonKey(e.target.value)}
+                placeholder="Paste your Supabase anon key here"
+                type="password"
+              />
+            </div>
+            <small style={{ color: 'var(--text-muted)', fontSize: '11px', marginTop: '4px', display: 'block' }}>
+              Found in: Supabase Dashboard → Settings → API → Project API Keys (anon public)
+            </small>
+          </div>
+
+          {savedSuccess && (
+            <div className="auth-alert-success">
+              <CheckCircle2 size={14} color="#10b981" />
+              <span>Credentials saved successfully!</span>
+            </div>
+          )}
+
+          <button type="submit" className="chef-login-btn" style={{ marginTop: '12px' }}>
+            <span>Save Configuration ✓</span>
+          </button>
+        </form>
+
+        <div className="supabase-config-actions">
+          <button
+            type="button"
+            className="config-schema-btn"
+            onClick={handleCopySqlSchema}
+          >
+            {copiedSchema ? <Check size={13} color="#10b981" /> : <Copy size={13} />}
+            <span>{copiedSchema ? 'SQL Schema Copied!' : 'Copy SQL Schema for Supabase'}</span>
+          </button>
+
+          <a
+            href="https://supabase.com/dashboard/project/nfsttzbqcfsffnojikyo"
+            target="_blank"
+            rel="noreferrer"
+            className="config-dash-link"
+          >
+            <span>Open Supabase Dashboard</span>
+            <ExternalLink size={12} />
+          </a>
+        </div>
+
+        <button
+          type="button"
+          className="chef-back-link"
+          onClick={onClose}
+          style={{ justifyContent: 'center', marginTop: '10px' }}
+        >
+          Close
+        </button>
+      </div>
+    </div>
+  );
 }
 
 // -------------------------------------------------------------
@@ -3943,6 +4892,21 @@ function App() {
     }
   });
 
+  // Supabase User & Session state
+  const [supabaseUser, setSupabaseUser] = useState(() => {
+    try {
+      const saved = localStorage.getItem('poddars_user_profile');
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      return null;
+    }
+  });
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [orderHistoryModalOpen, setOrderHistoryModalOpen] = useState(false);
+  const [supabaseConfigModalOpen, setSupabaseConfigModalOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const [historyBillOrder, setHistoryBillOrder] = useState(null);
+
   // Customer state & guest session
   const [guest, setGuest] = useState(() => {
     try {
@@ -3963,6 +4927,79 @@ function App() {
       return null;
     }
   });
+
+  // Check and restore Supabase session on startup
+  useEffect(() => {
+    getCurrentSession().then(session => {
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        try {
+          localStorage.setItem('poddars_user_profile', JSON.stringify(session.user));
+        } catch {}
+        const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0];
+        if (userName) {
+          setGuest(prev => ({
+            name: prev?.name || userName,
+            table: prev?.table || 'Table 1',
+            mode: prev?.mode || 'Dine in'
+          }));
+        }
+      }
+    }).catch(() => {});
+  }, []);
+
+  const handleUserAuthSuccess = (user, session) => {
+    setSupabaseUser(user);
+    try {
+      localStorage.setItem('poddars_user_profile', JSON.stringify(user));
+    } catch {}
+    const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0];
+    if (userName) {
+      const nextGuest = {
+        name: userName,
+        table: guest?.table || 'Table 1',
+        mode: guest?.mode || 'Dine in'
+      };
+      setGuest(nextGuest);
+      try {
+        localStorage.setItem('poddars_guest_session', JSON.stringify(nextGuest));
+      } catch {}
+    }
+    setNotice(true);
+    setTimeout(() => setNotice(false), 3000);
+  };
+
+  const handleUserLogout = async () => {
+    await signOutUser();
+    setSupabaseUser(null);
+    setUserDropdownOpen(false);
+    handleGlobalLogout();
+  };
+
+  const handleReorder = (items) => {
+    if (!Array.isArray(items) || items.length === 0) return;
+    const newCart = [...cart];
+    for (const it of items) {
+      const existingIdx = newCart.findIndex(c => c.id === it.id);
+      if (existingIdx >= 0) {
+        newCart[existingIdx].qty += Number(it.qty) || 1;
+      } else {
+        newCart.push({
+          id: it.id,
+          name: it.name,
+          price: Number(it.price),
+          qty: Number(it.qty) || 1,
+          color: it.color || 'coral',
+          mark: it.mark || 'FD',
+          category: it.category || 'Food'
+        });
+      }
+    }
+    setCart(newCart);
+    setCartOpen(true);
+    setAddedItem(`${items.length} items from past order added to cart!`);
+    setTimeout(() => setAddedItem(''), 3000);
+  };
 
   const [guestModalOpen, setGuestModalOpen] = useState(false);
 
@@ -4338,6 +5375,8 @@ function App() {
       id: `TP-${Math.floor(100000 + Math.random() * 900000)}`,
       status: 'New',
       createdAt: new Date().toISOString(),
+      userId: supabaseUser?.id || null,
+      userEmail: supabaseUser?.email || null,
       guestName: activeGuestName,
       mode,
       table: activeTable,
@@ -4384,6 +5423,13 @@ function App() {
     } finally {
       setSubmitting(false);
     }
+
+    // Save to Supabase Cloud Database for Order History
+    try {
+      saveOrderToSupabase(finalOrder, supabaseUser).catch(sErr => {
+        console.warn('Supabase order sync notice:', sErr);
+      });
+    } catch {}
 
     try {
       // Save to local storage cache so Kitchen Portal receives it immediately across tabs
@@ -4452,20 +5498,106 @@ function App() {
               <span></span>Kitchen is accepting orders
             </div>
 
-            <button
-              type="button"
-              className="header-guest-pill"
-              onClick={() => setGuestModalOpen(true)}
-              title="Click to change your Name or Table"
-            >
-              <User size={15} color="var(--lime)" />
-              <div>
-                <b>{guest?.name || 'Guest Check-in'}</b>
-                <small>{mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</small>
+            {/* Supabase User Profile or Sign In / Table Check-in */}
+            {supabaseUser ? (
+              <div className="header-user-menu-wrapper">
+                <button
+                  type="button"
+                  className="header-user-pill"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  title="Member Account & Order History"
+                >
+                  <div className="user-avatar-circle">
+                    {(supabaseUser.user_metadata?.full_name || supabaseUser.email || 'U')[0].toUpperCase()}
+                  </div>
+                  <div className="user-pill-info">
+                    <b>{supabaseUser.user_metadata?.full_name || supabaseUser.email.split('@')[0]}</b>
+                    <small>{mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</small>
+                  </div>
+                  <ChevronDown size={13} className={userDropdownOpen ? 'rotate-180' : ''} />
+                </button>
+
+                {userDropdownOpen && (
+                  <div className="header-user-dropdown" onClick={() => setUserDropdownOpen(false)}>
+                    <div className="user-dropdown-header">
+                      <b>{supabaseUser.user_metadata?.full_name || 'Member'}</b>
+                      <small>{supabaseUser.email}</small>
+                      <span className="user-dropdown-cloud-tag"><Database size={10} color="var(--lime)" /> Supabase Synced</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="user-dropdown-item"
+                      onClick={() => setOrderHistoryModalOpen(true)}
+                    >
+                      <History size={15} color="var(--lime)" />
+                      <span>My Order History</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="user-dropdown-item"
+                      onClick={() => setGuestModalOpen(true)}
+                    >
+                      <MapPin size={15} />
+                      <span>Table: {mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</span>
+                    </button>
+                    <button
+                      type="button"
+                      className="user-dropdown-item"
+                      onClick={() => setSupabaseConfigModalOpen(true)}
+                    >
+                      <Settings size={15} />
+                      <span>Supabase Settings & Schema</span>
+                    </button>
+                    <div className="user-dropdown-divider"></div>
+                    <button
+                      type="button"
+                      className="user-dropdown-item logout"
+                      onClick={handleUserLogout}
+                    >
+                      <LogOut size={15} />
+                      <span>Sign Out</span>
+                    </button>
+                  </div>
+                )}
               </div>
-            </button>
+            ) : (
+              <div className="header-guest-auth-group">
+                <button
+                  type="button"
+                  className="header-auth-btn"
+                  onClick={() => setAuthModalOpen(true)}
+                  title="Sign In with Supabase to sync orders"
+                >
+                  <User size={14} color="var(--lime)" />
+                  <span className="header-btn-label">Sign In</span>
+                </button>
+                <button
+                  type="button"
+                  className="header-guest-pill"
+                  onClick={() => setGuestModalOpen(true)}
+                  title="Click to change your Name or Table"
+                >
+                  <MapPin size={13} color="var(--lime)" />
+                  <div>
+                    <b>{guest?.name || 'Guest'}</b>
+                    <small>{mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</small>
+                  </div>
+                </button>
+              </div>
+            )}
 
             <div className="header-actions">
+              {/* Order History Header Button */}
+              <button
+                type="button"
+                className="header-orders-btn"
+                onClick={() => setOrderHistoryModalOpen(true)}
+                title="View your past and active orders"
+              >
+                <History size={15} color="var(--lime)" />
+                <span className="header-btn-label">Orders</span>
+              </button>
+
               {/* Kitchen & Staff Portal Switch Button */}
               <button
                 type="button"
@@ -5301,6 +6433,52 @@ function App() {
           onPrintAndLogout={handleGlobalLogout}
         />
       )}
+
+      {/* Final Bill / Receipt Modal for Selected Order History Item */}
+      {historyBillOrder && currentView === 'customer' && (
+        <FinalBillModal
+          order={historyBillOrder}
+          onClose={() => setHistoryBillOrder(null)}
+          onAddMore={() => {
+            setHistoryBillOrder(null);
+            handleReorder(historyBillOrder.items);
+          }}
+          onPrintAndLogout={() => setHistoryBillOrder(null)}
+        />
+      )}
+
+      {/* Supabase User Authentication Modal */}
+      <AuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onAuthSuccess={handleUserAuthSuccess}
+        onContinueAsGuest={() => setGuestModalOpen(true)}
+        guest={guest}
+        onOpenConfig={() => setSupabaseConfigModalOpen(true)}
+      />
+
+      {/* Supabase Order History Modal */}
+      <OrderHistoryModal
+        isOpen={orderHistoryModalOpen}
+        onClose={() => setOrderHistoryModalOpen(false)}
+        user={supabaseUser}
+        guest={guest}
+        onReorder={handleReorder}
+        onTrackOrder={orderId => {
+          setActiveTrackingOrderId(orderId);
+          setShowTracker(true);
+        }}
+        onOpenBill={order => {
+          setHistoryBillOrder(order);
+        }}
+        onOpenAuth={() => setAuthModalOpen(true)}
+      />
+
+      {/* Supabase Configuration & Schema Modal */}
+      <SupabaseConfigModal
+        isOpen={supabaseConfigModalOpen}
+        onClose={() => setSupabaseConfigModalOpen(false)}
+      />
     </main>
   );
 }

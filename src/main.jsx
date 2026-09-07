@@ -3835,10 +3835,305 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
 
   const handlePrint = () => {
     try {
-      window.print();
+      const invoiceElem = document.getElementById('printable-invoice');
+      if (!invoiceElem) {
+        window.print();
+        if (!isPaid) executePayment('Printed & Settled');
+        return;
+      }
+
+      // Create an isolated hidden iframe to guarantee EXACTLY 1 page with 0 blank pages
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = '0';
+      iframe.style.visibility = 'hidden';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow.document;
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Invoice #INV-${order.id} - The Poddar's Courtyard</title>
+          <style>
+            @page {
+              size: auto;
+              margin: 10mm 15mm;
+            }
+            * {
+              box-sizing: border-box;
+              margin: 0;
+              padding: 0;
+            }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+              color: #0f172a;
+              background: #fff;
+              padding: 10px;
+              font-size: 13px;
+              line-height: 1.4;
+            }
+            .bill-header {
+              text-align: center;
+              border-bottom: 2px dashed #94a3b8;
+              padding-bottom: 12px;
+              margin-bottom: 14px;
+            }
+            .bill-brand-badge {
+              display: inline-flex;
+              align-items: center;
+              gap: 5px;
+              font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 1.5px;
+              color: #047857;
+              background: #f0fdf4;
+              border: 1px solid #bbf7d0;
+              padding: 3px 10px;
+              border-radius: 20px;
+              margin-bottom: 6px;
+            }
+            .bill-header h2 {
+              font-size: 20px;
+              font-weight: 900;
+              letter-spacing: 2px;
+              margin: 2px 0 4px;
+              color: #0f172a;
+            }
+            .bill-tagline {
+              font-size: 11px;
+              color: #64748b;
+              margin-bottom: 6px;
+            }
+            .bill-tax-info {
+              font-size: 10px;
+              color: #64748b;
+              line-height: 1.35;
+            }
+            .bill-invoice-type {
+              display: inline-block;
+              margin-top: 8px;
+              background: #f8fafc;
+              border: 1px solid #cbd5e1;
+              color: #334155;
+              padding: 3px 12px;
+              font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 1px;
+              border-radius: 4px;
+            }
+            .bill-meta-grid {
+              display: grid;
+              grid-template-columns: 1fr 1fr;
+              gap: 8px 14px;
+              font-size: 11.5px;
+              margin: 12px 0;
+              background: #f8fafc;
+              padding: 10px 12px;
+              border-radius: 6px;
+              border: 1px solid #e2e8f0;
+            }
+            .bill-meta-grid div {
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+            }
+            .bill-meta-grid span {
+              font-size: 10px;
+              color: #64748b;
+              font-weight: 600;
+              letter-spacing: 0.5px;
+            }
+            .bill-meta-grid b {
+              color: #0f172a;
+              font-weight: 700;
+            }
+            .bill-table-highlight {
+              color: #047857 !important;
+            }
+            .bill-divider {
+              border-top: 1.5px dashed #cbd5e1;
+              margin: 12px 0;
+            }
+            .bill-items-table {
+              width: 100%;
+              margin-bottom: 12px;
+            }
+            .bill-table-head {
+              display: grid;
+              grid-template-columns: 2.2fr 0.6fr 0.8fr 1fr;
+              padding: 6px 4px;
+              font-size: 10.5px;
+              font-weight: 800;
+              color: #475569;
+              border-bottom: 1.5px solid #cbd5e1;
+              letter-spacing: 0.5px;
+            }
+            .bill-table-body {
+              display: flex;
+              flex-direction: column;
+            }
+            .bill-item-row {
+              display: grid;
+              grid-template-columns: 2.2fr 0.6fr 0.8fr 1fr;
+              padding: 7px 4px;
+              font-size: 12px;
+              border-bottom: 1px solid #f1f5f9;
+              align-items: center;
+            }
+            .bill-item-row:last-child {
+              border-bottom: none;
+            }
+            .col-item {
+              text-align: left;
+              font-weight: 600;
+              color: #1e293b;
+            }
+            .col-qty {
+              text-align: center;
+              font-weight: 700;
+              color: #475569;
+            }
+            .col-rate {
+              text-align: right;
+              color: #64748b;
+            }
+            .col-amount {
+              text-align: right;
+              font-weight: 700;
+              color: #0f172a;
+            }
+            .bill-special-note {
+              font-size: 11px;
+              color: #b45309;
+              background: #fffbeb;
+              padding: 6px 10px;
+              border-radius: 4px;
+              border: 1px solid #fde68a;
+              margin: 8px 0;
+            }
+            .bill-totals-breakdown {
+              display: flex;
+              flex-direction: column;
+              gap: 6px;
+              margin-top: 10px;
+            }
+            .bill-row {
+              display: flex;
+              justify-content: space-between;
+              font-size: 12px;
+              color: #475569;
+            }
+            .bill-row b {
+              color: #0f172a;
+            }
+            .grand-total-row {
+              margin-top: 8px;
+              padding-top: 8px;
+              border-top: 2px solid #0f172a;
+              font-size: 14px;
+              font-weight: 800;
+              color: #0f172a;
+              align-items: baseline;
+            }
+            .grand-total-row small {
+              display: block;
+              font-size: 9.5px;
+              color: #64748b;
+              font-weight: normal;
+            }
+            .bill-final-amount {
+              font-size: 17px;
+              color: #047857;
+              font-weight: 900;
+            }
+            .bill-status-banner {
+              margin-top: 14px;
+              padding: 10px 12px;
+              border-radius: 6px;
+              display: flex;
+              align-items: center;
+              gap: 10px;
+              font-size: 11.5px;
+            }
+            .bill-status-banner.paid {
+              background: #f0fdf4;
+              border: 1px solid #86efac;
+              color: #15803d;
+            }
+            .bill-status-banner.pending {
+              background: #fffbeb;
+              border: 1px solid #fde68a;
+              color: #b45309;
+            }
+            .bill-status-banner svg {
+              flex-shrink: 0;
+            }
+            .bill-status-banner div {
+              display: flex;
+              flex-direction: column;
+              gap: 2px;
+            }
+            .bill-status-banner b {
+              font-size: 11px;
+              letter-spacing: 0.5px;
+            }
+            .bill-print-footer {
+              display: block;
+              margin-top: 16px;
+              text-align: center;
+            }
+            .bill-footer-divider {
+              border-top: 1.5px dashed #cbd5e1;
+              margin-bottom: 10px;
+            }
+            .bill-footer-thanks {
+              font-size: 11px;
+              font-weight: 800;
+              letter-spacing: 1px;
+              color: #047857;
+              margin-bottom: 3px;
+            }
+            .bill-footer-sub {
+              font-size: 9.5px;
+              color: #64748b;
+              margin-bottom: 4px;
+            }
+            .bill-footer-meta {
+              display: flex;
+              justify-content: center;
+              gap: 8px;
+              font-size: 9px;
+              color: #94a3b8;
+            }
+          </style>
+        </head>
+        <body>
+          ${invoiceElem.innerHTML}
+        </body>
+        </html>
+      `);
+      doc.close();
+
+      setTimeout(() => {
+        iframe.contentWindow.focus();
+        iframe.contentWindow.print();
+        setTimeout(() => {
+          try {
+            document.body.removeChild(iframe);
+          } catch {}
+        }, 2000);
+      }, 250);
     } catch (err) {
-      console.error('Print trigger error:', err);
+      console.error('Print error fallback:', err);
+      window.print();
     }
+
     if (!isPaid) {
       executePayment('Printed & Settled');
     }
@@ -4073,6 +4368,15 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
                 >
                   <Copy size={13} /> Copy WhatsApp Text
                 </button>
+                <button
+                  type="button"
+                  className="bill-drawer-copy-btn"
+                  style={{ background: '#f8fafc', color: '#047857', border: '1px solid #bbf7d0' }}
+                  onClick={handlePrint}
+                  title="Print receipt or Save as 1-Page PDF"
+                >
+                  <Printer size={13} /> Print / Save 1-Page PDF
+                </button>
               </div>
             </form>
           </div>
@@ -4128,6 +4432,15 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
                   }}
                 >
                   <Copy size={13} /> Copy Email Body
+                </button>
+                <button
+                  type="button"
+                  className="bill-drawer-copy-btn"
+                  style={{ background: '#f8fafc', color: '#047857', border: '1px solid #bbf7d0' }}
+                  onClick={handlePrint}
+                  title="Print receipt or Save as 1-Page PDF"
+                >
+                  <Printer size={13} /> Print / Save 1-Page PDF
                 </button>
               </div>
             </form>

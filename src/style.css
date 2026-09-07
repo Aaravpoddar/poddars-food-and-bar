@@ -4877,8 +4877,40 @@ header {
     color-adjust: exact !important;
   }
 
-  body * {
-    visibility: hidden;
+  /* Completely collapse all SPA content outside the bill modal */
+  body > #root > *:not(.bill-modal-overlay),
+  .app-header,
+  .welcome-hero,
+  .happy-hour-banner,
+  .menu-controls-bar,
+  .categories,
+  .grid,
+  .dish,
+  .menu-section,
+  .floating-cart-bar,
+  .floating-waiter-call-wrap,
+  .drawer,
+  .backdrop,
+  .customer-footer,
+  .guest-login-bar,
+  .live-call-banner,
+  .toast-container,
+  .kds-container,
+  .bottom-nav,
+  .bill-close-btn,
+  .bill-payment-section,
+  .bill-share-toolbar,
+  .bill-share-drawer,
+  .bill-toast-feedback,
+  .bill-bottom-actions {
+    display: none !important;
+    height: 0 !important;
+    max-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    position: absolute !important;
+    visibility: hidden !important;
   }
 
   /* Unhide printable invoice and all required ancestor wrappers */
@@ -4886,6 +4918,7 @@ header {
   .bill-modal-card,
   #printable-invoice,
   #printable-invoice * {
+    display: block !important;
     visibility: visible !important;
   }
 
@@ -4931,12 +4964,15 @@ header {
   }
 
   .bill-header {
+    display: block !important;
+    text-align: center !important;
     border-bottom: 2px dashed #64748b !important;
     padding-bottom: 12px !important;
     margin-bottom: 14px !important;
   }
 
   .bill-brand-badge {
+    display: inline-flex !important;
     background: #f1f5f9 !important;
     color: #047857 !important;
     border: 1px solid #cbd5e1 !important;
@@ -4945,6 +4981,7 @@ header {
   }
 
   .bill-invoice-type {
+    display: inline-block !important;
     background: #f8fafc !important;
     border: 1px solid #94a3b8 !important;
     color: #0f172a !important;
@@ -4952,23 +4989,54 @@ header {
     print-color-adjust: exact !important;
   }
 
+  .bill-meta-grid {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+  }
+
   .bill-divider {
+    display: block !important;
     border-top: 1.5px dashed #94a3b8 !important;
     margin: 12px 0 !important;
   }
 
+  .bill-items-table {
+    display: block !important;
+    width: 100% !important;
+  }
+
   .bill-table-head {
+    display: grid !important;
+    grid-template-columns: 2.2fr 0.6fr 0.8fr 1fr !important;
     border-bottom: 1.5px solid #475569 !important;
     color: #334155 !important;
     font-weight: 800 !important;
   }
 
+  .bill-table-body {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
   .bill-item-row {
+    display: grid !important;
+    grid-template-columns: 2.2fr 0.6fr 0.8fr 1fr !important;
     border-bottom: 1px solid #e2e8f0 !important;
     padding: 8px 0 !important;
   }
 
+  .bill-totals-breakdown {
+    display: flex !important;
+    flex-direction: column !important;
+  }
+
+  .bill-row {
+    display: flex !important;
+    justify-content: space-between !important;
+  }
+
   .bill-status-banner {
+    display: flex !important;
     border: 1px solid #cbd5e1 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -4994,24 +5062,6 @@ header {
 
   .bill-footer-divider {
     border-top: 1.5px dashed #94a3b8 !important;
-  }
-
-  /* Non-printable UI elements */
-  .bill-close-btn,
-  .bill-payment-section,
-  .bill-share-toolbar,
-  .bill-share-drawer,
-  .bill-toast-feedback,
-  .bill-bottom-actions,
-  .app-header,
-  .bottom-nav,
-  .kds-container,
-  .floating-cart-bar,
-  .guest-login-bar,
-  .live-call-banner,
-  .toast-container {
-    display: none !important;
-    visibility: hidden !important;
   }
 }
 

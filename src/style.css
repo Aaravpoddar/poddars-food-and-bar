@@ -4551,24 +4551,467 @@ header {
   box-shadow: 0 6px 20px rgba(4, 120, 87, 0.4);
 }
 
-/* Print Only Styling */
+.bill-print-footer {
+  margin-top: 18px;
+  text-align: center;
+  padding-top: 10px;
+}
+
+.bill-footer-divider {
+  border-top: 1px dashed #cbd5e1;
+  margin-bottom: 12px;
+}
+
+.bill-footer-thanks {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--text-main);
+  letter-spacing: 1px;
+  margin: 0 0 4px;
+}
+
+.bill-footer-sub {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  margin: 0 0 6px;
+}
+
+.bill-footer-meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9.5px;
+  color: var(--text-dim);
+}
+
+/* Share & Export Bill Toolbar */
+.bill-share-toolbar {
+  margin: 16px 0 12px;
+  background: var(--bg-surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bill-share-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 10.5px;
+  font-weight: 800;
+  color: var(--text-dim);
+  letter-spacing: 0.5px;
+}
+
+.bill-share-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+.bill-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: 1px solid transparent;
+}
+
+.bill-share-btn.whatsapp {
+  background: #25d366;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(37, 211, 102, 0.25);
+}
+
+.bill-share-btn.whatsapp:hover,
+.bill-share-btn.whatsapp.active {
+  background: #1eb956;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(37, 211, 102, 0.4);
+}
+
+.bill-share-btn.email {
+  background: #0284c7;
+  color: #ffffff;
+  box-shadow: 0 2px 6px rgba(2, 132, 199, 0.25);
+}
+
+.bill-share-btn.email:hover,
+.bill-share-btn.email.active {
+  background: #0369a1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(2, 132, 199, 0.4);
+}
+
+.bill-share-btn.copy {
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--text-main);
+}
+
+.bill-share-btn.copy:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+  transform: translateY(-1px);
+}
+
+/* Share Drawers */
+.bill-share-drawer {
+  background: #ffffff;
+  border: 1.5px solid var(--line);
+  border-radius: 12px;
+  padding: 14px 16px;
+  margin-bottom: 14px;
+  animation: toast-in 0.2s ease;
+}
+
+.bill-share-drawer.whatsapp-drawer {
+  border-color: rgba(37, 211, 102, 0.4);
+  background: #f0fdf4;
+}
+
+.bill-share-drawer.email-drawer {
+  border-color: rgba(2, 132, 199, 0.4);
+  background: #f0f9ff;
+}
+
+.bill-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 6px;
+}
+
+.bill-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--text-main);
+}
+
+.whatsapp-drawer .bill-drawer-title {
+  color: #15803d;
+}
+
+.email-drawer .bill-drawer-title {
+  color: #0369a1;
+}
+
+.bill-drawer-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: grid;
+  place-items: center;
+}
+
+.bill-drawer-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--text-main);
+}
+
+.bill-drawer-hint {
+  font-size: 11.5px;
+  color: var(--text-muted);
+  margin: 0 0 10px;
+  line-height: 1.4;
+}
+
+.bill-drawer-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bill-input-icon-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.bill-field-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--text-dim);
+  pointer-events: none;
+}
+
+.bill-input-icon-wrap input {
+  width: 100%;
+  padding: 10px 12px 10px 36px;
+  border: 1px solid var(--line);
+  background: #ffffff;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-main);
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.bill-input-icon-wrap input:focus {
+  border-color: var(--brand-primary);
+}
+
+.bill-drawer-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.bill-drawer-send-btn {
+  flex: 1.4;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 12.5px;
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.whatsapp-submit {
+  background: #25d366;
+  color: #ffffff;
+}
+
+.whatsapp-submit:hover {
+  background: #1eb956;
+}
+
+.email-submit {
+  background: #0284c7;
+  color: #ffffff;
+}
+
+.email-submit:hover {
+  background: #0369a1;
+}
+
+.bill-drawer-copy-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  background: #ffffff;
+  border: 1px solid var(--line);
+  color: var(--text-main);
+  padding: 10px 12px;
+  border-radius: 8px;
+  font-size: 11.5px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.bill-drawer-copy-btn:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.bill-toast-feedback {
+  background: #0f172a;
+  color: #ffffff;
+  padding: 9px 14px;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 12px;
+  animation: toast-in 0.2s ease;
+}
+
+/* ─────────────────────────────────────────────────────────────
+   PRINT-OPTIMIZED INVOICE STYLING
+   ───────────────────────────────────────────────────────────── */
 @media print {
+  @page {
+    size: auto;
+    margin: 10mm 15mm;
+  }
+
+  *,
+  *::before,
+  *::after {
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  html,
+  body {
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+    font-size: 11pt !important;
+    line-height: 1.4 !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
   body * {
     visibility: hidden;
   }
-  #printable-invoice, #printable-invoice * {
-    visibility: visible;
+
+  /* Unhide printable invoice and all required ancestor wrappers */
+  .bill-modal-overlay,
+  .bill-modal-card,
+  #printable-invoice,
+  #printable-invoice * {
+    visibility: visible !important;
   }
+
+  .bill-modal-overlay {
+    position: static !important;
+    inset: auto !important;
+    display: block !important;
+    background: transparent !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+    z-index: 99999 !important;
+  }
+
+  .bill-modal-card {
+    position: static !important;
+    width: 100% !important;
+    max-width: 650px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    box-shadow: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
+  }
+
   #printable-invoice {
-    position: absolute;
-    left: 0;
-    top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 20px;
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #0f172a !important;
   }
-  .bill-close-btn, .bill-payment-section, .bill-bottom-actions {
+
+  .bill-header {
+    border-bottom: 2px dashed #64748b !important;
+    padding-bottom: 12px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .bill-brand-badge {
+    background: #f1f5f9 !important;
+    color: #047857 !important;
+    border: 1px solid #cbd5e1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .bill-invoice-type {
+    background: #f8fafc !important;
+    border: 1px solid #94a3b8 !important;
+    color: #0f172a !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .bill-divider {
+    border-top: 1.5px dashed #94a3b8 !important;
+    margin: 12px 0 !important;
+  }
+
+  .bill-table-head {
+    border-bottom: 1.5px solid #475569 !important;
+    color: #334155 !important;
+    font-weight: 800 !important;
+  }
+
+  .bill-item-row {
+    border-bottom: 1px solid #e2e8f0 !important;
+    padding: 8px 0 !important;
+  }
+
+  .bill-status-banner {
+    border: 1px solid #cbd5e1 !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .bill-status-banner.paid {
+    background: #f0fdf4 !important;
+    color: #166534 !important;
+    border-color: #86efac !important;
+  }
+
+  .bill-status-banner.pending {
+    background: #fffbeb !important;
+    color: #92400e !important;
+    border-color: #fde68a !important;
+  }
+
+  .bill-print-footer {
+    display: block !important;
+    margin-top: 18px !important;
+    page-break-inside: avoid;
+  }
+
+  .bill-footer-divider {
+    border-top: 1.5px dashed #94a3b8 !important;
+  }
+
+  /* Non-printable UI elements */
+  .bill-close-btn,
+  .bill-payment-section,
+  .bill-share-toolbar,
+  .bill-share-drawer,
+  .bill-toast-feedback,
+  .bill-bottom-actions,
+  .app-header,
+  .bottom-nav,
+  .kds-container,
+  .floating-cart-bar,
+  .guest-login-bar,
+  .live-call-banner,
+  .toast-container {
     display: none !important;
+    visibility: hidden !important;
   }
 }
 

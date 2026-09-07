@@ -66,7 +66,9 @@ import {
   CheckSquare,
   Mail,
   Phone,
-  ChevronDown
+  ChevronDown,
+  Share2,
+  MessageCircle
 } from 'lucide-react';
 import './style.css';
 import {
@@ -920,7 +922,6 @@ function AuthModal({ isOpen, onClose, onAuthSuccess, onContinueAsGuest, guest, o
   const [tab, setTab] = useState('signin'); // 'signin' | 'signup' | 'forgot'
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [fullName, setFullName] = useState(guest?.name || '');
   const [phone, setPhone] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -947,7 +948,7 @@ function AuthModal({ isOpen, onClose, onAuthSuccess, onContinueAsGuest, guest, o
     setSuccessMsg('');
     try {
       const { user, session } = await signInUser({ email: email.trim(), password });
-      setSuccessMsg(`Welcome back, ${user?.user_metadata?.full_name || user?.email}!`);
+      setSuccessMsg(`Welcome back, ${user?.email}!`);
       setTimeout(() => {
         onAuthSuccess(user, session);
         onClose();
@@ -970,10 +971,6 @@ function AuthModal({ isOpen, onClose, onAuthSuccess, onContinueAsGuest, guest, o
       setError('Password must be at least 6 characters.');
       return;
     }
-    if (!fullName.trim()) {
-      setError('Please enter your full name.');
-      return;
-    }
     setLoading(true);
     setError('');
     setSuccessMsg('');
@@ -981,11 +978,10 @@ function AuthModal({ isOpen, onClose, onAuthSuccess, onContinueAsGuest, guest, o
       const { user, session } = await signUpUser({
         email: email.trim(),
         password,
-        fullName: fullName.trim(),
         phone: phone.trim()
       });
       if (session) {
-        setSuccessMsg(`Account created! Welcome, ${fullName.trim()}!`);
+        setSuccessMsg(`Account created! Welcome!`);
         setTimeout(() => {
           onAuthSuccess(user, session);
           onClose();
@@ -1155,21 +1151,6 @@ function AuthModal({ isOpen, onClose, onAuthSuccess, onContinueAsGuest, guest, o
         {tab === 'signup' && (
           <form onSubmit={handleSignUp} className="guest-form auth-form">
             <div className="chef-input-group">
-              <label><User size={12} /> Full Name</label>
-              <div className="chef-input-box">
-                <User size={14} />
-                <input
-                  type="text"
-                  placeholder="e.g. Aarav Poddar"
-                  value={fullName}
-                  onChange={e => { setFullName(e.target.value); setError(''); }}
-                  required
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <div className="chef-input-group">
               <label><Mail size={12} /> Email Address</label>
               <div className="chef-input-box">
                 <Mail size={14} />
@@ -1179,6 +1160,7 @@ function AuthModal({ isOpen, onClose, onAuthSuccess, onContinueAsGuest, guest, o
                   value={email}
                   onChange={e => { setEmail(e.target.value); setError(''); }}
                   required
+                  autoFocus
                 />
               </div>
             </div>
@@ -3987,6 +3969,7 @@ function ChefPortal({ chefAuth, onLogout, onViewCustomerMenu, onOrderStatsChange
 }
 
 // -------------------------------------------------------------
+// -------------------------------------------------------------
 // FINAL BILL & INVOICE MODAL (SHOWS COMPLETE ITEMIZED BILL)
 // -------------------------------------------------------------
 function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
@@ -3994,7 +3977,13 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
   const [isPaid, setIsPaid] = useState(order?.paymentStatus === 'Paid' || false);
   const [settling, setSettling] = useState(false);
   const [copiedUpi, setCopiedUpi] = useState(false);
-  const [logoutCountdown, setLogoutCountdown] = useState(null);
+
+  // Sharing & Export States
+  const [shareTab, setShareTab] = useState(null); // 'whatsapp' | 'email' | null
+  const [phoneInput, setPhoneInput] = useState(order?.phone || '');
+  const [emailInput, setEmailInput] = useState(order?.email || '');
+  const [copiedBill, setCopiedBill] = useState(false);
+  const [shareFeedback, setShareFeedback] = useState('');
 
   // Card Payment States
   const [cardNumber, setCardNumber] = useState('');
@@ -4006,29 +3995,6 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
 
   const upiId = 'aaravpoddar19@okicici';
   const payeeName = 'Aarav Poddar';
-
-  // Auto-logout countdown timer when bill is settled
-  useEffect(() => {
-    if (isPaid || order?.paymentStatus === 'Paid') {
-      if (logoutCountdown === null) {
-        setLogoutCountdown(5);
-      }
-    } else {
-      setLogoutCountdown(null);
-    }
-  }, [isPaid, order?.paymentStatus]);
-
-  useEffect(() => {
-    if (logoutCountdown === null) return;
-    if (logoutCountdown <= 0) {
-      if (onPrintAndLogout) onPrintAndLogout();
-      return;
-    }
-    const timer = setTimeout(() => {
-      setLogoutCountdown(prev => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [logoutCountdown, onPrintAndLogout]);
 
   if (!order) return null;
 
@@ -4057,6 +4023,112 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
       navigator.clipboard.writeText(upiId);
       setCopiedUpi(true);
       setTimeout(() => setCopiedUpi(false), 2200);
+    }
+  };
+
+  const getWhatsAppText = () => {
+    const itemsList = (order.items || [])
+      .map(item => `• *${item.qty}x ${item.name}* - ₹${Math.round(item.price * item.qty)}`)
+      .join('\n');
+
+    let text = `🧾 *THE PODDAR'S COURTYARD*\n`;
+    text += `*Fine Dining • Signature Bar • Live Kitchen*\n`;
+    text += `📍 *GSTIN:* 07AABCT2024P1Z4 | *FSSAI Lic:* 10022011000452\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `📋 *TAX INVOICE: #INV-${order.id}*\n`;
+    text += `📅 *Date & Time:* ${formattedDate}, ${formattedTime}\n`;
+    text += `👤 *Guest:* ${order.guestName || 'Valued Guest'}\n`;
+    text += `🪑 *Table/Service:* ${order.mode === 'Dine in' ? (order.table || 'Table 1') : 'Self Pickup'}\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `🍴 *ORDERED ITEMS:*\n${itemsList}\n`;
+    if (order.instructions) {
+      text += `📝 *Chef Cooking Note:* _"${order.instructions}"_\n`;
+    }
+    text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `💰 *Subtotal:* ₹${Math.round(grossSubtotal)}\n`;
+    if (discount > 0) {
+      text += `🔥 *${discountLabel}:* -₹${Math.round(discount)}\n`;
+    }
+    text += `🧾 *CGST (2.5%):* ₹${Math.round(cgst)}\n`;
+    text += `🧾 *SGST (2.5%):* ₹${Math.round(sgst)}\n`;
+    text += `💳 *GRAND TOTAL:* *₹${Math.round(total)}*\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `📌 *Payment Status:* ${isPaid || order.paymentStatus === 'Paid' ? `✅ PAID IN FULL (${order.paymentMethod || 'Settled'})` : '⏳ PENDING PAYMENT'}\n`;
+    text += `━━━━━━━━━━━━━━━━━━━━━\n`;
+    text += `✨ *Thank you for dining with us! We look forward to seeing you again soon.*\n`;
+    text += `📞 *Reservations & Inquiries:* +91 98765 43210 | 🌐 info@thepoddars.com`;
+    return text;
+  };
+
+  const getEmailDetails = () => {
+    const subject = `Dining Tax Invoice #INV-${order.id} - The Poddar's Courtyard`;
+    const itemsList = (order.items || [])
+      .map(item => `  - ${item.qty}x ${item.name} @ ₹${item.price} = ₹${item.price * item.qty}`)
+      .join('\n');
+
+    let body = `THE PODDAR'S COURTYARD\n`;
+    body += `Fine Dining • Signature Bar • Live Gourmet Kitchen\n`;
+    body += `GSTIN: 07AABCT2024P1Z4 | FSSAI Lic: 10022011000452\n`;
+    body += `Phone: +91 98765 43210 | Email: info@thepoddars.com\n\n`;
+    body += `==========================================\n`;
+    body += `FINAL DINING TAX INVOICE: #INV-${order.id}\n`;
+    body += `==========================================\n\n`;
+    body += `Date & Time:  ${formattedDate}, ${formattedTime}\n`;
+    body += `Guest Name:   ${order.guestName || 'Valued Guest'}\n`;
+    body += `Service Mode: ${order.mode === 'Dine in' ? (order.table || 'Table 1') : 'Self Pickup'}\n\n`;
+    body += `ORDERED ITEMS:\n`;
+    body += `------------------------------------------\n`;
+    body += `${itemsList}\n`;
+    body += `------------------------------------------\n`;
+    if (order.instructions) {
+      body += `Chef Cooking Note: "${order.instructions}"\n\n`;
+    }
+    body += `Food & Beverage Subtotal: ₹${Math.round(grossSubtotal)}\n`;
+    if (discount > 0) {
+      body += `Discount (${discountLabel}): -₹${Math.round(discount)}\n`;
+    }
+    body += `CGST (2.5%): ₹${Math.round(cgst)}\n`;
+    body += `SGST (2.5%): ₹${Math.round(sgst)}\n`;
+    body += `------------------------------------------\n`;
+    body += `GRAND TOTAL PAYABLE: ₹${Math.round(total)}\n`;
+    body += `Payment Status: ${isPaid || order.paymentStatus === 'Paid' ? `PAID IN FULL (${order.paymentMethod || 'Settled'})` : 'PENDING PAYMENT'}\n`;
+    body += `==========================================\n\n`;
+    body += `Thank you for choosing The Poddar's Courtyard!\nWe hope you enjoyed your meal and look forward to serving you again.\n`;
+    return { subject, body };
+  };
+
+  const handleSendWhatsApp = (targetPhone) => {
+    const text = getWhatsAppText();
+    let cleaned = (targetPhone || '').replace(/\D/g, '');
+    if (cleaned.length === 10) {
+      cleaned = '91' + cleaned;
+    }
+    const url = cleaned
+      ? `https://wa.me/${cleaned}?text=${encodeURIComponent(text)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+    setShareFeedback('WhatsApp opened with invoice details!');
+    setTimeout(() => setShareFeedback(''), 3500);
+  };
+
+  const handleSendEmail = (targetEmail) => {
+    const { subject, body } = getEmailDetails();
+    const mailto = `mailto:${encodeURIComponent(targetEmail || '')}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    window.location.href = mailto;
+    setShareFeedback('Email app opened with invoice details!');
+    setTimeout(() => setShareFeedback(''), 3500);
+  };
+
+  const handleCopyBillText = () => {
+    const { body } = getEmailDetails();
+    if (navigator.clipboard) {
+      navigator.clipboard.writeText(body);
+      setCopiedBill(true);
+      setShareFeedback('Full invoice details copied to clipboard!');
+      setTimeout(() => {
+        setCopiedBill(false);
+        setShareFeedback('');
+      }, 3500);
     }
   };
 
@@ -4157,7 +4229,11 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
   };
 
   const handlePrint = () => {
-    window.print();
+    try {
+      window.print();
+    } catch (err) {
+      console.error('Print trigger error:', err);
+    }
     if (!isPaid) {
       executePayment('Printed & Settled');
     }
@@ -4176,12 +4252,15 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
           {/* Bill Restaurant Header */}
           <div className="bill-header">
             <div className="bill-brand-badge">
-              <Sparkles size={15} />
+              <Sparkles size={14} />
               <span>THE PODDAR'S</span>
             </div>
             <h2>COURTYARD</h2>
             <p className="bill-tagline">Fine Dining • Signature Bar • Live Gourmet Kitchen</p>
-            <p className="bill-tax-info">GSTIN: 07AABCT2024P1Z4 • FSSAI Lic: 10022011000452</p>
+            <p className="bill-tax-info">
+              GSTIN: 07AABCT2024P1Z4 • FSSAI Lic: 10022011000452<br />
+              Central Avenue, Luxury Dining Pavilion • Ph: +91 98765 43210
+            </p>
             <div className="bill-invoice-type">FINAL DINING TAX INVOICE</div>
           </div>
 
@@ -4291,7 +4370,172 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
               </>
             )}
           </div>
+
+          {/* Printed Bill Footer (Appears on Printed Invoices / PDFs) */}
+          <div className="bill-print-footer">
+            <div className="bill-footer-divider"></div>
+            <p className="bill-footer-thanks">★ THANK YOU FOR DINING AT THE PODDAR'S COURTYARD ★</p>
+            <p className="bill-footer-sub">For table reservations & event inquiries: +91 98765 43210 • info@thepoddars.com</p>
+            <div className="bill-footer-meta">
+              <span>Invoice #INV-{order.id}</span>
+              <span>•</span>
+              <span>Generated on {formattedDate} at {formattedTime}</span>
+            </div>
+          </div>
         </div>
+
+        {/* Share & Export Bill Toolbar */}
+        <div className="bill-share-toolbar">
+          <div className="bill-share-label">
+            <Share2 size={13} />
+            <span>SEND BILL DETAILS:</span>
+          </div>
+          <div className="bill-share-buttons">
+            <button
+              type="button"
+              className={`bill-share-btn whatsapp ${shareTab === 'whatsapp' ? 'active' : ''}`}
+              onClick={() => setShareTab(shareTab === 'whatsapp' ? null : 'whatsapp')}
+              title="Send bill on WhatsApp"
+            >
+              <MessageCircle size={15} /> WhatsApp
+            </button>
+            <button
+              type="button"
+              className={`bill-share-btn email ${shareTab === 'email' ? 'active' : ''}`}
+              onClick={() => setShareTab(shareTab === 'email' ? null : 'email')}
+              title="Send bill via Email"
+            >
+              <Mail size={15} /> Email
+            </button>
+            <button
+              type="button"
+              className="bill-share-btn copy"
+              onClick={handleCopyBillText}
+              title="Copy bill summary to clipboard"
+            >
+              {copiedBill ? <Check size={14} color="#16a34a" /> : <Copy size={14} />}
+              <span>{copiedBill ? 'Copied!' : 'Copy'}</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Expandable WhatsApp Drawer */}
+        {shareTab === 'whatsapp' && (
+          <div className="bill-share-drawer whatsapp-drawer">
+            <div className="bill-drawer-header">
+              <div className="bill-drawer-title">
+                <MessageCircle size={15} />
+                <span>Send Bill via WhatsApp</span>
+              </div>
+              <button
+                type="button"
+                className="bill-drawer-close"
+                onClick={() => setShareTab(null)}
+                aria-label="Close"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <p className="bill-drawer-hint">Enter recipient WhatsApp number (optional) or open WhatsApp directly to pick any contact:</p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendWhatsApp(phoneInput);
+              }}
+              className="bill-drawer-form"
+            >
+              <div className="bill-input-icon-wrap">
+                <Phone size={14} className="bill-field-icon" />
+                <input
+                  type="tel"
+                  placeholder="Phone number (e.g. 9876543210)"
+                  value={phoneInput}
+                  onChange={e => setPhoneInput(e.target.value)}
+                />
+              </div>
+              <div className="bill-drawer-actions">
+                <button type="submit" className="bill-drawer-send-btn whatsapp-submit">
+                  <Send size={13} /> Open WhatsApp
+                </button>
+                <button
+                  type="button"
+                  className="bill-drawer-copy-btn"
+                  onClick={() => {
+                    navigator.clipboard.writeText(getWhatsAppText());
+                    setShareFeedback('WhatsApp text copied!');
+                    setTimeout(() => setShareFeedback(''), 2500);
+                  }}
+                >
+                  <Copy size={13} /> Copy WhatsApp Text
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Expandable Email Drawer */}
+        {shareTab === 'email' && (
+          <div className="bill-share-drawer email-drawer">
+            <div className="bill-drawer-header">
+              <div className="bill-drawer-title">
+                <Mail size={15} />
+                <span>Send Bill via Email</span>
+              </div>
+              <button
+                type="button"
+                className="bill-drawer-close"
+                onClick={() => setShareTab(null)}
+                aria-label="Close"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <p className="bill-drawer-hint">Enter recipient email address to launch email client with pre-formatted invoice:</p>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                handleSendEmail(emailInput);
+              }}
+              className="bill-drawer-form"
+            >
+              <div className="bill-input-icon-wrap">
+                <Mail size={14} className="bill-field-icon" />
+                <input
+                  type="email"
+                  placeholder="guest@example.com"
+                  value={emailInput}
+                  onChange={e => setEmailInput(e.target.value)}
+                  required
+                />
+              </div>
+              <div className="bill-drawer-actions">
+                <button type="submit" className="bill-drawer-send-btn email-submit">
+                  <Send size={13} /> Open Email App
+                </button>
+                <button
+                  type="button"
+                  className="bill-drawer-copy-btn"
+                  onClick={() => {
+                    const { body } = getEmailDetails();
+                    navigator.clipboard.writeText(body);
+                    setShareFeedback('Email text copied!');
+                    setTimeout(() => setShareFeedback(''), 2500);
+                  }}
+                >
+                  <Copy size={13} /> Copy Email Body
+                </button>
+              </div>
+            </form>
+          </div>
+        )}
+
+        {/* Share Status Toast */}
+        {shareFeedback && (
+          <div className="bill-toast-feedback">
+            <CheckCircle2 size={14} />
+            <span>{shareFeedback}</span>
+          </div>
+        )}
 
         {/* Interactive Payment Methods (If Not Paid) */}
         {!isPaid && (
@@ -4508,7 +4752,7 @@ function FinalBillModal({ order, onClose, onAddMore, onPrintAndLogout }) {
         {/* Modal Bottom Actions */}
         <div className="bill-bottom-actions">
           <button type="button" className="bill-btn-print" onClick={handlePrint}>
-            <Printer size={15} /> Print Bill & Finish Dining
+            <Printer size={15} /> Print Bill Invoice
           </button>
           {isPaid ? (
             <button

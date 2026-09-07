@@ -50,7 +50,7 @@ export function saveSupabaseCredentials(key, customUrl = null) {
 // AUTHENTICATION METHODS
 // -------------------------------------------------------------
 
-export async function signUpUser({ email, password, fullName, phone }) {
+export async function signUpUser({ email, password, phone }) {
   const supabase = getSupabaseClient();
   if (!supabase) {
     throw new Error('Supabase Anon Key is not configured yet. Please configure it in settings or .env');
@@ -61,7 +61,6 @@ export async function signUpUser({ email, password, fullName, phone }) {
     password,
     options: {
       data: {
-        full_name: fullName?.trim() || '',
         phone: phone?.trim() || ''
       }
     }
@@ -75,7 +74,6 @@ export async function signUpUser({ email, password, fullName, phone }) {
       await supabase.from('profiles').upsert({
         id: data.user.id,
         email: data.user.email,
-        full_name: fullName?.trim() || data.user.email?.split('@')[0],
         phone: phone?.trim() || '',
         updated_at: new Date().toISOString()
       });

@@ -916,378 +916,6 @@ function calculateStats(ordersList) {
 }
 
 // -------------------------------------------------------------
-// SUPABASE AUTHENTICATION & USER LOGIN MODAL
-// -------------------------------------------------------------
-function AuthModal({ isOpen, onClose, onAuthSuccess, onContinueAsGuest, guest, onOpenConfig }) {
-  const [tab, setTab] = useState('signin'); // 'signin' | 'signup' | 'forgot'
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [phone, setPhone] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
-  const [successMsg, setSuccessMsg] = useState('');
-
-  useEffect(() => {
-    if (isOpen) {
-      setError('');
-      setSuccessMsg('');
-    }
-  }, [isOpen, tab]);
-
-  if (!isOpen) return null;
-
-  const handleSignIn = async (e) => {
-    e.preventDefault();
-    if (!email.trim() || !password) {
-      setError('Please provide both email and password.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setSuccessMsg('');
-    try {
-      const { user, session } = await signInUser({ email: email.trim(), password });
-      setSuccessMsg(`Welcome back, ${user?.email}!`);
-      setTimeout(() => {
-        onAuthSuccess(user, session);
-        onClose();
-      }, 500);
-    } catch (err) {
-      console.error('Sign in error:', err);
-      setError(err.message || 'Failed to sign in. Please verify your email and password.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSignUp = async (e) => {
-    e.preventDefault();
-    if (!email.trim() || !password) {
-      setError('Please provide email and password.');
-      return;
-    }
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setSuccessMsg('');
-    try {
-      const { user, session } = await signUpUser({
-        email: email.trim(),
-        password,
-        phone: phone.trim()
-      });
-      if (session) {
-        setSuccessMsg(`Account created! Welcome!`);
-        setTimeout(() => {
-          onAuthSuccess(user, session);
-          onClose();
-        }, 600);
-      } else {
-        setSuccessMsg('Registration successful! Please check your email inbox to confirm your account or sign in.');
-        setTab('signin');
-      }
-    } catch (err) {
-      console.error('Sign up error:', err);
-      setError(err.message || 'Failed to create account. Please check your details.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleForgotPassword = async (e) => {
-    e.preventDefault();
-    if (!email.trim()) {
-      setError('Please enter your registered email address.');
-      return;
-    }
-    setLoading(true);
-    setError('');
-    setSuccessMsg('');
-    try {
-      await resetPasswordForEmail(email.trim());
-      setSuccessMsg(`Password reset link sent to ${email.trim()}! Please check your inbox.`);
-    } catch (err) {
-      console.error('Reset error:', err);
-      setError(err.message || 'Could not send reset email. Please try again.');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const creds = getSupabaseCredentials();
-
-  return (
-    <div className="guest-login-overlay auth-modal-overlay" onClick={onClose}>
-      <div className="guest-login-card auth-card" onClick={e => e.stopPropagation()}>
-        {/* Modal Header */}
-        <div className="guest-modal-top">
-          <div className="brand-mark guest-modal-logo auth-modal-logo">
-            <UtensilsCrossed size={18} />
-          </div>
-          <div>
-            <h2>THE PODDAR'S COURTYARD</h2>
-            <p className="guest-login-sub">Member Sign In & Cloud Order Sync</p>
-          </div>
-        </div>
-
-        {/* Supabase Connection Banner */}
-        <div className="supabase-status-pill">
-          <span className="supabase-dot"></span>
-          <Database size={12} color="var(--lime)" />
-          <span>Supabase Project: <code>nfsttzbqcfsffnojikyo</code></span>
-          {!creds.isConfigured && (
-            <button
-              type="button"
-              className="supabase-pill-config-btn"
-              onClick={onOpenConfig}
-              title="Configure Supabase Public Key"
-            >
-              <Key size={11} /> Setup Key
-            </button>
-          )}
-        </div>
-
-        {/* Tab Buttons */}
-        <div className="auth-tab-row">
-          <button
-            type="button"
-            className={`auth-tab-btn ${tab === 'signin' ? 'active' : ''}`}
-            onClick={() => { setTab('signin'); setError(''); setSuccessMsg(''); }}
-          >
-            <LogIn size={14} /> Sign In
-          </button>
-          <button
-            type="button"
-            className={`auth-tab-btn ${tab === 'signup' ? 'active' : ''}`}
-            onClick={() => { setTab('signup'); setError(''); setSuccessMsg(''); }}
-          >
-            <UserPlus size={14} /> Create Account
-          </button>
-        </div>
-
-        {/* Notifications & Error Alerts */}
-        {error && (
-          <div className="chef-login-error auth-alert-error">
-            <AlertTriangle size={14} />
-            <span>{error}</span>
-          </div>
-        )}
-
-        {successMsg && (
-          <div className="auth-alert-success">
-            <CheckCircle2 size={14} color="#10b981" />
-            <span>{successMsg}</span>
-          </div>
-        )}
-
-        {/* SIGN IN FORM */}
-        {tab === 'signin' && (
-          <form onSubmit={handleSignIn} className="guest-form auth-form">
-            <div className="chef-input-group">
-              <label><Mail size={12} /> Email Address</label>
-              <div className="chef-input-box">
-                <Mail size={14} />
-                <input
-                  type="email"
-                  placeholder="your.name@example.com"
-                  value={email}
-                  onChange={e => { setEmail(e.target.value); setError(''); }}
-                  required
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <div className="chef-input-group">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <label><Lock size={12} /> Password</label>
-                <button
-                  type="button"
-                  className="auth-forgot-link"
-                  onClick={() => { setTab('forgot'); setError(''); }}
-                >
-                  Forgot password?
-                </button>
-              </div>
-              <div className="chef-input-box">
-                <Lock size={14} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Enter your password"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError(''); }}
-                  required
-                />
-                <button
-                  type="button"
-                  className="auth-eye-btn"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex="-1"
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="chef-login-btn auth-submit-btn"
-              disabled={loading}
-            >
-              {loading ? (
-                <span><RefreshCw size={14} className="spin-icon" /> Signing in...</span>
-              ) : (
-                <span><LogIn size={15} /> Sign In & Sync Orders →</span>
-              )}
-            </button>
-          </form>
-        )}
-
-        {/* SIGN UP FORM */}
-        {tab === 'signup' && (
-          <form onSubmit={handleSignUp} className="guest-form auth-form">
-            <div className="chef-input-group">
-              <label><Mail size={12} /> Email Address</label>
-              <div className="chef-input-box">
-                <Mail size={14} />
-                <input
-                  type="email"
-                  placeholder="your.email@example.com"
-                  value={email}
-                  onChange={e => { setEmail(e.target.value); setError(''); }}
-                  required
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <div className="chef-input-group">
-              <label><Phone size={12} /> Phone Number (Optional)</label>
-              <div className="chef-input-box">
-                <Phone size={14} />
-                <input
-                  type="tel"
-                  placeholder="e.g. +91 98765 43210"
-                  value={phone}
-                  onChange={e => setPhone(e.target.value)}
-                />
-              </div>
-            </div>
-
-            <div className="chef-input-group">
-              <label><Lock size={12} /> Password (Min. 6 characters)</label>
-              <div className="chef-input-box">
-                <Lock size={14} />
-                <input
-                  type={showPassword ? 'text' : 'password'}
-                  placeholder="Choose a strong password"
-                  value={password}
-                  onChange={e => { setPassword(e.target.value); setError(''); }}
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  className="auth-eye-btn"
-                  onClick={() => setShowPassword(!showPassword)}
-                  tabIndex="-1"
-                >
-                  {showPassword ? <EyeOff size={15} /> : <Eye size={15} />}
-                </button>
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="chef-login-btn auth-submit-btn"
-              disabled={loading}
-            >
-              {loading ? (
-                <span><RefreshCw size={14} className="spin-icon" /> Creating Account...</span>
-              ) : (
-                <span><UserPlus size={15} /> Create Member Account →</span>
-              )}
-            </button>
-          </form>
-        )}
-
-        {/* FORGOT PASSWORD FORM */}
-        {tab === 'forgot' && (
-          <form onSubmit={handleForgotPassword} className="guest-form auth-form">
-            <div className="chef-input-group">
-              <label><Mail size={12} /> Registered Email Address</label>
-              <div className="chef-input-box">
-                <Mail size={14} />
-                <input
-                  type="email"
-                  placeholder="your.registered@example.com"
-                  value={email}
-                  onChange={e => { setEmail(e.target.value); setError(''); }}
-                  required
-                  autoFocus
-                />
-              </div>
-            </div>
-
-            <button
-              type="submit"
-              className="chef-login-btn auth-submit-btn"
-              disabled={loading}
-            >
-              {loading ? (
-                <span><RefreshCw size={14} className="spin-icon" /> Sending Reset Link...</span>
-              ) : (
-                <span>Send Password Reset Link →</span>
-              )}
-            </button>
-
-            <button
-              type="button"
-              className="chef-back-link"
-              onClick={() => { setTab('signin'); setError(''); setSuccessMsg(''); }}
-              style={{ marginTop: '10px', justifyContent: 'center' }}
-            >
-              ← Back to Sign In
-            </button>
-          </form>
-        )}
-
-        {/* Quick Guest Continue Option & Footer */}
-        <div className="auth-footer-divider">
-          <span>OR</span>
-        </div>
-
-        <button
-          type="button"
-          className="auth-guest-btn"
-          onClick={() => {
-            onContinueAsGuest();
-            onClose();
-          }}
-        >
-          <Utensils size={14} color="var(--lime)" />
-          <span>Continue as Dine-In Guest (No login required)</span>
-        </button>
-
-        <div className="auth-footer-links">
-          <button
-            type="button"
-            className="auth-config-link"
-            onClick={onOpenConfig}
-          >
-            <Settings size={12} /> Supabase Settings & Schema
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-// -------------------------------------------------------------
 // SUPABASE ORDER HISTORY MODAL
 // -------------------------------------------------------------
 function OrderHistoryModal({
@@ -1434,29 +1062,6 @@ function OrderHistoryModal({
             </button>
           </div>
         </div>
-
-        {/* Guest Banner if not signed in */}
-        {!user && (
-          <div className="order-history-auth-prompt">
-            <div className="history-auth-prompt-text">
-              <Cloud size={16} color="var(--lime)" />
-              <div>
-                <b>Sign In with Supabase</b>
-                <p>Save and sync your full order history across all phones and tablets.</p>
-              </div>
-            </div>
-            <button
-              type="button"
-              className="history-auth-prompt-btn"
-              onClick={() => {
-                onClose();
-                onOpenAuth();
-              }}
-            >
-              Sign In
-            </button>
-          </div>
-        )}
 
         {/* Filter Pills */}
         <div className="history-filter-row">
@@ -5145,10 +4750,8 @@ function App() {
       return null;
     }
   });
-  const [authModalOpen, setAuthModalOpen] = useState(false);
   const [orderHistoryModalOpen, setOrderHistoryModalOpen] = useState(false);
   const [supabaseConfigModalOpen, setSupabaseConfigModalOpen] = useState(false);
-  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
   const [historyBillOrder, setHistoryBillOrder] = useState(null);
 
   // Customer state & guest session
@@ -5172,53 +4775,14 @@ function App() {
     }
   });
 
-  // Check and restore Supabase session on startup
+  // Check and restore Supabase session silently on startup if available
   useEffect(() => {
     getCurrentSession().then(session => {
       if (session?.user) {
         setSupabaseUser(session.user);
-        try {
-          localStorage.setItem('poddars_user_profile', JSON.stringify(session.user));
-        } catch {}
-        const userName = session.user.user_metadata?.full_name || session.user.email?.split('@')[0];
-        if (userName) {
-          setGuest(prev => ({
-            name: prev?.name || userName,
-            table: prev?.table || 'Table 1',
-            mode: prev?.mode || 'Dine in'
-          }));
-        }
       }
     }).catch(() => {});
   }, []);
-
-  const handleUserAuthSuccess = (user, session) => {
-    setSupabaseUser(user);
-    try {
-      localStorage.setItem('poddars_user_profile', JSON.stringify(user));
-    } catch {}
-    const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0];
-    if (userName) {
-      const nextGuest = {
-        name: userName,
-        table: guest?.table || 'Table 1',
-        mode: guest?.mode || 'Dine in'
-      };
-      setGuest(nextGuest);
-      try {
-        localStorage.setItem('poddars_guest_session', JSON.stringify(nextGuest));
-      } catch {}
-    }
-    setNotice(true);
-    setTimeout(() => setNotice(false), 3000);
-  };
-
-  const handleUserLogout = async () => {
-    await signOutUser();
-    setSupabaseUser(null);
-    setUserDropdownOpen(false);
-    handleGlobalLogout();
-  };
 
   const handleReorder = (items) => {
     if (!Array.isArray(items) || items.length === 0) return;
@@ -5742,93 +5306,19 @@ function App() {
               <span></span>Kitchen is accepting orders
             </div>
 
-            {/* Supabase User Profile or Sign In / Table Check-in */}
-            {supabaseUser ? (
-              <div className="header-user-menu-wrapper">
-                <button
-                  type="button"
-                  className="header-user-pill"
-                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
-                  title="Member Account & Order History"
-                >
-                  <div className="user-avatar-circle">
-                    {(supabaseUser.user_metadata?.full_name || supabaseUser.email || 'U')[0].toUpperCase()}
-                  </div>
-                  <div className="user-pill-info">
-                    <b>{supabaseUser.user_metadata?.full_name || supabaseUser.email.split('@')[0]}</b>
-                    <small>{mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</small>
-                  </div>
-                  <ChevronDown size={13} className={userDropdownOpen ? 'rotate-180' : ''} />
-                </button>
-
-                {userDropdownOpen && (
-                  <div className="header-user-dropdown" onClick={() => setUserDropdownOpen(false)}>
-                    <div className="user-dropdown-header">
-                      <b>{supabaseUser.user_metadata?.full_name || 'Member'}</b>
-                      <small>{supabaseUser.email}</small>
-                      <span className="user-dropdown-cloud-tag"><Database size={10} color="var(--lime)" /> Supabase Synced</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="user-dropdown-item"
-                      onClick={() => setOrderHistoryModalOpen(true)}
-                    >
-                      <History size={15} color="var(--lime)" />
-                      <span>My Order History</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="user-dropdown-item"
-                      onClick={() => setGuestModalOpen(true)}
-                    >
-                      <MapPin size={15} />
-                      <span>Table: {mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</span>
-                    </button>
-                    <button
-                      type="button"
-                      className="user-dropdown-item"
-                      onClick={() => setSupabaseConfigModalOpen(true)}
-                    >
-                      <Settings size={15} />
-                      <span>Supabase Settings & Schema</span>
-                    </button>
-                    <div className="user-dropdown-divider"></div>
-                    <button
-                      type="button"
-                      className="user-dropdown-item logout"
-                      onClick={handleUserLogout}
-                    >
-                      <LogOut size={15} />
-                      <span>Sign Out</span>
-                    </button>
-                  </div>
-                )}
+            {/* Table & Guest Info Pill */}
+            <button
+              type="button"
+              className="header-guest-pill"
+              onClick={() => setGuestModalOpen(true)}
+              title="Click to change your Name or Table"
+            >
+              <MapPin size={13} color="var(--lime)" />
+              <div>
+                <b>{guest?.name || 'Guest'}</b>
+                <small>{mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</small>
               </div>
-            ) : (
-              <div className="header-guest-auth-group">
-                <button
-                  type="button"
-                  className="header-auth-btn"
-                  onClick={() => setAuthModalOpen(true)}
-                  title="Sign In with Supabase to sync orders"
-                >
-                  <User size={14} color="var(--lime)" />
-                  <span className="header-btn-label">Sign In</span>
-                </button>
-                <button
-                  type="button"
-                  className="header-guest-pill"
-                  onClick={() => setGuestModalOpen(true)}
-                  title="Click to change your Name or Table"
-                >
-                  <MapPin size={13} color="var(--lime)" />
-                  <div>
-                    <b>{guest?.name || 'Guest'}</b>
-                    <small>{mode === 'Dine in' ? (guest?.table || 'Table 1') : 'Pickup'}</small>
-                  </div>
-                </button>
-              </div>
-            )}
+            </button>
 
             <div className="header-actions">
               {/* Order History Header Button */}
@@ -6691,16 +6181,6 @@ function App() {
         />
       )}
 
-      {/* Supabase User Authentication Modal */}
-      <AuthModal
-        isOpen={authModalOpen}
-        onClose={() => setAuthModalOpen(false)}
-        onAuthSuccess={handleUserAuthSuccess}
-        onContinueAsGuest={() => setGuestModalOpen(true)}
-        guest={guest}
-        onOpenConfig={() => setSupabaseConfigModalOpen(true)}
-      />
-
       {/* Supabase Order History Modal */}
       <OrderHistoryModal
         isOpen={orderHistoryModalOpen}
@@ -6715,7 +6195,6 @@ function App() {
         onOpenBill={order => {
           setHistoryBillOrder(order);
         }}
-        onOpenAuth={() => setAuthModalOpen(true)}
       />
 
       {/* Supabase Configuration & Schema Modal */}
